@@ -22,10 +22,15 @@ typedef struct buffer {
 } buffer;
 
 
-buffer* buffer_build(unsigned int cap);
+buffer* buffer_build(void);
+void buffer_destroy(buffer* b);
 
 unsigned int buffer_length(const buffer* b);
 
+buffer* buffer_set_character(buffer* b, char c);
+buffer* buffer_set_string(buffer* b, const char* s);
+
+buffer* buffer_append_character(buffer* b, char c);
 buffer* buffer_append_string(buffer* b, const char* s);
 
 // convert between slice and buffer
@@ -34,5 +39,7 @@ buffer* slice_to_buffer(const slice s);
 slice buffer_to_slice(const buffer* b);
 
 const char* slice_to_string(const slice s, char* string);
+
+void slice_dump(const slice s);
 
 #endif

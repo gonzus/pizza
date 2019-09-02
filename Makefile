@@ -1,4 +1,5 @@
 CFLAGS += -g
+CFLAGS += -Wall -Wextra -Werror
 
 all: main
 

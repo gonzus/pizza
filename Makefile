@@ -1,13 +1,15 @@
 CFLAGS += -std=c99
+CFLAGS += -I.
 CFLAGS += -g
 CFLAGS += -Wall -Wextra -Werror
 
 all: main
 
-pizza.o: pizza.c
+slice.o: slice.c
+buffer.o: buffer.c
 main.o: main.c
 
-main: main.o pizza.o
+main: main.o slice.o buffer.o
 
 clean:
 	rm -f *.o

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include "pizza.h"
+#include <slice.h>
+#include <buffer.h>
 
 static unsigned char volcano[] = {
     0x45,

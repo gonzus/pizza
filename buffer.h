@@ -19,8 +19,8 @@
  */
 typedef struct buffer {
     Byte* ptr;          // pointer to beginning of data
-    unsigned int cap;   // total capacity of data
-    unsigned int pos;   // position of next char written to data
+    unsigned int cap;   // total data capacity
+    unsigned int pos;   // position of next char written to buffer
 } buffer;
 
 // build an empty / default-sized buffer

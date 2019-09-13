@@ -24,10 +24,10 @@ slice slice_wrap_ptr_len(const char* p, unsigned int l) {
     return s;
 }
 
-const char* slice_to_string(slice s, char* string) {
+unsigned int slice_to_string(slice s, char* string) {
     memcpy(string, s.ptr, s.len);
     string[s.len] = '\0';
-    return string;
+    return s.len;
 }
 
 void slice_dump(slice s) {

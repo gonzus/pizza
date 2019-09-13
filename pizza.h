@@ -23,7 +23,7 @@ slice slice_wrap_ptr_len(const char* p, unsigned int l);
  * copy a slice into a string buffer and return the buffer; includes a null terminator
  * the string buffer must already have the right size (slice.len + 1)
  */
-const char* slice_to_string(slice s, char* string);
+unsigned int slice_to_string(slice s, char* string);
 
 // dump a slice into stderr
 void slice_dump(slice s);

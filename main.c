@@ -99,6 +99,37 @@ static void test_tokenize(void) {
     }
 }
 
+static void test_split(void) {
+    static struct {
+        const char* string;
+        const char* set;
+    } data[] = {
+        { " this is  a   line with\tblanks ", " \t" },
+        { "123+34*-55-+/28+++--", "+-*/" },
+        { "--++123", "+-*/" },
+    };
+    char tmp[1024];
+    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+        fprintf(stderr, "Splitting [%s], set [%s]\n", data[j].string, data[j].set);
+        slice s = slice_wrap_string(data[j].string);
+        slice set = slice_wrap_string(data[j].set);
+        for (int included = 1; 1; included = !included) {
+            slice l, r;
+
+            if (slice_get_length(s) == 0) break;
+
+            slice_split(s, included, set, &l, &r);
+            slice_to_string(l, tmp);
+            fprintf(stderr, "  L [%s]\n", tmp);
+            slice_to_string(r, tmp);
+            fprintf(stderr, "  R [%s]\n", tmp);
+            s = r;
+        }
+
+        fprintf(stderr, "Splitting DONE\n");
+    }
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -109,6 +140,7 @@ int main(int argc, char* argv[]) {
     test_simple();
     test_utf8();
     test_tokenize();
+    test_split();
 
     return 0;
 }

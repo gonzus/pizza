@@ -41,7 +41,35 @@ slice slice_wrap_ptr_len(const Byte* ptr, unsigned int len);
  */
 unsigned int slice_to_string(slice s, char* string);
 
+/*
+ * tokenize slice s by repeatedly searching for bytes in sep, returning each token in c
+ * intended to be used like this:
+ *
+ *    for (slice token = SLICE_NULL; slice_tokenize(s, sep, &token); ) {
+ *        // do something with token
+ *    }
+ */
 int slice_tokenize(slice s, slice sep, slice* c);
+
+/*
+ * find longest span at beginning of slice with characters included in / excluded from set
+ * returns left and right slices
+ */
+int slice_split(slice s, int included, slice set, slice* l, slice* r);
+
+/*
+ * find longest span at beginning of slice with characters included in set
+ * returns left and right slices
+ * calls slice_split with included=1
+ */
+int slice_split_included(slice s, slice set, slice* l, slice* r);
+
+/*
+ * find longest span at beginning of slice with characters excluded from set
+ * returns left and right slices
+ * calls slice_split with included=0
+ */
+int slice_split_excluded(slice s, slice set, slice* l, slice* r);
 
 // dump a slice into stderr
 void slice_dump(slice s);

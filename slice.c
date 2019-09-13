@@ -78,6 +78,42 @@ int slice_tokenize(slice s, slice sep, slice* token) {
     return 1;
 }
 
+int slice_split(slice s, int included, slice set, slice* l, slice* r) {
+    unsigned int j = 0;
+    unsigned int k = 0;
+    for (j = 0; j < s.len; ++j) {
+        int matches = 0;
+        for (k = 0; k < set.len; ++k) {
+            if (s.ptr[j] == set.ptr[k]) {
+                ++matches;
+                if (!included) {
+                    break;
+                }
+            }
+        }
+        if (( included && !matches) ||
+            (!included &&  matches)) {
+            break;
+        }
+    }
+    if (l) {
+        l->ptr = s.ptr;
+        l->len = j;
+    }
+    if (r) {
+        r->ptr = s.ptr + j;
+        r->len = s.len - j;
+    }
+    return j;
+}
+
+int slice_split_included(slice s, slice set, slice* l, slice* r) {
+    return slice_split(s, 1, set, l, r);
+}
+
+int slice_split_excluded(slice s, slice set, slice* l, slice* r) {
+    return slice_split(s, 0, set, l, r);
+}
 
 static void slice_dump_file(slice s, FILE* fp) {
     char byte[16*3+1];

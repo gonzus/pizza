@@ -32,9 +32,7 @@ slice slice_wrap_ptr(const char* p) {
 }
 
 slice slice_wrap_ptr_len(const char* p, unsigned int l) {
-    slice s;
-    s.ptr = p;
-    s.len = l;
+    slice s = { .ptr = p, .len = l };
     return s;
 }
 

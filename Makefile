@@ -1,3 +1,4 @@
+CFLAGS += -std=c99
 CFLAGS += -g
 CFLAGS += -Wall -Wextra -Werror
 

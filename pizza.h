@@ -13,6 +13,15 @@ typedef struct slice {
     unsigned int len;   // length of data
 } slice;
 
+// the null slice
+extern slice SLICE_NULL;
+
+// return true if slice is null (no ptr)
+int slice_is_null(slice s);
+
+// return true if slice is empty (valid ptr, zero len)
+int slice_is_empty(slice s);
+
 // wrap a const char* into a slice; compute the length using strlen()
 slice slice_wrap_ptr(const char* p);
 

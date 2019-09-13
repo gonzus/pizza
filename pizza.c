@@ -9,9 +9,19 @@
 #define BUFFER_DEFAULT_CAPACITY 32  // default size for buffer
 #define BUFFER_GROWTH_FACTOR     2  // factor to make buffer grow when needed
 
+slice SLICE_NULL = { .ptr = 0, .len = 0 };
+
 static void slice_dump_file(slice s, FILE* fp);
 static void buffer_ensure_extra(buffer* b, unsigned int extra);
 static void buffer_ensure_total(buffer* b, unsigned int total);
+
+int slice_is_null(slice s) {
+    return s.ptr == 0;
+}
+
+int slice_is_empty(slice s) {
+    return s.ptr != 0 && s.len == 0;
+}
 
 slice slice_wrap_ptr(const char* p) {
     return slice_wrap_ptr_len(p, p == 0 ? 0 : strlen(p));

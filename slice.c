@@ -66,7 +66,14 @@ int slice_compare(slice l, slice r) {
     return 0;
 }
 
-// TODO: use a map[256] bytes to quickly check bytes in sep
+static void set_bitmap(Byte* map, int len, slice set) {
+    memset(map, 0, len);
+    for (unsigned int j = 0; j < set.len; ++j) {
+        map[set.ptr[j]] = 1;
+    }
+}
+
+// TODO: keep map between calls -- how?
 int slice_tokenize(slice s, slice sep, slice* token) {
     unsigned int start = 0;
     if (token->ptr) {
@@ -78,44 +85,35 @@ int slice_tokenize(slice s, slice sep, slice* token) {
         return 0;
     }
 
+    Byte map[256];
+    set_bitmap(map, 256, sep);
+
     const Byte* p = s.ptr + start;
     unsigned int l = s.len - start;
     unsigned int j = 0;
-    unsigned int k = 0;
-    int found = 0;
-    for (j = 0; !found && j < l; ++j) {
-        for (k = 0; !found && k < sep.len; ++k) {
-            if (p[j] == sep.ptr[k]) {
-                found = 1;
-            }
+    for (j = 0; j < l; ++j) {
+        if (map[p[j]]) {
+            break;
         }
     }
 
     token->ptr = p;
-    if (found) {
-        token->len = j - 1;
+    if (j < l) {
+        token->len = j;
     } else {
         token->len = l;
     }
     return 1;
 }
 
-// TODO: use a map[256] bytes to quickly check bytes in set
 int slice_split(slice s, int included, slice set, slice* l, slice* r) {
+    Byte map[256];
+    set_bitmap(map, 256, set);
+
     unsigned int j = 0;
-    unsigned int k = 0;
     for (j = 0; j < s.len; ++j) {
-        int matches = 0;
-        for (k = 0; k < set.len; ++k) {
-            if (s.ptr[j] == set.ptr[k]) {
-                ++matches;
-                if (!included) {
-                    break;
-                }
-            }
-        }
-        if (( included && !matches) ||
-            (!included &&  matches)) {
+        int match = map[s.ptr[j]];
+        if (included ? !match : match) {
             break;
         }
     }

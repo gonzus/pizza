@@ -130,6 +130,26 @@ static void test_split(void) {
     }
 }
 
+static void test_compare(void) {
+    static struct {
+        const char* l;
+        const char* r;
+    } data[] = {
+        { "abc" , "pqr"  },
+        { "pqr" , "abc"  },
+        { "pqr" , "pqr"  },
+        { ""    , ""     },
+        { "abc" , "abcd" },
+        { "abcd", "abc"  },
+        { "abcd", "abcd" },
+    };
+    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+        slice l = slice_wrap_string(data[j].l);
+        slice r = slice_wrap_string(data[j].r);
+        fprintf(stderr, "Comparing [%s] [%s] => %d\n", data[j].l, data[j].r, slice_compare(l, r));
+    }
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -141,6 +161,7 @@ int main(int argc, char* argv[]) {
     test_utf8();
     test_tokenize();
     test_split();
+    test_compare();
 
     return 0;
 }

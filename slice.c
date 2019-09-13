@@ -45,6 +45,27 @@ void slice_dump(slice s) {
     slice_dump_file(s, stderr);
 }
 
+int slice_compare(slice l, slice r) {
+    for (unsigned int j = 0; 1; ++j) {
+        if (j >= l.len && j >= r.len) {
+            return 0;
+        }
+        if (j >= l.len) {
+            return -1;
+        }
+        if (j >= r.len) {
+            return +1;
+        }
+        if (l.ptr[j] < r.ptr[j]) {
+            return -1;
+        }
+        if (l.ptr[j] > r.ptr[j]) {
+            return +1;
+        }
+    }
+    return 0;
+}
+
 // TODO: use a map[256] bytes to quickly check bytes in sep
 int slice_tokenize(slice s, slice sep, slice* token) {
     unsigned int start = 0;

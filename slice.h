@@ -4,8 +4,6 @@
 /*
  * TODO
  *
- * strcmp, strncmp -- compare strings
- *
  * strchr, strrchr -- locate character in string
  * strpbrk -- locate multiple characters in string
  *
@@ -52,11 +50,15 @@ slice slice_wrap_string_length(const char* string, unsigned int length);
 
 // wrap a given number of bytes from an array of Bytes into a slice.
 slice slice_wrap_ptr_len(const Byte* ptr, unsigned int len);
+
 /*
  * copy a slice into a string (char*) and return the buffer; includes a null terminator
  * the string buffer must already have the right size (slice.len + 1)
  */
 unsigned int slice_to_string(slice s, char* string);
+
+// compare two slices, returning: l < r: -1; l > r: 1; l == r: 0
+int slice_compare(slice l, slice r);
 
 /*
  * tokenize slice s by repeatedly searching for bytes in sep, returning each token in c

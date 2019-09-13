@@ -27,13 +27,17 @@ int slice_get_length(slice s) {
     return s.len;
 }
 
-slice slice_wrap_ptr(const char* p) {
-    return slice_wrap_ptr_len(p, p == 0 ? 0 : strlen(p));
+static slice slice_wrap_ptr_len(const Byte* ptr, unsigned int len) {
+    slice s = { .ptr = ptr, .len = len };
+    return s;
 }
 
-slice slice_wrap_ptr_len(const char* p, unsigned int l) {
-    slice s = { .ptr = p, .len = l };
-    return s;
+slice slice_wrap_string(const char* string) {
+    return slice_wrap_ptr_len((const Byte*) string, string == 0 ? 0 : strlen(string));
+}
+
+slice slice_wrap_string_length(const char* string, unsigned int length) {
+    return slice_wrap_ptr_len((const Byte*) string, length);
 }
 
 unsigned int slice_to_string(slice s, char* string) {
@@ -57,7 +61,7 @@ int slice_tokenize(slice s, slice sep, slice* token) {
         return 0;
     }
 
-    const char* p = s.ptr + start;
+    const Byte* p = s.ptr + start;
     unsigned int l = s.len - start;
     unsigned int j = 0;
     unsigned int k = 0;
@@ -106,11 +110,11 @@ void buffer_clear(buffer* b) {
     b->pos = 0;
 }
 
-buffer* buffer_set_character(buffer* b, char c) {
+buffer* buffer_set_byte(buffer* b, Byte u) {
     buffer_ensure_total(b, 1);
-    LOG("COPYC [0x%02x]\n", (unsigned int) (unsigned char) c);
+    LOG("COPYC [0x%02x]\n", (unsigned int) u);
     b->pos = 0;
-    b->ptr[b->pos++] = c;
+    b->ptr[b->pos++] = u;
     return b;
 }
 
@@ -122,10 +126,10 @@ buffer* buffer_set_slice(buffer* b, slice s) {
     return b;
 }
 
-buffer* buffer_append_character(buffer* b, char c) {
+buffer* buffer_append_byte(buffer* b, Byte u) {
     buffer_ensure_extra(b, 1);
-    LOG("APPENDC [0x%02x]\n", (unsigned int) (unsigned char) c);
-    b->ptr[b->pos++] = c;
+    LOG("APPENDC [0x%02x]\n", (unsigned int) u);
+    b->ptr[b->pos++] = u;
     return b;
 }
 

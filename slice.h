@@ -40,7 +40,7 @@ int slice_is_null(slice s);
 int slice_is_empty(slice s);
 
 // return slice length
-int slice_get_length(slice s);
+unsigned int slice_get_length(slice s);
 
 // wrap a string (const char*) into a slice; compute the length using strlen()
 slice slice_wrap_string(const char* string);

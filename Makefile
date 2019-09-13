@@ -1,16 +1,22 @@
-CFLAGS += -std=c99
+# uncomment to see logging messages
+# CFLAGS += -DLOG_SHOW=1
+
+# uncomment to make warnings into errors
+# CFLAGS += -Werror
+
 CFLAGS += -I.
+CFLAGS += -std=c99
 CFLAGS += -g
 CFLAGS += -Wall -Wextra
-# CFLAGS += -Werror
 
 all: main
 
+log.o: log.c
 slice.o: slice.c
 buffer.o: buffer.c
 main.o: main.c
 
-main: main.o slice.o buffer.o
+main: main.o log.o slice.o buffer.o
 
 clean:
 	rm -f *.o

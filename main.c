@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <string.h>
 #include <slice.h>
 #include <buffer.h>
 
@@ -29,6 +28,7 @@ static void test_simple(void) {
     const char* name = "nico";
     int year = 2005;
     char tmp[100];
+    unsigned int len = 0;
 
     slice s1 = slice_wrap_string(name);
 
@@ -40,21 +40,21 @@ static void test_simple(void) {
     buffer_append_byte(b, '!');
     slice s2 = buffer_get_slice(b);
 
-    slice_to_string(s2, tmp);
-    printf("[%lu] [%s]\n", strlen(tmp), tmp);
+    len = slice_to_string(s2, tmp);
+    printf("[%u] [%s]\n", len, tmp);
 
     buffer_set_byte(b, '(');
     buffer_append_slice(b, slice_wrap_string("it was Sofi who was born in 2002, before Nico"));
     buffer_append_byte(b, ')');
     slice s3 = buffer_get_slice(b);
 
-    slice_to_string(s3, tmp);
-    printf("[%lu] [%s]\n", strlen(tmp), tmp);
+    len = slice_to_string(s3, tmp);
+    printf("[%u] [%s]\n", len, tmp);
 
     buffer_set_slice(b, slice_wrap_string("Bye now!"));
     slice s4 = buffer_get_slice(b);
-    slice_to_string(s4, tmp);
-    printf("[%lu] [%s]\n", strlen(tmp), tmp);
+    len = slice_to_string(s4, tmp);
+    printf("[%u] [%s]\n", len, tmp);
     buffer_destroy(b);
 }
 

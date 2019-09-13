@@ -4,12 +4,6 @@
 /*
  * TODO
  *
- * strchr, strrchr -- locate character in string
- * strpbrk -- locate multiple characters in string
- *
- * strstr, strcasestr, strnstr -- locate a substring in a string
- *
- *
  * MAYBE?
  *
  * strcoll, strcoll_l -- compare strings, according to current collation
@@ -59,6 +53,12 @@ unsigned int slice_to_string(slice s, char* string);
 
 // compare two slices, returning: l < r: -1; l > r: 1; l == r: 0
 int slice_compare(slice l, slice r);
+
+// find byte in slice
+slice slice_find_byte(slice s, Byte t);
+
+// find slice in slice
+slice slice_find_slice(slice s, slice t);
 
 /*
  * tokenize slice s by repeatedly searching for bytes in sep, returning each token in c

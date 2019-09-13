@@ -66,6 +66,38 @@ int slice_compare(slice l, slice r) {
     return 0;
 }
 
+slice slice_find_byte(slice s, Byte t) {
+    unsigned int j = 0;
+    unsigned int top = s.len;
+    for (j = 0; j < top; ++j) {
+        if (s.ptr[j] == t) {
+            break;
+        }
+    }
+    if (j < top) {
+        return slice_wrap_ptr_len(s.ptr + j, 1);
+    }
+    return SLICE_NULL;
+}
+
+slice slice_find_slice(slice s, slice t) {
+    if (s.len < t.len) {
+        return SLICE_NULL;
+    }
+
+    unsigned int j = 0;
+    unsigned int top = s.len - t.len + 1;
+    for (j = 0; j < top; ++j) {
+        if (memcmp(s.ptr + j, t.ptr, t.len) == 0) {
+            break;
+        }
+    }
+    if (j < top) {
+        return slice_wrap_ptr_len(s.ptr + j, t.len);
+    }
+    return SLICE_NULL;
+}
+
 static void set_bitmap(Byte* map, int len, slice set) {
     memset(map, 0, len);
     for (unsigned int j = 0; j < set.len; ++j) {

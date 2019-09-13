@@ -150,6 +150,44 @@ static void test_compare(void) {
     }
 }
 
+static void test_find_byte(void) {
+    static struct {
+        const char* s;
+        char t;
+    } data[] = {
+        { "you know it is there" , 'k'  },
+        { "this time it is not" , 'x'  },
+        { "" , 'x'  },
+    };
+    char tmp[1024];
+    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+        slice s = slice_wrap_string(data[j].s);
+        slice f = slice_find_byte(s, data[j].t);
+        slice_to_string(f, tmp);
+        fprintf(stderr, "Searching byte [%c] in slice [%s] => %d - [%s]\n", data[j].t, data[j].s, !slice_is_null(f), tmp);
+    }
+}
+
+static void test_find_slice(void) {
+    static struct {
+        const char* s;
+        const char* t;
+    } data[] = {
+        { "you know it is there" , "know"  },
+        { "this time it is not" , "really"  },
+        { "" , "really"  },
+        { "hello" , ""  },
+    };
+    char tmp[1024];
+    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+        slice s = slice_wrap_string(data[j].s);
+        slice t = slice_wrap_string(data[j].t);
+        slice f = slice_find_slice(s, t);
+        slice_to_string(f, tmp);
+        fprintf(stderr, "Searching slice [%s] in [%s] => %d - [%s]\n", data[j].t, data[j].s, !slice_is_null(f), tmp);
+    }
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -162,6 +200,8 @@ int main(int argc, char* argv[]) {
     test_tokenize();
     test_split();
     test_compare();
+    test_find_byte();
+    test_find_slice();
 
     return 0;
 }

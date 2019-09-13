@@ -30,26 +30,28 @@ static void test_simple(void) {
     char tmp[100];
 
     slice s1 = slice_wrap_ptr(name);
-    buffer* b = slice_to_buffer(s1);
+
+    buffer* b = buffer_build();
+    buffer_set_slice(b, s1);
 
     sprintf(tmp, " was born in %d", year);
-    buffer_append_string(b, tmp);
+    buffer_append_slice(b, slice_wrap_ptr(tmp));
     buffer_append_character(b, '!');
-    slice s2 = buffer_to_slice(b);
+    slice s2 = buffer_get_slice(b);
 
     slice_to_string(s2, tmp);
     printf("[%lu] [%s]\n", strlen(tmp), tmp);
 
     buffer_set_character(b, '(');
-    buffer_append_string(b, "it was Sofi who was born in 2002, before Nico");
+    buffer_append_slice(b, slice_wrap_ptr("it was Sofi who was born in 2002, before Nico"));
     buffer_append_character(b, ')');
-    slice s3 = buffer_to_slice(b);
+    slice s3 = buffer_get_slice(b);
 
     slice_to_string(s3, tmp);
     printf("[%lu] [%s]\n", strlen(tmp), tmp);
 
-    buffer_set_string(b, "Bye now!");
-    slice s4 = buffer_to_slice(b);
+    buffer_set_slice(b, slice_wrap_ptr("Bye now!"));
+    slice s4 = buffer_get_slice(b);
     slice_to_string(s4, tmp);
     printf("[%lu] [%s]\n", strlen(tmp), tmp);
     buffer_destroy(b);
@@ -64,7 +66,7 @@ static void test_utf8(void) {
         buffer_append_character(b, volcano[j]);
 #endif
     }
-    slice s1 = buffer_to_slice(b);
+    slice s1 = buffer_get_slice(b);
     char tmp[100];
     slice_to_string(s1, tmp);
     slice_dump(s1);
@@ -74,6 +76,9 @@ static void test_utf8(void) {
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
+
+    fprintf(stderr, "sizeof(slice) = %lu\n", sizeof(slice));
+    fprintf(stderr, "sizeof(buffer) = %lu\n", sizeof(buffer));
 
     test_simple();
     test_utf8();

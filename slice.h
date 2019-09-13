@@ -1,6 +1,23 @@
 #ifndef SLICE_H_
 #define SLICE_H_
 
+/*
+ * TODO
+ *
+ * strcmp, strncmp -- compare strings
+ *
+ * strchr, strrchr -- locate character in string
+ * strpbrk -- locate multiple characters in string
+ *
+ * strstr, strcasestr, strnstr -- locate a substring in a string
+ *
+ *
+ * MAYBE?
+ *
+ * strcoll, strcoll_l -- compare strings, according to current collation
+ * strxfrm, strxfrm_l -- transform a string under locale
+ */
+
 typedef unsigned char Byte;
 
 /*

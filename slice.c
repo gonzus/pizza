@@ -45,6 +45,7 @@ void slice_dump(slice s) {
     slice_dump_file(s, stderr);
 }
 
+// TODO: use a map[256] bytes to quickly check bytes in sep
 int slice_tokenize(slice s, slice sep, slice* token) {
     unsigned int start = 0;
     if (token->ptr) {
@@ -78,6 +79,7 @@ int slice_tokenize(slice s, slice sep, slice* token) {
     return 1;
 }
 
+// TODO: use a map[256] bytes to quickly check bytes in set
 int slice_split(slice s, int included, slice set, slice* l, slice* r) {
     unsigned int j = 0;
     unsigned int k = 0;
@@ -115,26 +117,30 @@ int slice_split_excluded(slice s, slice set, slice* l, slice* r) {
     return slice_split(s, 0, set, l, r);
 }
 
+static void dump_line(unsigned int row, const char* byte, unsigned int white, const char* text, FILE* fp) {
+    fprintf(fp, "%06x | %s%*s | %-16s |\n", row, byte, white, "", text);
+}
+
 static void slice_dump_file(slice s, FILE* fp) {
     char byte[16*3+1];
     int bpos = 0;
-    char dump[16+1];
+    char text[16+1];
     int dpos = 0;
     unsigned int row = 0;
     unsigned int col = 0;
     for (unsigned int j = 0; j < s.len; ++j) {
         unsigned char uc = (unsigned char) s.ptr[j];
         unsigned int ui = (unsigned int) uc;
-        bpos += sprintf(byte + bpos, " %02x", ui);
-        dpos += sprintf(dump + dpos, "%c", isprint(uc) ? uc : '.');
+        bpos += sprintf(byte + bpos, "%s%02x", col ? " " : "", ui);
+        dpos += sprintf(text + dpos, "%c", isprint(uc) ? uc : '.');
         col++;
         if (col == 16) {
-            fprintf(fp, "%06x | %s | %s\n", row, byte, dump);
+            dump_line(row, byte, 0, text, fp);
             col = bpos = dpos = 0;
             row += 16;
         }
     }
     if (dpos > 0) {
-        fprintf(fp, "%06x | %s%*c | %s\n", row, byte, (16-col)*3, ' ', dump);
+        dump_line(row, byte, (16-col)*3, text, fp);
     }
 }

@@ -1,7 +1,8 @@
 CFLAGS += -std=c99
 CFLAGS += -I.
 CFLAGS += -g
-CFLAGS += -Wall -Wextra -Werror
+CFLAGS += -Wall -Wextra
+# CFLAGS += -Werror
 
 all: main
 

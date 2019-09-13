@@ -1,6 +1,14 @@
 #ifndef BUFFER_H_
 #define BUFFER_H_
 
+/*
+ * TODO
+ *
+ * MAYBE?
+ *
+ * sprintf
+ */
+
 #include <slice.h>
 
 /*

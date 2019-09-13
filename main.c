@@ -73,6 +73,31 @@ static void test_utf8(void) {
     buffer_destroy(b);
 }
 
+static void test_tokenize(void) {
+    static struct {
+        const char* string;
+        const char* sep;
+    } data[] = {
+        { "simple-line-with-single-separator", "-" },
+        { "simple-line;-this-time,-with-multiple-separators", ",;" },
+        { "duplicated,;-separators;;;now", ",;" },
+        { "separators not found", ",;" },
+        { "", ",;" },
+        { "empty separators", "" },
+    };
+    char tmp[1024];
+    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+        fprintf(stderr, "Tokenizing [%s], separators [%s]\n", data[j].string, data[j].sep);
+        slice s = slice_wrap_ptr(data[j].string);
+        slice sep = slice_wrap_ptr(data[j].sep);
+        for (slice token = SLICE_NULL; slice_tokenize(s, sep, &token); ) {
+            slice_to_string(token, tmp);
+            fprintf(stderr, "  [%s]\n", tmp);
+        }
+        fprintf(stderr, "Tokenizing DONE\n");
+    }
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -82,6 +107,7 @@ int main(int argc, char* argv[]) {
 
     test_simple();
     test_utf8();
+    test_tokenize();
 
     return 0;
 }

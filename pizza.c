@@ -46,6 +46,38 @@ void slice_dump(slice s) {
     slice_dump_file(s, stderr);
 }
 
+int slice_tokenize(slice s, slice sep, slice* token) {
+    unsigned int start = 0;
+    if (token->ptr) {
+        start = (token->ptr - s.ptr) + token->len + 1;
+        token->ptr = 0;
+    }
+
+    if (start >= s.len) {
+        return 0;
+    }
+
+    const char* p = s.ptr + start;
+    unsigned int l = s.len - start;
+    unsigned int j = 0;
+    unsigned int k = 0;
+    int found = 0;
+    for (j = 0; !found && j < l; ++j) {
+        for (k = 0; !found && k < sep.len; ++k) {
+            if (p[j] == sep.ptr[k]) {
+                found = 1;
+            }
+        }
+    }
+
+    token->ptr = p;
+    if (found) {
+        token->len = j - 1;
+    } else {
+        token->len = l;
+    }
+    return 1;
+}
 
 
 buffer* buffer_build(void) {

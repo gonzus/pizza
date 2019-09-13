@@ -37,6 +37,8 @@ slice slice_wrap_ptr_len(const char* p, unsigned int l);
  */
 unsigned int slice_to_string(slice s, char* string);
 
+int slice_tokenize(slice s, slice sep, slice* c);
+
 // dump a slice into stderr
 void slice_dump(slice s);
 

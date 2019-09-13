@@ -3,13 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "log.h"
 #include "pizza.h"
 
 #define BUFFER_DEFAULT_CAPACITY 32  // default size for buffer
 #define BUFFER_GROWTH_FACTOR     2  // factor to make buffer grow when needed
-
-#define SHOW_LOG 1
-#define LOG(...) if (SHOW_LOG) do { fprintf(stderr, "LOG: "); fprintf(stderr, __VA_ARGS__); } while (0)
 
 static void slice_dump_file(slice s, FILE* fp);
 static void buffer_ensure_extra(buffer* b, unsigned int extra);

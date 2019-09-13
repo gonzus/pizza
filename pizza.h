@@ -22,6 +22,9 @@ int slice_is_null(slice s);
 // return true if slice is empty (valid ptr, zero len)
 int slice_is_empty(slice s);
 
+// return slice length
+int slice_get_length(slice s);
+
 // wrap a const char* into a slice; compute the length using strlen()
 slice slice_wrap_ptr(const char* p);
 

@@ -23,6 +23,10 @@ int slice_is_empty(slice s) {
     return s.ptr != 0 && s.len == 0;
 }
 
+int slice_get_length(slice s) {
+    return s.len;
+}
+
 slice slice_wrap_ptr(const char* p) {
     return slice_wrap_ptr_len(p, p == 0 ? 0 : strlen(p));
 }

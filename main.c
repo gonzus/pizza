@@ -33,10 +33,9 @@ static void test_simple(void) {
 
     slice s1 = slice_wrap_string(name);
 
-    buffer* b = buffer_build();
-    buffer_set_slice(b, s1);
-
     sprintf(tmp, " was born in %d", year);
+    buffer* b = buffer_build();
+    buffer_append_slice(b, s1);
     buffer_append_slice(b, slice_wrap_string(tmp));
     buffer_append_byte(b, '!');
     slice s2 = buffer_get_slice(b);
@@ -44,7 +43,8 @@ static void test_simple(void) {
     len = slice_to_string(s2, tmp);
     printf("[%u] [%s]\n", len, tmp);
 
-    buffer_set_byte(b, '(');
+    buffer_clear(b);
+    buffer_append_byte(b, '(');
     buffer_append_slice(b, slice_wrap_string("it was Sofi who was born in 2002, before Nico"));
     buffer_append_byte(b, ')');
     slice s3 = buffer_get_slice(b);
@@ -52,7 +52,8 @@ static void test_simple(void) {
     len = slice_to_string(s3, tmp);
     printf("[%u] [%s]\n", len, tmp);
 
-    buffer_set_slice(b, slice_wrap_string("Bye now!"));
+    buffer_clear(b);
+    buffer_append_slice(b, slice_wrap_string("Bye now!"));
     slice s4 = buffer_get_slice(b);
     len = slice_to_string(s4, tmp);
     printf("[%u] [%s]\n", len, tmp);
@@ -63,10 +64,6 @@ static void test_utf8(void) {
     buffer* b = buffer_build();
     for (unsigned int j = 0; j < sizeof(volcano); ++j) {
         buffer_append_byte(b, volcano[j]);
-#if 0
-        buffer_append_byte(b, volcano[j]);
-        buffer_append_byte(b, volcano[j]);
-#endif
     }
     slice s1 = buffer_get_slice(b);
     char tmp[100];

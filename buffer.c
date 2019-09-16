@@ -18,9 +18,9 @@ buffer* buffer_build(void) {
 }
 
 buffer* buffer_clone(const buffer* b) {
-    buffer* n = buffer_build();
     slice s = buffer_get_slice(b);
-    buffer_set_slice(n, s);
+    buffer* n = buffer_build();
+    buffer_append_slice(n, s);
     return n;
 }
 
@@ -50,22 +50,6 @@ unsigned int buffer_capacity(const buffer* b) {
 
 void buffer_clear(buffer* b) {
     b->pos = 0;
-}
-
-buffer* buffer_set_byte(buffer* b, Byte u) {
-    buffer_ensure_total(b, 1);
-    LOG_INFO("SETB [0x%02x:%c]", (unsigned int) u, isprint(u) ? u : '.');
-    b->pos = 0;
-    b->ptr[b->pos++] = u;
-    return b;
-}
-
-buffer* buffer_set_slice(buffer* b, slice s) {
-    buffer_ensure_total(b, s.len);
-    LOG_INFO("SETS [%u:%.*s]", s.len, s.len, s.ptr);
-    memcpy(b->ptr, s.ptr, s.len);
-    b->pos = s.len;
-    return b;
 }
 
 buffer* buffer_append_byte(buffer* b, Byte u) {

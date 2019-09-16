@@ -51,12 +51,6 @@ unsigned int buffer_get_capacity(const buffer* b);
 // clear the contents of buffer -- does NOT reallocate current memory
 void buffer_clear(buffer* b);
 
-// discard current contents of buffer and set them to a single byte
-buffer* buffer_set_byte(buffer* b, Byte u);
-
-// discard current contents of buffer and set them to a slice
-buffer* buffer_set_slice(buffer* b, slice s);
-
 // append to current contents of buffer a single byte
 buffer* buffer_append_byte(buffer* b, Byte u);
 

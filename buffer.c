@@ -1,7 +1,8 @@
 #include <assert.h>
 #include <ctype.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "log.h"
 #include "buffer.h"
 
@@ -10,6 +11,7 @@
 
 static void buffer_ensure_extra(buffer* b, unsigned int extra);
 static void buffer_ensure_total(buffer* b, unsigned int total);
+static void buffer_realloc(buffer* b, unsigned int cap);
 
 buffer* buffer_build(void) {
     buffer* b = (buffer*) calloc(1, sizeof(buffer));
@@ -82,8 +84,19 @@ static void buffer_ensure_total(buffer* b, unsigned int total) {
         current = next;
     }
     if (changes) {
-        b->cap = current;
-        b->ptr = realloc((void*) b->ptr, b->cap);
+        buffer_realloc(b, current);
     }
     assert(b->cap >= total);
+}
+
+static void buffer_realloc(buffer* b, unsigned int cap) {
+    LOG("REALLOC %p: %u to %u bytes\n", b->ptr, b->cap, cap);
+    Byte* tmp = realloc((void*) b->ptr, cap);
+    if (!tmp) {
+        fprintf(stderr, "Out of memory when reallocating %p from %u to %u bytes\n", b->ptr, b->cap, cap);
+        abort();
+    }
+    b->ptr = tmp;
+    b->cap = cap;
+    return;
 }

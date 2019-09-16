@@ -6,6 +6,10 @@
  *
  * MAYBE?
  *
+ * trim -- for a set of characters?
+ * tolower
+ * toupper
+ * append_XXX for int, long, float, etc
  * sprintf
  */
 
@@ -26,8 +30,14 @@ typedef struct buffer {
 // build an empty / default-sized buffer
 buffer* buffer_build(void);
 
+// clone an existing buffer
+buffer* buffer_clone(const buffer* b);
+
 // destroy a buffer
 void buffer_destroy(buffer* b);
+
+// reallocate memory so that current data fits exactly into buffer
+unsigned int buffer_pack(buffer* b);
 
 // get a slice to current contents of buffer
 slice buffer_get_slice(const buffer* b);

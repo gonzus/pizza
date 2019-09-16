@@ -18,9 +18,23 @@ buffer* buffer_build(void) {
     return b;
 }
 
+buffer* buffer_clone(const buffer* b) {
+    buffer* n = buffer_build();
+    slice s = buffer_get_slice(b);
+    buffer_set_slice(n, s);
+    return n;
+}
+
 void buffer_destroy(buffer* b) {
     free(b->ptr);
     free(b);
+}
+
+unsigned int buffer_pack(buffer* b) {
+    if (b->pos < b->cap) {
+        buffer_realloc(b, b->pos);
+    }
+    return b->pos;
 }
 
 slice buffer_get_slice(const buffer* b) {

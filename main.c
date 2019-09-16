@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <slice.h>
 #include <buffer.h>
 
@@ -184,7 +185,46 @@ static void test_find_slice(void) {
         slice t = slice_wrap_string(data[j].t);
         slice f = slice_find_slice(s, t);
         slice_to_string(f, tmp);
-        fprintf(stderr, "Searching slice [%s] in [%s] => %d - [%s]\n", data[j].t, data[j].s, !slice_is_null(f), tmp);
+        fprintf(stderr, "Searching slice [%s] in [%s] => %s - [%s]\n",
+                data[j].t, data[j].s, slice_is_null(f) ? "N" : "Y", tmp);
+    }
+}
+
+static void test_clone(void) {
+    static struct {
+        const char* s;
+    } data[] = {
+        { "you know it is there" },
+        { "" },
+        { "  this look \t\t good " },
+    };
+    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+        slice s = slice_wrap_string(data[j].s);
+        buffer* b = buffer_build();
+        buffer_append_slice(b, s);
+        buffer* n = buffer_clone(b);
+        fprintf(stderr, "Cloning [%s]: [%d:%d:%p] [%d:%d:%p] %s\n",
+                data[j].s, b->pos, b->cap, b->ptr, n->pos, n->cap, n->ptr,
+                b->pos == n->pos && memcmp(b->ptr, n->ptr, b->pos) == 0 ? "OK" : "BAD");
+    }
+}
+
+static void test_pack(void) {
+    static struct {
+        const char* s;
+    } data[] = {
+        { "you know it is there" },
+        { "" },
+        { "  this look \t\t good, hopefully it is " },
+    };
+    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+        slice s = slice_wrap_string(data[j].s);
+        buffer* b = buffer_build();
+        buffer_append_slice(b, s);
+        buffer_pack(b);
+        fprintf(stderr, "Packing [%s]: [%d:%d:%p] %s\n",
+                data[j].s, b->pos, b->cap, b->ptr,
+                b->pos == b->cap && (b->ptr ? b->pos == strlen((char*) b->ptr) : b->pos == 0) ? "OK" : "BAD");
     }
 }
 
@@ -202,6 +242,8 @@ int main(int argc, char* argv[]) {
     test_compare();
     test_find_byte();
     test_find_slice();
+    test_clone();
+    test_pack();
 
     return 0;
 }

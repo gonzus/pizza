@@ -17,27 +17,9 @@ buffer* buffer_build(void) {
     return b;
 }
 
-buffer* buffer_clone(const buffer* b) {
-    slice s = buffer_get_slice(b);
-    buffer* n = buffer_build();
-    buffer_append_slice(n, s);
-    return n;
-}
-
 void buffer_destroy(buffer* b) {
     free(b->ptr);
     free(b);
-}
-
-unsigned int buffer_pack(buffer* b) {
-    if (b->pos < b->cap) {
-        buffer_realloc(b, b->pos);
-    }
-    return b->pos;
-}
-
-slice buffer_get_slice(const buffer* b) {
-    return slice_wrap_ptr_len(b->ptr, b->pos);
 }
 
 unsigned int buffer_length(const buffer* b) {
@@ -48,23 +30,38 @@ unsigned int buffer_capacity(const buffer* b) {
     return b->cap;
 }
 
+slice buffer_get_slice(const buffer* b) {
+    return slice_wrap_ptr_len(b->ptr, b->pos);
+}
+
+buffer* buffer_clone(const buffer* b) {
+    slice s = buffer_get_slice(b);
+    buffer* n = buffer_build();
+    buffer_append_slice(n, s);
+    return n;
+}
+
+void buffer_pack(buffer* b) {
+    if (b->pos < b->cap) {
+        buffer_realloc(b, b->pos);
+    }
+}
+
 void buffer_clear(buffer* b) {
     b->pos = 0;
 }
 
-buffer* buffer_append_byte(buffer* b, Byte u) {
+void buffer_append_byte(buffer* b, Byte u) {
     buffer_ensure_extra(b, 1);
     LOG_INFO("APPENDB [0x%02x:%c]", (unsigned int) u, isprint(u) ? u : '.');
     b->ptr[b->pos++] = u;
-    return b;
 }
 
-buffer* buffer_append_slice(buffer* b, slice s) {
+void buffer_append_slice(buffer* b, slice s) {
     buffer_ensure_extra(b, s.len);
     LOG_INFO("APPENDS [%u:%.*s]", s.len, s.len, s.ptr);
     memcpy(b->ptr + b->pos, s.ptr, s.len);
     b->pos += s.len;
-    return b;
 }
 
 static void buffer_ensure_extra(buffer* b, unsigned int extra) {

@@ -9,7 +9,6 @@
  * trim -- for a set of characters?
  * tolower
  * toupper
- * sprintf
  * memory allocation functions?
  */
 
@@ -62,5 +61,8 @@ void buffer_format_unsigned(buffer* b, unsigned long long l);
 
 // append to current contents of buffer a formatted double
 void buffer_format_double(buffer* b, double d);
+
+// append to current contents of buffer using a printf-like format
+void buffer_format(buffer* b, const char* fmt, ...);
 
 #endif

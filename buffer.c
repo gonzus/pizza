@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,6 +84,26 @@ void buffer_format_double(buffer* b, double d) {
     buffer_append_slice(b, slice_wrap_string_length(cstr, clen));
 }
 
+void buffer_format(buffer* b, const char* fmt, ...) {
+    va_list ap1;
+    va_list ap2;
+
+    va_start(ap1, fmt);
+    va_copy(ap2, ap1);
+
+    int size = vsnprintf(0, 0, fmt, ap1);
+    va_end(ap1);
+    LOG_INFO("FORMAT [%s] => %d bytes", fmt, size);
+
+    buffer_ensure_extra(b, size + 1);  // snprintf below will also include a '\0'
+
+    vsnprintf((char*) b->ptr + b->pos, size + 1, fmt, ap2);
+    va_end(ap2);
+    LOG_INFO("FORMATTED [%d:%.*s]", size, size, b->ptr + b->pos);
+
+    b->pos += size;
+}
+
 
 static void buffer_ensure_extra(buffer* b, unsigned int extra) {
     buffer_ensure_total(b, extra + b->pos);
@@ -94,7 +115,7 @@ static void buffer_ensure_total(buffer* b, unsigned int total) {
     while (total > current) {
         ++changes;
         unsigned int next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
-        LOG_INFO("ENSURE %u -> %u", current, next);
+        LOG_DEBUG("ENSURE %u -> %u", current, next);
         current = next;
     }
     if (changes) {

@@ -225,7 +225,7 @@ static void test_pack(void) {
     }
 }
 
-static void test_format(void) {
+static void test_format_numbers(void) {
     static struct {
         long long int u;
         unsigned long long int s;
@@ -275,6 +275,16 @@ static void test_format(void) {
     }
 }
 
+static void test_format_printf(void) {
+    buffer* b = buffer_build();
+
+    buffer_clear(b);
+    buffer_format(b, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
+    slice r = buffer_get_slice(b);
+    slice e = slice_wrap_string(" Movie year 1968, rating 8.3, name [ 2001]");
+    fprintf(stderr, "Format [%d:%.*s] %s\n", r.len, r.len, r.ptr, slice_compare(r, e) == 0 ? "OK" : "BAD");
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -291,7 +301,8 @@ int main(int argc, char* argv[]) {
     test_find_slice();
     test_clone();
     test_pack();
-    test_format();
+    test_format_numbers();
+    test_format_printf();
 
     return 0;
 }

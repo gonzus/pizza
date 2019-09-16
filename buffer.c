@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "log.h"
@@ -63,6 +64,25 @@ void buffer_append_slice(buffer* b, slice s) {
     memcpy(b->ptr + b->pos, s.ptr, s.len);
     b->pos += s.len;
 }
+
+void buffer_format_signed(buffer* b, long long l) {
+    char cstr[99];
+    int clen = sprintf(cstr, "%lld", l);
+    buffer_append_slice(b, slice_wrap_string_length(cstr, clen));
+}
+
+void buffer_format_unsigned(buffer* b, unsigned long long l) {
+    char cstr[99];
+    int clen = sprintf(cstr, "%llu", l);
+    buffer_append_slice(b, slice_wrap_string_length(cstr, clen));
+}
+
+void buffer_format_double(buffer* b, double d) {
+    char cstr[99];
+    int clen = sprintf(cstr, "%f", d);
+    buffer_append_slice(b, slice_wrap_string_length(cstr, clen));
+}
+
 
 static void buffer_ensure_extra(buffer* b, unsigned int extra) {
     buffer_ensure_total(b, extra + b->pos);

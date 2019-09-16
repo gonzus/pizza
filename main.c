@@ -225,6 +225,56 @@ static void test_pack(void) {
     }
 }
 
+static void test_format(void) {
+    static struct {
+        long long int u;
+        unsigned long long int s;
+        double d;
+        int t;
+    } data[] = {
+        { 0ULL , 0, 0, 0 },
+        { 1ULL , 0, 0, 0 },
+        { 11ULL, 0, 0, 0 },
+
+        { 0,   0LL, 0, 1 },
+        { 0,   1LL, 0, 1 },
+        { 0,  -1LL, 0, 1 },
+        { 0,  12LL, 0, 1 },
+        { 0, -12LL, 0, 1 },
+
+        { 0, 0,   0.0, 2 },
+        { 0, 0,   1.0, 2 },
+        { 0, 0,  -1.0, 2 },
+        { 0, 0,  3.14, 2 },
+        { 0, 0, -3.14, 2 },
+    };
+    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+        char tmp[1024];
+        buffer* b = buffer_build();
+        switch (data[j].t) {
+            case 0:
+                buffer_format_unsigned(b, data[j].u);
+                sprintf(tmp, "%llu", data[j].u);
+                break;
+            case 1:
+                buffer_format_signed(b, data[j].s);
+                sprintf(tmp, "%lld", data[j].s);
+                break;
+            case 2:
+                buffer_format_double(b, data[j].d);
+                sprintf(tmp, "%f", data[j].d);
+                break;
+            default:
+                continue;
+        }
+
+        slice r = buffer_get_slice(b);
+        slice e = slice_wrap_string(tmp);
+        fprintf(stderr, "Format [%s]: [%d:%.*s] %s\n",
+                tmp, r.len, r.len, r.ptr, slice_compare(r, e) == 0 ? "OK" : "BAD");
+    }
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -241,6 +291,7 @@ int main(int argc, char* argv[]) {
     test_find_slice();
     test_clone();
     test_pack();
+    test_format();
 
     return 0;
 }

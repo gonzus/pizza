@@ -9,8 +9,8 @@
  * trim -- for a set of characters?
  * tolower
  * toupper
- * append_XXX for int, long, float, etc
  * sprintf
+ * memory allocation functions?
  */
 
 #include <slice.h>
@@ -55,5 +55,12 @@ void buffer_append_byte(buffer* b, Byte u);
 
 // append to current contents of buffer a slice
 void buffer_append_slice(buffer* b, slice s);
+
+// append to current contents of buffer a formatted signed / unsigned integer
+void buffer_format_signed(buffer* b, long long l);
+void buffer_format_unsigned(buffer* b, unsigned long long l);
+
+// append to current contents of buffer a formatted double
+void buffer_format_double(buffer* b, double d);
 
 #endif

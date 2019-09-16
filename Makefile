@@ -1,5 +1,5 @@
 # uncomment to see logging messages
-# CFLAGS += -DLOG_SHOW=1
+# CFLAGS += -DLOG_LEVEL_DEFAULT=1
 
 # uncomment to make warnings into errors
 # CFLAGS += -Werror

@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "log.h"
@@ -55,7 +54,7 @@ void buffer_clear(buffer* b) {
 
 buffer* buffer_set_byte(buffer* b, Byte u) {
     buffer_ensure_total(b, 1);
-    LOG("SETB [0x%02x:%c]\n", (unsigned int) u, isprint(u) ? u : '.');
+    LOG_INFO("SETB [0x%02x:%c]", (unsigned int) u, isprint(u) ? u : '.');
     b->pos = 0;
     b->ptr[b->pos++] = u;
     return b;
@@ -63,7 +62,7 @@ buffer* buffer_set_byte(buffer* b, Byte u) {
 
 buffer* buffer_set_slice(buffer* b, slice s) {
     buffer_ensure_total(b, s.len);
-    LOG("SETS [%u:%.*s]\n", s.len, s.len, s.ptr);
+    LOG_INFO("SETS [%u:%.*s]", s.len, s.len, s.ptr);
     memcpy(b->ptr, s.ptr, s.len);
     b->pos = s.len;
     return b;
@@ -71,14 +70,14 @@ buffer* buffer_set_slice(buffer* b, slice s) {
 
 buffer* buffer_append_byte(buffer* b, Byte u) {
     buffer_ensure_extra(b, 1);
-    LOG("APPENDB [0x%02x:%c]\n", (unsigned int) u, isprint(u) ? u : '.');
+    LOG_INFO("APPENDB [0x%02x:%c]", (unsigned int) u, isprint(u) ? u : '.');
     b->ptr[b->pos++] = u;
     return b;
 }
 
 buffer* buffer_append_slice(buffer* b, slice s) {
     buffer_ensure_extra(b, s.len);
-    LOG("APPENDS [%u:%.*s]\n", s.len, s.len, s.ptr);
+    LOG_INFO("APPENDS [%u:%.*s]", s.len, s.len, s.ptr);
     memcpy(b->ptr + b->pos, s.ptr, s.len);
     b->pos += s.len;
     return b;
@@ -94,7 +93,7 @@ static void buffer_ensure_total(buffer* b, unsigned int total) {
     while (total > current) {
         ++changes;
         unsigned int next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
-        LOG("ENSURE %u -> %u\n", current, next);
+        LOG_INFO("ENSURE %u -> %u", current, next);
         current = next;
     }
     if (changes) {
@@ -104,11 +103,10 @@ static void buffer_ensure_total(buffer* b, unsigned int total) {
 }
 
 static void buffer_realloc(buffer* b, unsigned int cap) {
-    LOG("REALLOC %p: %u to %u bytes\n", b->ptr, b->cap, cap);
+    LOG_INFO("REALLOC %p: %u to %u bytes", b->ptr, b->cap, cap);
     Byte* tmp = realloc((void*) b->ptr, cap);
     if (!tmp) {
-        fprintf(stderr, "Out of memory when reallocating %p from %u to %u bytes\n", b->ptr, b->cap, cap);
-        abort();
+        LOG_ERROR("Out of memory when reallocating %p from %u to %u bytes", b->ptr, b->cap, cap);
     }
     b->ptr = tmp;
     b->cap = cap;

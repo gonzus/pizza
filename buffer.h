@@ -20,6 +20,9 @@
  * do NOT use with C standard strXXX() functions
  */
 
+#define BUFFER_FLAG_BUF_IN_HEAP (1U<<0)
+#define BUFFER_FLAG_PTR_IN_HEAP (1U<<1)
+
 // total size we want Buffer struct to have
 #define BUFFER_DESIRED_SIZE 64UL
 
@@ -50,6 +53,9 @@ static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
 
 // build an empty / default-sized Buffer
 Buffer* buffer_build(void);
+
+// initialize Buffer, whether allocated in stack or heap
+void buffer_init(Buffer* b);
 
 // destroy a Buffer
 void buffer_destroy(Buffer* b);

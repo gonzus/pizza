@@ -203,6 +203,7 @@ static void test_clone(void) {
         fprintf(stderr, "Cloning [%s]: [%d:%d:%p] [%d:%d:%p] %s\n",
                 data[j].s, b->pos, b->cap, b->ptr, n->pos, n->cap, n->ptr,
                 b->pos == n->pos && memcmp(b->ptr, n->ptr, b->pos) == 0 ? "OK" : "BAD");
+        buffer_destroy(b);
     }
 }
 
@@ -221,8 +222,15 @@ static void test_pack(void) {
         buffer_pack(b);
         fprintf(stderr, "Packing [%s]: [%d:%d:%p] %s\n",
                 data[j].s, b->pos, b->cap, b->ptr,
-                b->pos == b->cap && (b->ptr ? b->pos == strlen((char*) b->ptr) : b->pos == 0) ? "OK" : "BAD");
+                (b->ptr ? b->pos == strlen((char*) b->ptr) : b->pos == 0) ? "OK" : "BAD");
+        buffer_destroy(b);
     }
+    Buffer* b = buffer_build();
+    const char* heap = "extremely useful heap";
+    buffer_format(b, "This is large enough to need the %s %s %s", heap, heap, heap);
+    buffer_clear(b);
+    buffer_pack(b);
+    buffer_destroy(b);
 }
 
 static void test_format_numbers(void) {
@@ -272,6 +280,7 @@ static void test_format_numbers(void) {
         Slice e = slice_wrap_string(tmp);
         fprintf(stderr, "Format [%s]: [%d:%.*s] %s\n",
                 tmp, r.len, r.len, r.ptr, slice_compare(r, e) == 0 ? "OK" : "BAD");
+        buffer_destroy(b);
     }
 }
 
@@ -283,6 +292,35 @@ static void test_format_printf(void) {
     Slice r = buffer_get_slice(b);
     Slice e = slice_wrap_string(" Movie year 1968, rating 8.3, name [ 2001]");
     fprintf(stderr, "Format [%d:%.*s] %s\n", r.len, r.len, r.ptr, slice_compare(r, e) == 0 ? "OK" : "BAD");
+    buffer_destroy(b);
+}
+
+static void test_stack(void) {
+    // Buffer* b = buffer_build();
+    Buffer b;
+    buffer_init(&b);
+
+    buffer_clear(&b);
+    buffer_format(&b, "This fits on the %s", "stack");
+    buffer_destroy(&b);
+}
+
+static void test_stack_heap(void) {
+    // Buffer* b = buffer_build();
+    Buffer b;
+    buffer_init(&b);
+
+    const char* heap = "extremely useful heap";
+    buffer_format(&b, "This is large enough to need the %s %s %s", heap, heap, heap);
+    buffer_destroy(&b);
+}
+
+static void test_pure_heap(void) {
+    Buffer* b = buffer_build();
+
+    const char* heap = "extremely useful heap";
+    buffer_format(b, "This is large enough to need the %s %s %s", heap, heap, heap);
+    buffer_destroy(b);
 }
 
 int main(int argc, char* argv[]) {
@@ -300,6 +338,9 @@ int main(int argc, char* argv[]) {
     test_pack();
     test_format_numbers();
     test_format_printf();
+    test_stack();
+    test_stack_heap();
+    test_pure_heap();
 
     fprintf(stderr, "sizeof(Slice) = %lu\n", sizeof(Slice));
     fprintf(stderr, "sizeof(Buffer) = %lu (wanted %lu, data %lu)\n",

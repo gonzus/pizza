@@ -10,18 +10,36 @@
 #define BUFFER_DEFAULT_CAPACITY 32  // default size for Buffer
 #define BUFFER_GROWTH_FACTOR     2  // factor to make Buffer grow when needed
 
+#define BUFFER_FLAG_SET(b, f) do { (b)->flg |= ( f); } while (0)
+#define BUFFER_FLAG_CLR(b, f) do { (b)->flg &= (~f); } while (0)
+#define BUFFER_FLAG_CHK(b, f) ( (b)->flg & (f) )
+
 static void buffer_ensure_extra(Buffer* b, Size extra);
 static void buffer_ensure_total(Buffer* b, Size total);
 static void buffer_realloc(Buffer* b, Size cap);
 
 Buffer* buffer_build(void) {
-    Buffer* b = (Buffer*) calloc(1, sizeof(Buffer));
+    Buffer* b = (Buffer*) malloc(sizeof(Buffer));
+    buffer_init(b);
+    BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
     return b;
 }
 
+void buffer_init(Buffer* b) {
+    memset(b, 0, sizeof(Buffer));
+    b->ptr = b->buf;
+    b->cap = BUFFER_DATA_SIZE;
+}
+
 void buffer_destroy(Buffer* b) {
-    free(b->ptr);
-    free(b);
+    if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
+        LOG_INFO("DESTROY deleting heap-allocated ptr with %u bytes", b->cap);
+        free(b->ptr);
+    }
+    if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_BUF_IN_HEAP)) {
+        LOG_INFO("DESTROY deleting heap-allocated buf");
+        free(b);
+    }
 }
 
 Size buffer_length(const Buffer* b) {
@@ -44,7 +62,18 @@ Buffer* buffer_clone(const Buffer* b) {
 }
 
 void buffer_pack(Buffer* b) {
-    if (b->pos < b->cap) {
+    if (!BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
+        return;
+    }
+
+    if (b->pos < BUFFER_DATA_SIZE) {
+        // using heap ptr now
+        LOG_INFO("MIGRATED heap [%p] to stack [%p]", b->ptr, b->buf);
+        memcpy(b->buf, b->ptr, b->pos);
+        buffer_realloc(b, 0);
+        b->ptr = b->buf;
+        BUFFER_FLAG_CLR(b, BUFFER_FLAG_PTR_IN_HEAP);
+    } else {
         buffer_realloc(b, b->pos);
     }
 }
@@ -112,6 +141,7 @@ static void buffer_ensure_extra(Buffer* b, Size extra) {
 static void buffer_ensure_total(Buffer* b, Size total) {
     Size changes = 0;
     Size current = b->cap;
+    LOG_INFO("ENSURE currently using %u out of %u", b->pos, b->cap);
     while (total > current) {
         ++changes;
         Size next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
@@ -119,7 +149,18 @@ static void buffer_ensure_total(Buffer* b, Size total) {
         current = next;
     }
     if (changes) {
-        buffer_realloc(b, current);
+        if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
+            buffer_realloc(b, current);
+        } else {
+            // using stack buf now
+            Size old = b->cap;
+            b->ptr = 0;
+            b->cap = 0;
+            buffer_realloc(b, current);
+            memcpy(b->ptr, b->buf, old);
+            LOG_INFO("MIGRATED stack [%u:%p] to heap [%u:%p]", old, b->buf, current, b->ptr);
+            BUFFER_FLAG_SET(b, BUFFER_FLAG_PTR_IN_HEAP);
+        }
     }
     assert(b->cap >= total);
 }

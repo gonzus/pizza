@@ -15,54 +15,77 @@
 #include <slice.h>
 
 /*
- * buffer -- write-only access to an array of bytes
+ * Buffer -- write-only access to an array of bytes
  * it does NOT add a null terminator at the end
  * do NOT use with C standard strXXX() functions
  */
-typedef struct buffer {
-    Byte* ptr;          // pointer to beginning of data
-    unsigned int cap;   // total data capacity
-    unsigned int pos;   // position of next char written to buffer
-} buffer;
 
-// build an empty / default-sized buffer
-buffer* buffer_build(void);
+// total size we want Buffer struct to have
+#define BUFFER_DESIRED_SIZE 64UL
 
-// destroy a buffer
-void buffer_destroy(buffer* b);
+// total size used up by Buffer fields, except buf
+// MUST BE KEPT IN SYNC WITH DECLARATION OF struct Buffer
+#define BUFFER_FIELDS_SIZE (\
+    sizeof(Byte*) + \
+    sizeof(Size)  + \
+    sizeof(Size)  + \
+    sizeof(Byte)  + \
+    0)
 
-// get current buffer length
-unsigned int buffer_get_length(const buffer* b);
+// size allowed for a Buffer's static data array
+#define BUFFER_DATA_SIZE (BUFFER_DESIRED_SIZE - BUFFER_FIELDS_SIZE)
 
-// get current buffer capacity
-unsigned int buffer_get_capacity(const buffer* b);
+typedef struct Buffer {
+    Byte* ptr;                    // pointer to beginning of data
+    Size cap;                     // total data capacity
+    Size pos;                     // position of next char written to Buffer
+    Byte flg;                     // flags for Buffer
+    Byte buf[BUFFER_DATA_SIZE];   // stack space for small Buffer
+} Buffer;
 
-// get a slice to current contents of buffer
-slice buffer_get_slice(const buffer* b);
+#if __STDC_VERSION__ >= 201112L
+#include <assert.h>
+static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
+#endif
 
-// clone an existing buffer
-buffer* buffer_clone(const buffer* b);
+// build an empty / default-sized Buffer
+Buffer* buffer_build(void);
 
-// reallocate memory so that current data fits exactly into buffer
-void buffer_pack(buffer* b);
+// destroy a Buffer
+void buffer_destroy(Buffer* b);
 
-// clear the contents of buffer -- does NOT reallocate current memory
-void buffer_clear(buffer* b);
+// get current Buffer length
+Size buffer_get_length(const Buffer* b);
 
-// append to current contents of buffer a single byte
-void buffer_append_byte(buffer* b, Byte u);
+// get current Buffer capacity
+Size buffer_get_capacity(const Buffer* b);
 
-// append to current contents of buffer a slice
-void buffer_append_slice(buffer* b, slice s);
+// get a Slice to current contents of Buffer
+Slice buffer_get_slice(const Buffer* b);
 
-// append to current contents of buffer a formatted signed / unsigned integer
-void buffer_format_signed(buffer* b, long long l);
-void buffer_format_unsigned(buffer* b, unsigned long long l);
+// clone an existing Buffer
+Buffer* buffer_clone(const Buffer* b);
 
-// append to current contents of buffer a formatted double
-void buffer_format_double(buffer* b, double d);
+// reallocate memory so that current data fits exactly into Buffer
+void buffer_pack(Buffer* b);
 
-// append to current contents of buffer using a printf-like format
-void buffer_format(buffer* b, const char* fmt, ...);
+// clear the contents of Buffer -- does NOT reallocate current memory
+void buffer_clear(Buffer* b);
+
+// append to current contents of Buffer a single byte
+void buffer_append_byte(Buffer* b, Byte u);
+
+// append to current contents of Buffer a Slice
+void buffer_append_slice(Buffer* b, Slice s);
+
+// append to current contents of Buffer a formatted signed / unsigned integer
+void buffer_format_signed(Buffer* b, long long l);
+void buffer_format_unsigned(Buffer* b, unsigned long long l);
+
+// append to current contents of Buffer a formatted double
+void buffer_format_double(Buffer* b, double d);
+
+// append to current contents of Buffer using a printf-like format
+void buffer_format(Buffer* b, const char* fmt, ...);
 
 #endif

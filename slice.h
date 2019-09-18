@@ -39,12 +39,6 @@ Slice slice_wrap_string(const char* string);
 // string doesn't have to be null-terminated
 Slice slice_wrap_ptr_len(const Byte* ptr, Size len);
 
-/*
- * copy a Slice into a string (char*) and return the buffer; includes a null terminator
- * the string buffer must already have the right size (Slice.len + 1)
- */
-Size slice_to_string(Slice s, char* string);
-
 // compare two Slices, returning: l < r: -1; l > r: 1; l == r: 0
 bool slice_compare(Slice l, Slice r);
 

@@ -3,33 +3,10 @@
 #include <slice.h>
 #include <buffer.h>
 
-static unsigned char volcano[] = {
-    0x45,
-    0x79,
-    0x6A,
-    0x61,
-    0x66,
-    0x6A,
-    0x61,
-    0x6C,
-    0x6C,
-    0x61,
-    0x6A,
-    0xC3,
-    0xB6,
-    0x6B,
-    0x75,
-    0x6C,
-    0x6C,
-    0x00,
-    '!',
-};
-
 static void test_simple(void) {
     const char* name = "nico";
     int year = 2005;
     char tmp[100];
-    unsigned int len = 0;
 
     Slice s1 = slice_wrap_string(name);
 
@@ -40,8 +17,7 @@ static void test_simple(void) {
     buffer_append_byte(b, '!');
     Slice s2 = buffer_get_slice(b);
 
-    len = slice_to_string(s2, tmp);
-    printf("[%u] [%s]\n", len, tmp);
+    printf("[%u] [%.*s]\n", s2.len, s2.len, s2.ptr);
 
     buffer_clear(b);
     buffer_append_byte(b, '(');
@@ -49,25 +25,43 @@ static void test_simple(void) {
     buffer_append_byte(b, ')');
     Slice s3 = buffer_get_slice(b);
 
-    len = slice_to_string(s3, tmp);
-    printf("[%u] [%s]\n", len, tmp);
+    printf("[%u] [%.*s]\n", s3.len, s3.len, s3.ptr);
 
     buffer_clear(b);
     buffer_append_slice(b, slice_wrap_string("Bye now!"));
     Slice s4 = buffer_get_slice(b);
-    len = slice_to_string(s4, tmp);
-    printf("[%u] [%s]\n", len, tmp);
+    printf("[%u] [%.*s]\n", s4.len, s4.len, s4.ptr);
     buffer_destroy(b);
 }
 
 static void test_utf8(void) {
+    static unsigned char volcano[] = {
+        0x45,
+        0x79,
+        0x6A,
+        0x61,
+        0x66,
+        0x6A,
+        0x61,
+        0x6C,
+        0x6C,
+        0x61,
+        0x6A,
+        0xC3,
+        0xB6,
+        0x6B,
+        0x75,
+        0x6C,
+        0x6C,
+        0x00,
+        '!',
+    };
+
     Buffer* b = buffer_build();
     for (unsigned int j = 0; j < sizeof(volcano); ++j) {
         buffer_append_byte(b, volcano[j]);
     }
     Slice s1 = buffer_get_slice(b);
-    char tmp[100];
-    slice_to_string(s1, tmp);
     slice_dump(s1);
     buffer_destroy(b);
 }
@@ -84,14 +78,12 @@ static void test_tokenize(void) {
         { "", ",;" },
         { "empty separators", "" },
     };
-    char tmp[1024];
     for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
         fprintf(stderr, "Tokenizing [%s], separators [%s]\n", data[j].string, data[j].sep);
         Slice s = slice_wrap_string(data[j].string);
         Slice sep = slice_wrap_string(data[j].sep);
         for (Slice token = SLICE_NULL; slice_tokenize(s, sep, &token); ) {
-            slice_to_string(token, tmp);
-            fprintf(stderr, "  [%s]\n", tmp);
+            fprintf(stderr, "  [%.*s]\n", token.len, token.ptr);
         }
         fprintf(stderr, "Tokenizing DONE\n");
     }
@@ -106,7 +98,6 @@ static void test_split(void) {
         { "123+34*-55-+/28+++--", "+-*/" },
         { "--++123", "+-*/" },
     };
-    char tmp[1024];
     for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
         fprintf(stderr, "Splitting [%s], set [%s]\n", data[j].string, data[j].set);
         Slice s = slice_wrap_string(data[j].string);
@@ -117,10 +108,8 @@ static void test_split(void) {
             if (slice_get_length(s) == 0) break;
 
             slice_split(s, included, set, &l, &r);
-            slice_to_string(l, tmp);
-            fprintf(stderr, "  L [%s]\n", tmp);
-            slice_to_string(r, tmp);
-            fprintf(stderr, "  R [%s]\n", tmp);
+            fprintf(stderr, "  L [%.*s]\n", l.len, l.ptr);
+            fprintf(stderr, "  R [%.*s]\n", r.len, r.ptr);
             s = r;
         }
 
@@ -157,12 +146,11 @@ static void test_find_byte(void) {
         { "this time it is not" , 'x'  },
         { "" , 'x'  },
     };
-    char tmp[1024];
     for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Slice f = slice_find_byte(s, data[j].t);
-        slice_to_string(f, tmp);
-        fprintf(stderr, "Searching byte [%c] in slice [%s] => %d - [%s]\n", data[j].t, data[j].s, !slice_is_null(f), tmp);
+        fprintf(stderr, "Searching byte [%c] in slice [%s] => %d - [%.*s]\n",
+                data[j].t, data[j].s, !slice_is_null(f), f.len, f.ptr);
     }
 }
 
@@ -176,14 +164,12 @@ static void test_find_slice(void) {
         { "" , "really"  },
         { "hello" , ""  },
     };
-    char tmp[1024];
     for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Slice t = slice_wrap_string(data[j].t);
         Slice f = slice_find_slice(s, t);
-        slice_to_string(f, tmp);
-        fprintf(stderr, "Searching slice [%s] in [%s] => %s - [%s]\n",
-                data[j].t, data[j].s, slice_is_null(f) ? "N" : "Y", tmp);
+        fprintf(stderr, "Searching slice [%s] in [%s] => %s - [%.*s]\n",
+                data[j].t, data[j].s, slice_is_null(f) ? "N" : "Y", f.len, f.ptr);
     }
 }
 

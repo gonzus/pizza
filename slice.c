@@ -163,6 +163,7 @@ static void dump_line(Size row, const char* byte, Size white, const char* text, 
 }
 
 static void slice_dump_file(Slice s, FILE* fp) {
+    fprintf(fp, "slice: ptr %p, len %u\n", s.ptr, s.len);
     char byte[16*3+1];
     Size bpos = 0;
     char text[16+1];

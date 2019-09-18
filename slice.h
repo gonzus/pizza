@@ -39,6 +39,14 @@ Slice slice_wrap_string(const char* string);
 // string doesn't have to be null-terminated
 Slice slice_wrap_ptr_len(const Byte* ptr, Size len);
 
+// dump a Slice into stderr
+void slice_dump(Slice s);
+
+
+/*
+ * Slice algorithms
+ */
+
 // compare two Slices, returning: l < r: -1; l > r: 1; l == r: 0
 bool slice_compare(Slice l, Slice r);
 
@@ -77,8 +85,5 @@ bool slice_split_included(Slice s, Slice set, Slice* l, Slice* r);
  * calls slice_split with included=0
  */
 bool slice_split_excluded(Slice s, Slice set, Slice* l, Slice* r);
-
-// dump a Slice into stderr
-void slice_dump(Slice s);
 
 #endif

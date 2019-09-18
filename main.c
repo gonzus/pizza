@@ -17,6 +17,7 @@ static void test_simple(void) {
     buffer_append_byte(b, '!');
     Slice s2 = buffer_get_slice(b);
 
+    buffer_dump(b);
     printf("[%u] [%.*s]\n", s2.len, s2.len, s2.ptr);
 
     buffer_clear(b);
@@ -213,7 +214,7 @@ static void test_pack(void) {
     }
     Buffer* b = buffer_build();
     const char* heap = "extremely useful heap";
-    buffer_format(b, "This is large enough to need the %s %s %s", heap, heap, heap);
+    buffer_format_print(b, "This is large enough to need the %s %s %s", heap, heap, heap);
     buffer_clear(b);
     buffer_pack(b);
     buffer_destroy(b);
@@ -274,7 +275,7 @@ static void test_format_printf(void) {
     Buffer* b = buffer_build();
 
     buffer_clear(b);
-    buffer_format(b, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
+    buffer_format_print(b, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
     Slice r = buffer_get_slice(b);
     Slice e = slice_wrap_string(" Movie year 1968, rating 8.3, name [ 2001]");
     fprintf(stderr, "Format [%d:%.*s] %s\n", r.len, r.len, r.ptr, slice_compare(r, e) == 0 ? "OK" : "BAD");
@@ -287,7 +288,7 @@ static void test_stack(void) {
     buffer_init(&b);
 
     buffer_clear(&b);
-    buffer_format(&b, "This fits on the %s", "stack");
+    buffer_format_print(&b, "This fits on the %s", "stack");
     buffer_destroy(&b);
 }
 
@@ -297,7 +298,7 @@ static void test_stack_heap(void) {
     buffer_init(&b);
 
     const char* heap = "extremely useful heap";
-    buffer_format(&b, "This is large enough to need the %s %s %s", heap, heap, heap);
+    buffer_format_print(&b, "This is large enough to need the %s %s %s", heap, heap, heap);
     buffer_destroy(&b);
 }
 
@@ -305,7 +306,7 @@ static void test_pure_heap(void) {
     Buffer* b = buffer_build();
 
     const char* heap = "extremely useful heap";
-    buffer_format(b, "This is large enough to need the %s %s %s", heap, heap, heap);
+    buffer_format_print(b, "This is large enough to need the %s %s %s", heap, heap, heap);
     buffer_destroy(b);
 }
 

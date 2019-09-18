@@ -5,10 +5,12 @@
 # CFLAGS += -Werror
 
 CFLAGS += -I.
-CFLAGS += -std=c99
-# CFLAGS += -std=c11
 CFLAGS += -g
 CFLAGS += -Wall -Wextra
+
+# CFLAGS += -std=c89 -Wno-gcc-compat -Wno-comment
+# CFLAGS += -std=c99
+CFLAGS += -std=c11
 
 all: main
 

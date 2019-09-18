@@ -7,6 +7,11 @@
 #include "log.h"
 #include "buffer.h"
 
+#if !defined(va_copy)
+// need this if we want to compile for C89
+#define va_copy(d,s) __va_copy(d,s)
+#endif
+
 #define BUFFER_DEFAULT_CAPACITY BUFFER_DESIRED_SIZE  // default size for Buffer
 #define BUFFER_GROWTH_FACTOR                      2  // how Buffer grows when needed
 

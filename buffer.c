@@ -98,19 +98,19 @@ void buffer_append_slice(Buffer* b, Slice s) {
 void buffer_format_signed(Buffer* b, long long l) {
     char cstr[99];
     Size clen = sprintf(cstr, "%lld", l);
-    buffer_append_slice(b, slice_wrap_string_length(cstr, clen));
+    buffer_append_slice(b, slice_wrap_ptr_len((Byte*) cstr, clen));
 }
 
 void buffer_format_unsigned(Buffer* b, unsigned long long l) {
     char cstr[99];
     Size clen = sprintf(cstr, "%llu", l);
-    buffer_append_slice(b, slice_wrap_string_length(cstr, clen));
+    buffer_append_slice(b, slice_wrap_ptr_len((Byte*) cstr, clen));
 }
 
 void buffer_format_double(Buffer* b, double d) {
     char cstr[99];
     Size clen = sprintf(cstr, "%f", d);
-    buffer_append_slice(b, slice_wrap_string_length(cstr, clen));
+    buffer_append_slice(b, slice_wrap_ptr_len((Byte*) cstr, clen));
 }
 
 void buffer_format(Buffer* b, const char* fmt, ...) {

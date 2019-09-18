@@ -31,10 +31,6 @@ Slice slice_wrap_string(const char* string) {
     return slice_wrap_ptr_len((const Byte*) string, string == 0 ? 0 : strlen(string));
 }
 
-Slice slice_wrap_string_length(const char* string, Size length) {
-    return slice_wrap_ptr_len((const Byte*) string, length);
-}
-
 Size slice_to_string(Slice s, char* string) {
     memcpy(string, s.ptr, s.len);
     string[s.len] = '\0';

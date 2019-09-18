@@ -8,24 +8,15 @@ typedef uint8_t  Byte;
 typedef uint16_t Size;
 
 /*
- * TODO
- *
- * MAYBE?
- *
- * strcoll, strcoll_l -- compare strings, according to current collation
- * strxfrm, strxfrm_l -- transform a string under locale
- */
-
-/*
  * =======================================================================
  * slices -- read-only access to an array of bytes
  * it does NOT assume data has a null terminator at the end
  * do NOT use with C standard strXXX() functions
- * intended to be passed around by copying, not with a reference (pointer)
+ * small enough to be passed around by copying, not with a reference (pointer)
  */
 typedef struct Slice {
     const Byte* ptr;    // pointer to beginning of data
-    Size len;   // length of data
+    Size len;           // length of data
 } Slice;
 
 // the null Slice
@@ -40,13 +31,12 @@ bool slice_is_empty(Slice s);
 // return Slice length
 Size slice_get_length(Slice s);
 
-// wrap a string (const char*) into a Slice; compute the length using strlen()
+// wrap a string (const char*) into a Slice
+// computes the length using strlen(), so string must be null-terminated
 Slice slice_wrap_string(const char* string);
 
-// wrap a given number of bytes from a string (const char*) into a Slice.
-Slice slice_wrap_string_length(const char* string, Size length);
-
-// wrap a given number of bytes from an array of Bytes into a Slice.
+// wrap a given number of bytes from an array of Bytes (or a const char*) into a Slice.
+// string doesn't have to be null-terminated
 Slice slice_wrap_ptr_len(const Byte* ptr, Size len);
 
 /*

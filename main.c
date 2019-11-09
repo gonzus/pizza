@@ -117,8 +117,8 @@ static void test_split(void) {
             if (slice_get_length(s) == 0) break;
 
             slice_split(s, included, set, &l, &r);
-            fprintf(stderr, "  L [%.*s]\n", l.len, l.ptr);
-            fprintf(stderr, "  R [%.*s]\n", r.len, r.ptr);
+            fprintf(stderr, "  L (%d) [%.*s]\n", included, l.len, l.ptr);
+            fprintf(stderr, "  R (%d) [%.*s]\n", included, r.len, r.ptr);
             s = r;
         }
 
@@ -158,8 +158,8 @@ static void test_find_byte(void) {
     for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Slice f = slice_find_byte(s, data[j].t);
-        fprintf(stderr, "Searching byte [%c] in slice [%s] => %d - [%.*s]\n",
-                data[j].t, data[j].s, !slice_is_null(f), f.len, f.ptr);
+        fprintf(stderr, "Searching byte [%c] in slice [%s] => %s - [%.*s]\n",
+                data[j].t, data[j].s, slice_is_null(f) ? "N" : "Y", f.len, f.ptr);
     }
 }
 
@@ -188,7 +188,7 @@ static void test_clone(void) {
     } data[] = {
         { "you know it is there" },
         { "" },
-        { "  this look \t\t good " },
+        { "  this looks \t\t good " },
     };
     for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
         Slice s = slice_wrap_string(data[j].s);
@@ -208,16 +208,15 @@ static void test_pack(void) {
     } data[] = {
         { "you know it is there" },
         { "" },
-        { "  this look \t\t good, hopefully it is " },
+        { "  this looks \t\t good, hopefully it is " },
     };
     for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Buffer* b = buffer_build();
         buffer_append_slice(b, s);
         buffer_pack(b);
-        fprintf(stderr, "Packing [%s]: [%d:%d:%p] %s\n",
-                data[j].s, b->pos, b->cap, b->ptr,
-                (b->ptr ? b->pos == strlen((char*) b->ptr) : b->pos == 0) ? "OK" : "BAD");
+        fprintf(stderr, "Packing [%s]: [%d:%d:%p] [%.*s]\n",
+                data[j].s, b->pos, b->cap, b->ptr, b->pos, b->ptr);
         buffer_destroy(b);
     }
     Buffer* b = buffer_build();
@@ -338,9 +337,10 @@ int main(int argc, char* argv[]) {
     test_stack_heap();
     test_pure_heap();
 
-    fprintf(stderr, "sizeof(Slice) = %lu\n", sizeof(Slice));
-    fprintf(stderr, "sizeof(Buffer) = %lu (wanted %lu, data %lu)\n",
-            sizeof(Buffer), BUFFER_DESIRED_SIZE, BUFFER_DATA_SIZE);
+    fprintf(stderr, "sizeof(Slice) = %lu (Byte %lu, Size %lu, Byte* %lu)\n",
+            sizeof(Slice), sizeof(Byte), sizeof(Size), sizeof(Byte*));
+    fprintf(stderr, "sizeof(Buffer) = %lu (wanted %lu, data %lu, fields %lu)\n",
+            sizeof(Buffer), BUFFER_DESIRED_SIZE, BUFFER_DATA_SIZE, BUFFER_FIELDS_SIZE);
 
     return 0;
 }

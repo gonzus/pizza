@@ -1,13 +1,26 @@
 #ifndef LOG_H_
 #define LOG_H_
 
-#define LOG_LEVEL_DEBUG 0
-#define LOG_LEVEL_INFO  1
-#define LOG_LEVEL_WARN  2
-#define LOG_LEVEL_ERROR 3
+/*
+ * Log -- debug- and run-time controllable logging
+ *
+ * Depending on the compile-time value of macro LOG_LEVEL_DEFAULT, some of the
+ * calls to LOG_XXX will completely disappear from the code.
+ *
+ * TODO: The calls that remain can be controlled by the run-time value of
+ * environment variable LOG_LEVEL.
+ */
+
+#define LOG_LEVEL_DEBUG      0
+#define LOG_LEVEL_INFO       1
+#define LOG_LEVEL_WARNING    2
+#define LOG_LEVEL_ERROR      3
+#define LOG_LEVEL_LAST       4
+
+#define LOG_LEVEL_ENV "LOG_LEVEL"
 
 #if !defined(LOG_LEVEL_DEFAULT)
-#define LOG_LEVEL_DEFAULT LOG_LEVEL_WARN
+#define LOG_LEVEL_DEFAULT LOG_LEVEL_WARNING
 #endif
 
 #if LOG_LEVEL_DEFAULT <= LOG_LEVEL_DEBUG

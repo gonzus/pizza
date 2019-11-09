@@ -96,7 +96,7 @@ static void set_bitmap(Byte* map, Size len, Slice set) {
 }
 
 // TODO: keep map between calls -- how?
-bool slice_tokenize(Slice s, Slice sep, Slice* token) {
+bool slice_tokenize(Slice s, Slice separators, Slice* token) {
     Size start = 0;
     if (token->ptr) {
         start = (token->ptr - s.ptr) + token->len + 1;
@@ -108,7 +108,7 @@ bool slice_tokenize(Slice s, Slice sep, Slice* token) {
     }
 
     Byte map[256];
-    set_bitmap(map, 256, sep);
+    set_bitmap(map, 256, separators);
 
     const Byte* p = s.ptr + start;
     Size l = s.len - start;

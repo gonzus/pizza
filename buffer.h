@@ -2,6 +2,12 @@
 #define BUFFER_H_
 
 /*
+ * Buffer -- write-only access to an array of bytes
+ * space is automatically grown as needed -- hopefully no overflows
+ * small buffers use an internal array, larger buffer allocate
+ * it does NOT add a null terminator at the end
+ * do NOT use with C standard strXXX() functions
+ *
  * TODO
  *
  * trim -- for a set of characters?
@@ -10,14 +16,6 @@
  */
 
 #include <slice.h>
-
-/*
- * Buffer -- write-only access to an array of bytes
- * space is automatically grown as needed -- hopefully no overflows
- * small buffers use an internal array, larger buffer allocate
- * it does NOT add a null terminator at the end
- * do NOT use with C standard strXXX() functions
- */
 
 // flags used for a buffer
 #define BUFFER_FLAG_BUF_IN_HEAP (1U<<0)

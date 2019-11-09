@@ -1,19 +1,19 @@
 #ifndef SLICE_H_
 #define SLICE_H_
 
+/*
+ * Slice -- read-only access to an array of bytes
+ * it does NOT assume data has a null terminator at the end
+ * do NOT use with C standard strXXX() functions
+ * small enough to be passed around by copying, not with a reference (pointer)
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 
 typedef uint8_t  Byte;
 typedef uint16_t Size;
 
-/*
- * =======================================================================
- * slices -- read-only access to an array of bytes
- * it does NOT assume data has a null terminator at the end
- * do NOT use with C standard strXXX() functions
- * small enough to be passed around by copying, not with a reference (pointer)
- */
 typedef struct Slice {
     const Byte* ptr;    // pointer to beginning of data
     Size len;           // length of data
@@ -57,14 +57,14 @@ Slice slice_find_byte(Slice s, Byte t);
 Slice slice_find_slice(Slice s, Slice t);
 
 /*
- * tokenize Slice s by repeatedly searching for bytes in sep, returning each token in c
+ * tokenize Slice s by repeatedly searching for bytes in separators; return each token
  * intended to be used like this:
  *
- *    for (Slice token = SLICE_NULL; slice_tokenize(s, sep, &token); ) {
+ *    for (Slice token = SLICE_NULL; slice_tokenize(s, separators, &token); ) {
  *        // do something with token
  *    }
  */
-bool slice_tokenize(Slice s, Slice sep, Slice* c);
+bool slice_tokenize(Slice s, Slice separators, Slice* token);
 
 /*
  * find longest span at beginning of Slice with characters included in / excluded from set

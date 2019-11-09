@@ -2,6 +2,14 @@
 #include <string.h>
 #include <slice.h>
 #include <buffer.h>
+#include "log.h"
+
+static void test_log(void) {
+    LOG_DEBUG("LOG_DEBUG");
+    LOG_INFO("LOG_INFO");
+    LOG_WARNING("LOG_WARNING");
+    // LOG_ERROR("LOG_ERROR");
+}
 
 static void test_simple(void) {
     const char* name = "nico";
@@ -314,6 +322,7 @@ int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
 
+    test_log();
     test_simple();
     test_utf8();
     test_tokenize();

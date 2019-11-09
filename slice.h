@@ -48,7 +48,7 @@ void slice_dump(Slice s);
  */
 
 // compare two Slices, returning: l < r: -1; l > r: 1; l == r: 0
-bool slice_compare(Slice l, Slice r);
+int slice_compare(Slice l, Slice r);
 
 // find byte in Slice
 Slice slice_find_byte(Slice s, Byte t);

@@ -35,7 +35,7 @@ void slice_dump(Slice s) {
     slice_dump_file(s, stderr);
 }
 
-bool slice_compare(Slice l, Slice r) {
+int slice_compare(Slice l, Slice r) {
     for (Size j = 0; 1; ++j) {
         if (j >= l.len && j >= r.len) {
             return 0;

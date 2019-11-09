@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 typedef uint8_t  Byte;
-typedef uint16_t Size;
+typedef uint32_t Size;
 
 typedef struct Slice {
     const Byte* ptr;    // pointer to beginning of data

@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <string.h>
-#include <slice.h>
-#include <buffer.h>
+
+#include <locale.h>     // printing Unicode
+#include <wchar.h>      // wint_t
+
+#include "slice.h"
+#include "buffer.h"
+#include "utf8.h"
 #include "log.h"
 
 static void test_log(void) {
@@ -65,6 +70,34 @@ static void test_utf8(void) {
         0x00,
         '!',
     };
+
+    setlocale(LC_ALL, "");
+
+    fprintf(stderr, "sizeof(Byte) = %lu\n", sizeof(Byte));
+    fprintf(stderr, "sizeof(Rune) = %lu\n", sizeof(Rune));
+    fprintf(stderr, "sizeof(wint_t) = %lu\n", sizeof(wint_t));
+
+    fprintf(stderr, "-- Decoding --\n");
+    Rune uni[1024];
+    int pos = 0;
+    for (Byte* buf = volcano; *buf != 0; ) {
+        Rune r;
+        buf = utf8_decode(buf, &r);
+        fprintf(stderr, "Rune [%x:%u]: [%lc], next [%x:%u]\n", r, r, (wint_t) r, (unsigned int) *buf, (unsigned int) *buf);
+        uni[pos++] = r;
+    }
+
+    fprintf(stderr, "-- Encoding --\n");
+    for (int j = 0; j < pos; ++j) {
+        Byte buf[5];
+        Rune r = uni[j];
+        Byte len = utf8_encode(buf, r);
+        fprintf(stderr, "Rune [%x:%u]: [%lc] => %u:", r, r, (wint_t) r, (unsigned) len);
+        for (int k = 0; k < len; ++k) {
+            fprintf(stderr, " [%x:%u]", (unsigned int) buf[k], (unsigned int) buf[k]);
+        }
+        fprintf(stderr, "\n");
+    }
 
     Buffer* b = buffer_build();
     for (unsigned int j = 0; j < sizeof(volcano); ++j) {
@@ -321,9 +354,10 @@ int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
 
+    test_utf8();
+#if 0
     test_log();
     test_simple();
-    test_utf8();
     test_tokenize();
     test_split();
     test_compare();
@@ -336,6 +370,7 @@ int main(int argc, char* argv[]) {
     test_stack();
     test_stack_heap();
     test_pure_heap();
+#endif
 
     fprintf(stderr, "sizeof(Slice) = %lu (Byte %lu, Size %lu, Byte* %lu)\n",
             sizeof(Slice), sizeof(Byte), sizeof(Size), sizeof(Byte*));

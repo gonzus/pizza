@@ -362,7 +362,7 @@ int main(int argc, char* argv[]) {
     (void) argv;
 
     test_utf8();
-#if 0
+#if 1
     test_log();
     test_simple();
     test_tokenize();

@@ -4,10 +4,12 @@
 # uncomment to make warnings into errors
 # CFLAGS += -Werror
 
+# uncomment to stop complaints about unused functions
+# CFLAGS += -Wno-unused-function
+
 CFLAGS += -I.
 CFLAGS += -g
 CFLAGS += -Wall -Wextra
-CFLAGS += -Wno-unused-function
 
 # CFLAGS += -std=c89 -Wno-gcc-compat -Wno-comment
 # CFLAGS += -std=c99

@@ -7,6 +7,7 @@
 #include "slice.h"
 #include "buffer.h"
 #include "utf8.h"
+#include "date.h"
 #include "log.h"
 
 static void test_log(void) {
@@ -357,6 +358,24 @@ static void test_pure_heap(void) {
     buffer_destroy(b);
 }
 
+static void test_dates(void) {
+    int y = 0;
+    int m = 0;
+    int d = 0;
+    int t = 0;
+
+    t = date_today(&y, &m, &d);
+    fprintf(stderr, "Today is %d %d (%s) %d = %d\n", y, m, date_month_name(m), d, t);
+    fprintf(stderr, "Current year %d %s a leap year\n", y, date_is_leap_year(y) ? "IS" : "IS NOT");
+    fprintf(stderr, "Current month %d %d (%s) has %d days\n", y, m, date_month_name(m), date_days_in_month(y, m));
+    int j2 = date_ymd_to_julian(y, m, d);
+
+    t = date_easter(y, &m, &d);
+    fprintf(stderr, "Easter for year %d is on %d (%s) %d = %d\n", y, m, date_month_name(m), d, t);
+    int j1 = date_ymd_to_julian(y, m, d);
+    fprintf(stderr, "Between Easter %d and today, %d days have passed\n", y, j2 - j1);
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -377,6 +396,7 @@ int main(int argc, char* argv[]) {
     test_stack();
     test_stack_heap();
     test_pure_heap();
+    test_dates();
 #endif
 
     fprintf(stderr, "sizeof(Slice) = %lu (Byte %lu, Size %lu, Byte* %lu)\n",

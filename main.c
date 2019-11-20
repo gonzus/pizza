@@ -85,26 +85,30 @@ static void test_utf8(void) {
     slice_dump(s);
 
     fprintf(stderr, "-- Decoding --\n");
-    int pos = 0;
+    int ulen = 0;
     Rune uni[1024];
     for (Slice x; !slice_is_empty(s); s = x) {
         Rune r = utf8_decode(s, &x);
+        if (r == UTF8_INVALID_RUNE) {
+            fprintf(stderr, "FUCK\n");
+            continue;
+        }
+        uni[ulen++] = r;
         fprintf(stderr, "Rune [%x:%u]: [%lc]\n", r, r, (wint_t) r);
-        s = x;
-        uni[pos++] = r;
     }
+    fprintf(stderr, "Decoded %d bytes into %d runes\n", buffer_length(b), ulen);
 
     fprintf(stderr, "-- Encoding --\n");
     Buffer *enc = buffer_build();
-    for (int j = 0; j < pos; ++j) {
+    for (int j = 0; j < ulen; ++j) {
         Rune r = uni[j];
-        bool ok = utf8_encode(r, enc);
-        if (ok) {
-        } else {
+        Byte len = utf8_encode(r, enc);
+        if (len == 0) {
             fprintf(stderr, "FUCK\n");
-            break;
+            continue;
         }
     }
+    fprintf(stderr, "Encoded %d runes into %d bytes\n", ulen, buffer_length(enc));
     s = buffer_get_slice(enc);
     slice_dump(s);
 

@@ -17,9 +17,9 @@ Rune utf8_decode(Slice s, Slice* rest);
 
 /*
  * Encode a Unicode rune into a buffer of bytes.
- * Return true if the rune was valid Unicode; otherwise, return false and place
- * a Unicode replacement character into the buffer.
+ * Return the number of bytes the Unicode rune was encoded into.
+ * If the rune was not valid Unicode, return 0.
  */
-bool utf8_encode(Rune r, Buffer* b);
+Byte utf8_encode(Rune r, Buffer* b);
 
 #endif

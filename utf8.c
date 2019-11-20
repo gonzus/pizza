@@ -1,7 +1,7 @@
 #include "utf8.h"
 
 Rune utf8_decode(Slice s, Slice* rest) {
-    int l = 1;
+    Byte l = 0;
     Rune r = UTF8_INVALID_RUNE;
     if (s.len >= 1 && s.ptr[0] < 0x80) {
         // length 1, simple ASCII
@@ -38,18 +38,18 @@ Rune utf8_decode(Slice s, Slice* rest) {
     return r;
 }
 
-bool utf8_encode(Rune r, Buffer* b) {
+Byte utf8_encode(Rune r, Buffer* b) {
     if (r <= 0x7f) {
         // length 1, simple ASCII
         buffer_append_byte(b, (Byte) r);
-        return true;
+        return 1;
     }
 
     if (r <= 0x07ff) {
         // length 2
         buffer_append_byte(b, (Byte) (((r >> 6) & 0x1f) | 0xc0));
         buffer_append_byte(b, (Byte) (((r >> 0) & 0x3f) | 0x80));
-        return true;
+        return 2;
     }
 
     if (r <= 0xffff) {
@@ -57,7 +57,7 @@ bool utf8_encode(Rune r, Buffer* b) {
         buffer_append_byte(b, (Byte) (((r >> 12) & 0x0f) | 0xe0));
         buffer_append_byte(b, (Byte) (((r >>  6) & 0x3f) | 0x80));
         buffer_append_byte(b, (Byte) (((r >>  0) & 0x3f) | 0x80));
-        return true;
+        return 3;
     }
 
     if (r <= 0x10ffff) {
@@ -66,12 +66,9 @@ bool utf8_encode(Rune r, Buffer* b) {
         buffer_append_byte(b, (Byte) (((r >> 12) & 0x3f) | 0x80));
         buffer_append_byte(b, (Byte) (((r >>  6) & 0x3f) | 0x80));
         buffer_append_byte(b, (Byte) (((r >>  0) & 0x3f) | 0x80));
-        return true;
+        return 4;
     }
 
-    // invalid - use replacement character
-    buffer_append_byte(b, (Byte) 0xef);
-    buffer_append_byte(b, (Byte) 0xbf);
-    buffer_append_byte(b, (Byte) 0xbd);
-    return false;
+    // invalid
+    return 0;
 }

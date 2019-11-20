@@ -174,7 +174,7 @@ static void slice_dump_file(Slice s, FILE* fp) {
         unsigned char uc = (unsigned char) s.ptr[j];
         Size ui = (Size) uc;
         bpos += sprintf(byte + bpos, "%s%02x", col ? " " : "", ui);
-        dpos += sprintf(text + dpos, "%c", isprint(uc) ? uc : '.');
+        dpos += sprintf(text + dpos, "%c", uc <= 0x7f && isprint(uc) ? uc : '.');
         col++;
         if (col == 16) {
             dump_line(row, byte, 0, text, fp);

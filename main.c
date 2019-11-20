@@ -71,40 +71,43 @@ static void test_utf8(void) {
         '!',
     };
 
-    setlocale(LC_ALL, "");
+    setlocale(LC_ALL, ""); // just to print Unicode
 
     fprintf(stderr, "sizeof(Byte) = %lu\n", sizeof(Byte));
     fprintf(stderr, "sizeof(Rune) = %lu\n", sizeof(Rune));
     fprintf(stderr, "sizeof(wint_t) = %lu\n", sizeof(wint_t));
 
-    fprintf(stderr, "-- Decoding --\n");
-    Rune uni[1024];
-    int pos = 0;
-    for (Byte* buf = volcano; *buf != 0; ) {
-        Rune r;
-        buf = utf8_decode(buf, &r);
-        fprintf(stderr, "Rune [%x:%u]: [%lc], next [%x:%u]\n", r, r, (wint_t) r, (unsigned int) *buf, (unsigned int) *buf);
-        uni[pos++] = r;
-    }
-
-    fprintf(stderr, "-- Encoding --\n");
-    for (int j = 0; j < pos; ++j) {
-        Byte buf[5];
-        Rune r = uni[j];
-        Byte len = utf8_encode(buf, r);
-        fprintf(stderr, "Rune [%x:%u]: [%lc] => %u:", r, r, (wint_t) r, (unsigned) len);
-        for (int k = 0; k < len; ++k) {
-            fprintf(stderr, " [%x:%u]", (unsigned int) buf[k], (unsigned int) buf[k]);
-        }
-        fprintf(stderr, "\n");
-    }
-
     Buffer* b = buffer_build();
     for (unsigned int j = 0; j < sizeof(volcano); ++j) {
         buffer_append_byte(b, volcano[j]);
     }
-    Slice s1 = buffer_get_slice(b);
-    slice_dump(s1);
+    Slice s = buffer_get_slice(b);
+    slice_dump(s);
+
+    fprintf(stderr, "-- Decoding --\n");
+    int pos = 0;
+    Rune uni[1024];
+    for (Slice x; !slice_is_empty(s); s = x) {
+        Rune r = utf8_decode(s, &x);
+        fprintf(stderr, "Rune [%x:%u]: [%lc]\n", r, r, (wint_t) r);
+        s = x;
+        uni[pos++] = r;
+    }
+
+    fprintf(stderr, "-- Encoding --\n");
+    Buffer *enc = buffer_build();
+    for (int j = 0; j < pos; ++j) {
+        Rune r = uni[j];
+        bool ok = utf8_encode(r, enc);
+        if (ok) {
+        } else {
+            fprintf(stderr, "FUCK\n");
+            break;
+        }
+    }
+    s = buffer_get_slice(enc);
+    slice_dump(s);
+
     buffer_destroy(b);
 }
 

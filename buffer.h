@@ -66,10 +66,10 @@ Buffer* buffer_clone(const Buffer* b);
 void buffer_dump(Buffer* s);
 
 // get current Buffer length
-Size buffer_get_length(const Buffer* b);
+Size buffer_length(const Buffer* b);
 
 // get current Buffer capacity
-Size buffer_get_capacity(const Buffer* b);
+Size buffer_capacity(const Buffer* b);
 
 // get a Slice to current contents of Buffer
 Slice buffer_get_slice(const Buffer* b);

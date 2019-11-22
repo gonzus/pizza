@@ -19,7 +19,14 @@
 #define BUFFER_FLAG_CLR(b, f) do { (b)->flg &= (~f); } while (0)
 #define BUFFER_FLAG_CHK(b, f)    ( (b)->flg &  ( f) )
 
-static void buffer_ensure_extra(Buffer* b, Size extra);
+#define buffer_ensure_extra(b, extra) \
+    do { \
+        Size total = (extra) + (b)->pos; \
+        if (total > (b)->cap) { \
+            buffer_ensure_total(b, total); \
+        } \
+    } while (0)
+
 static void buffer_ensure_total(Buffer* b, Size total);
 static void buffer_realloc(Buffer* b, Size cap);
 static void buffer_dump_file(Buffer* b, FILE* fp);
@@ -154,10 +161,6 @@ void buffer_format_print(Buffer* b, const char* fmt, ...) {
     LOG_DEBUG("FORMAT [%d:%.*s]", size, size, b->ptr + b->pos);
 }
 
-
-static void buffer_ensure_extra(Buffer* b, Size extra) {
-    buffer_ensure_total(b, extra + b->pos);
-}
 
 static void buffer_ensure_total(Buffer* b, Size total) {
     Size changes = 0;

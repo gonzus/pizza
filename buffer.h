@@ -65,6 +65,9 @@ static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
 // Build an empty / default-sized Buffer.
 Buffer* buffer_build(void);
 
+// Build a Buffer with defined capacity.
+Buffer* buffer_build_capacity(Size cap);
+
 // Initialize Buffer, whether allocated in stack or heap.
 void buffer_init(Buffer* b);
 

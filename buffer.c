@@ -31,11 +31,16 @@ static void buffer_ensure_total(Buffer* b, Size total);
 static void buffer_realloc(Buffer* b, Size cap);
 static void buffer_dump_file(Buffer* b, FILE* fp);
 
-// TODO: might want to specify a capacity to pre-allocate it
 Buffer* buffer_build(void) {
     Buffer* b = (Buffer*) malloc(sizeof(Buffer));
     buffer_init(b);
     BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
+    return b;
+}
+
+Buffer* buffer_build_capacity(Size cap) {
+    Buffer* b = buffer_build();
+    buffer_ensure_total(b, cap);
     return b;
 }
 

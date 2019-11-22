@@ -50,6 +50,18 @@ typedef struct Buffer {
 static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
 #endif
 
+// Get current Buffer length.
+#define buffer_length(b)   (b)->pos
+
+// Get current Buffer capacity.
+#define buffer_capacity(b) (b)->cap
+
+// Clear the contents of Buffer -- does NOT reallocate current memory.
+#define buffer_clear(b) \
+    do { \
+        (b)->pos = 0; \
+    } while (0)
+
 // Build an empty / default-sized Buffer.
 Buffer* buffer_build(void);
 
@@ -65,17 +77,8 @@ Buffer* buffer_clone(const Buffer* b);
 // Dump a Buffer to stderr.
 void buffer_dump(Buffer* s);
 
-// Get current Buffer length.
-Size buffer_length(const Buffer* b);
-
-// Get current Buffer capacity.
-Size buffer_capacity(const Buffer* b);
-
 // Get a Slice to current contents of Buffer.
 Slice buffer_get_slice(const Buffer* b);
-
-// Clear the contents of Buffer -- does NOT reallocate current memory.
-void buffer_clear(Buffer* b);
 
 // Reallocate memory so that current data fits exactly into Buffer.
 void buffer_pack(Buffer* b);

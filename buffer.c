@@ -70,14 +70,6 @@ void buffer_dump(Buffer* b) {
     buffer_dump_file(b, stderr);
 }
 
-Size buffer_length(const Buffer* b) {
-    return b->pos;
-}
-
-Size buffer_capacity(const Buffer* b) {
-    return b->cap;
-}
-
 Slice buffer_get_slice(const Buffer* b) {
     return slice_wrap_ptr_len(b->ptr, b->pos);
 }
@@ -100,10 +92,6 @@ void buffer_pack(Buffer* b) {
         // Not enough space in buf, remain in ptr
         buffer_realloc(b, b->pos);
     }
-}
-
-void buffer_clear(Buffer* b) {
-    b->pos = 0;
 }
 
 void buffer_append_byte(Buffer* b, Byte u) {

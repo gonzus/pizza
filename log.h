@@ -4,7 +4,7 @@
 /*
  * Log -- debug- and run-time controllable logging
  *
- * Depending on the compile-time value of macro LOG_LEVEL_DEFAULT, some of
+ * Depending on the compile-time value of macro LOG_LEVEL, some of
  * the calls to LOG_XXX will completely disappear from the code.
  *
  * Depending on the run-time value of environment variable LOG_LEVEL, some of
@@ -17,34 +17,38 @@
 #define LOG_LEVEL_ERROR      3
 #define LOG_LEVEL_LAST       4
 
+// Compile-time default log level
+#define LOG_LEVEL_DEFAULT LOG_LEVEL_WARNING
+
 // Name of environment variable to control run-time logging.
 #define LOG_LEVEL_ENV "LOG_LEVEL"
 
-// Default value of LOG_LEVEL for compile- and run-time.
-#if !defined(LOG_LEVEL_DEFAULT)
-#define LOG_LEVEL_DEFAULT LOG_LEVEL_WARNING
+#if defined(LOG_LEVEL)
+#define LOG_LEVEL_USE LOG_LEVEL
+#else
+#define LOG_LEVEL_USE LOG_LEVEL_DEFAULT
 #endif
 
-#if LOG_LEVEL_DEFAULT <= LOG_LEVEL_DEBUG
-#define LOG_DEBUG(...)   do { log_print_debug (__VA_ARGS__); } while (0)
+#if LOG_LEVEL_USE <= LOG_LEVEL_DEBUG
+#define LOG_DEBUG(...)   do { log_print_debug (LOG_LEVEL_USE, __VA_ARGS__); } while (0)
 #else
 #define LOG_DEBUG(...)   do {} while (0)
 #endif
 
-#if LOG_LEVEL_DEFAULT <= LOG_LEVEL_INFO
-#define LOG_INFO(...)    do { log_print_info   (__VA_ARGS__); } while (0)
+#if LOG_LEVEL_USE <= LOG_LEVEL_INFO
+#define LOG_INFO(...)    do { log_print_info   (LOG_LEVEL_USE, __VA_ARGS__); } while (0)
 #else
 #define LOG_INFO(...)    do {} while (0)
 #endif
 
-#if LOG_LEVEL_DEFAULT <= LOG_LEVEL_WARNING
-#define LOG_WARNING(...) do { log_print_warning(__VA_ARGS__); } while (0)
+#if LOG_LEVEL_USE <= LOG_LEVEL_WARNING
+#define LOG_WARNING(...) do { log_print_warning(LOG_LEVEL_USE, __VA_ARGS__); } while (0)
 #else
 #define LOG_WARNING(...) do {} while (0)
 #endif
 
-#if LOG_LEVEL_DEFAULT <= LOG_LEVEL_ERROR
-#define LOG_ERROR(...)   do { log_print_error (__VA_ARGS__); } while (0)
+#if LOG_LEVEL_USE <= LOG_LEVEL_ERROR
+#define LOG_ERROR(...)   do { log_print_error (LOG_LEVEL_USE, __VA_ARGS__); } while (0)
 #else
 #define LOG_ERROR(...)   do {} while (0)
 #endif
@@ -53,9 +57,9 @@
 #define LOG(...) LOG_INFO(__VA_ARGS__)
 
 // Implementations of the real logging functions, per level.
-void log_print_debug  (const char* fmt, ...);
-void log_print_info   (const char* fmt, ...);
-void log_print_warning(const char* fmt, ...);
-void log_print_error  (const char* fmt, ...);
+void log_print_debug  (int level, const char* fmt, ...);
+void log_print_info   (int level, const char* fmt, ...);
+void log_print_warning(int level, const char* fmt, ...);
+void log_print_error  (int level, const char* fmt, ...);
 
 #endif

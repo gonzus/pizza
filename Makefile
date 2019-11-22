@@ -1,3 +1,5 @@
+NAME = pizza
+
 # uncomment to see logging messages
 # CFLAGS += -DLOG_LEVEL_DEFAULT=1
 
@@ -17,15 +19,27 @@ CFLAGS += -std=c11
 
 all: main
 
-log.o: log.c
-slice.o: slice.c
-buffer.o: buffer.c
-utf8.o: utf8.c
-date.o: date.c
-main.o: main.c
+LIBRARY = lib$(NAME).a
 
-main: main.o log.o slice.o buffer.o utf8.o date.o
+C_SRC_LIB = \
+	log.c \
+	slice.c \
+	buffer.c \
+	utf8.c \
+	date.c \
+
+C_OBJ_LIB = $(C_SRC_LIB:.c=.o)
+
+$(LIBRARY): $(C_OBJ_LIB)
+	ar -crs $@ $^
+
+%.o: %.c
+	cc $(CFLAGS) -c -o $@ $^
+
+main: main.o $(LIBRARY)
+	cc $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 clean:
 	rm -f *.o
+	rm -f $(LIBRARY)
 	rm -f main

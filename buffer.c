@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -185,8 +186,10 @@ static void buffer_ensure_total(Buffer* b, Size total) {
 static void buffer_realloc(Buffer* b, Size cap) {
     LOG_DEBUG("REALLOC %p: %u to %u bytes", b->ptr, b->cap, cap);
     Byte* tmp = realloc((void*) b->ptr, cap);
-    if (!tmp) {
+    if (errno) { // ENOMEM
         LOG_ERROR("Out of memory when reallocating %p from %u to %u bytes", b->ptr, b->cap, cap);
+    } else if (cap > 0 && !tmp) {
+        LOG_ERROR("Could not allocate memory when reallocating %p from %u to %u bytes", b->ptr, b->cap, cap);
     }
     b->ptr = tmp;
     b->cap = cap;

@@ -3,9 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 #include "log.h"
+
+// Name of environment variable to control run-time logging.
+#define LOG_LEVEL_ENV "LOG_LEVEL"
 
 static int runtime_level = -1;
 
@@ -21,12 +25,14 @@ static int log_get_runtime_level(int level) {
         const char* str = getenv(LOG_LEVEL_ENV);
         int val = -1;
         if (str) {
+            // try with log level names
             for (int j = 0; val < 0 && j < LOG_LEVEL_LAST; ++j) {
                 if (strcmp(str, log_level_label[j]) == 0) {
                     val = j;
                     break;
                 }
             }
+            // try with log level as a number
             if (val < 0) {
                 val = strtol(str, 0, 10);
                 if (val == 0 && errno == EINVAL) {

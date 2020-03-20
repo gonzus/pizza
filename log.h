@@ -4,11 +4,16 @@
 /*
  * Log -- debug- and run-time controllable logging
  *
- * Depending on the compile-time value of macro LOG_LEVEL, some of
- * the calls to LOG_XXX will completely disappear from the code.
+ * Depending on the compile-time value of macro LOG_LEVEL, some of the calls to
+ * LOG_XXX will completely disappear from the code.  Example:
+ *
+ *   $ cc -c -DLOG_LEVEL=4 foo.c
+ *
  *
  * Depending on the run-time value of environment variable LOG_LEVEL, some of
- * the calls to LOG_XXX will remain in the code but become no-ops.
+ * the calls to LOG_XXX will remain in the code but become no-ops.  Example:
+ *
+ *   $ LOG_LEVEL=4 ./foo
  */
 
 #define LOG_LEVEL_DEBUG      0
@@ -20,9 +25,7 @@
 // Compile-time default log level
 #define LOG_LEVEL_DEFAULT LOG_LEVEL_WARNING
 
-// Name of environment variable to control run-time logging.
-#define LOG_LEVEL_ENV "LOG_LEVEL"
-
+// Set default log level in case none was defined
 #if defined(LOG_LEVEL)
 #define LOG_LEVEL_USE LOG_LEVEL
 #else
@@ -30,7 +33,7 @@
 #endif
 
 #if LOG_LEVEL_USE <= LOG_LEVEL_DEBUG
-#define LOG_DEBUG(...)   do { log_print_debug (LOG_LEVEL_USE, __VA_ARGS__); } while (0)
+#define LOG_DEBUG(...)   do { log_print_debug  (LOG_LEVEL_USE, __VA_ARGS__); } while (0)
 #else
 #define LOG_DEBUG(...)   do {} while (0)
 #endif
@@ -48,7 +51,7 @@
 #endif
 
 #if LOG_LEVEL_USE <= LOG_LEVEL_ERROR
-#define LOG_ERROR(...)   do { log_print_error (LOG_LEVEL_USE, __VA_ARGS__); } while (0)
+#define LOG_ERROR(...)   do { log_print_error  (LOG_LEVEL_USE, __VA_ARGS__); } while (0)
 #else
 #define LOG_ERROR(...)   do {} while (0)
 #endif

@@ -43,15 +43,14 @@ static void log_print(int level, const char* fmt, va_list ap) {
     int saved_errno = errno;
 
     time_t seconds = time(0);
-    struct tm local;
-    localtime_r(&seconds, &local);
+    struct tm* local = localtime(&seconds);
 
     pid_t pid = getpid();
 
-    fprintf(stderr, "[%.3s] %04d%02d%02d %02d%02d%02d %5ld | ",
+    fprintf(stderr, "%%%.3s %04d%02d%02d %02d%02d%02d %5ld | ",
             log_level_label[level],
-            local.tm_year + 1900, local.tm_mon + 1, local.tm_mday,
-            local.tm_hour, local.tm_min, local.tm_sec,
+            local->tm_year + 1900, local->tm_mon + 1, local->tm_mday,
+            local->tm_hour, local->tm_min, local->tm_sec,
             (long int) pid);
     if (level >= LOG_LEVEL_WARNING) {
         if (saved_errno) {

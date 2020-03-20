@@ -67,13 +67,12 @@ int date_decode(int date, int* y, int* m, int* d)
 
 int date_today(int* y, int* m, int* d)
 {
-    time_t now = time(0);
-    struct tm local;
-    localtime_r(&now, &local);
+    time_t seconds = time(0);
+    struct tm* local = localtime(&seconds);
 
-    int yy = local.tm_year + 1900;
-    int mm = local.tm_mon  + 1;
-    int dd = local.tm_mday;
+    int yy = local->tm_year + 1900;
+    int mm = local->tm_mon  + 1;
+    int dd = local->tm_mday;
 
     if (y) {
         *y = yy;

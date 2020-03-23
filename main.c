@@ -10,6 +10,8 @@
 #include "date.h"
 #include "log.h"
 
+#define ALEN(a) (sizeof(a) / sizeof(a[0]))
+
 static void test_simple(void) {
     const char* name = "nico";
     int year = 2005;
@@ -121,7 +123,7 @@ static void test_tokenize(void) {
         { "", ",;" },
         { "empty separators", "" },
     };
-    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
         fprintf(stderr, "Tokenizing [%s], separators [%s]\n", data[j].string, data[j].sep);
         Slice s = slice_wrap_string(data[j].string);
         Slice sep = slice_wrap_string(data[j].sep);
@@ -141,7 +143,7 @@ static void test_split(void) {
         { "123+34*-55-+/28+++--", "+-*/" },
         { "--++123", "+-*/" },
     };
-    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
         fprintf(stderr, "Splitting [%s], set [%s]\n", data[j].string, data[j].set);
         Slice s = slice_wrap_string(data[j].string);
         Slice set = slice_wrap_string(data[j].set);
@@ -173,7 +175,7 @@ static void test_compare(void) {
         { "abcd", "abc"  },
         { "abcd", "abcd" },
     };
-    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
         Slice l = slice_wrap_string(data[j].l);
         Slice r = slice_wrap_string(data[j].r);
         fprintf(stderr, "Comparing [%s] [%s] => %d\n", data[j].l, data[j].r, slice_compare(l, r));
@@ -189,7 +191,7 @@ static void test_find_byte(void) {
         { "this time it is not" , 'x'  },
         { "" , 'x'  },
     };
-    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Slice f = slice_find_byte(s, data[j].t);
         fprintf(stderr, "Searching byte [%c] in slice [%s] => %s - [%.*s]\n",
@@ -207,7 +209,7 @@ static void test_find_slice(void) {
         { "" , "really"  },
         { "hello" , ""  },
     };
-    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Slice t = slice_wrap_string(data[j].t);
         Slice f = slice_find_slice(s, t);
@@ -224,7 +226,7 @@ static void test_clone(void) {
         { "" },
         { "  this looks \t\t good " },
     };
-    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Buffer* b = buffer_build();
         buffer_append_slice(b, s);
@@ -244,7 +246,7 @@ static void test_pack(void) {
         { "" },
         { "  this looks \t\t good, hopefully it is " },
     };
-    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Buffer* b = buffer_build();
         buffer_append_slice(b, s);
@@ -284,7 +286,7 @@ static void test_format_numbers(void) {
         { 0, 0,  3.14, 2 },
         { 0, 0, -3.14, 2 },
     };
-    for (unsigned int j = 0; j < sizeof(data) / sizeof(data[0]); ++j) {
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
         char tmp[1024];
         Buffer* b = buffer_build();
         switch (data[j].t) {

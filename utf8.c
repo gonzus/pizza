@@ -38,7 +38,7 @@ Rune utf8_decode(Slice s, Slice* rest) {
     return r;
 }
 
-Byte utf8_encode(Rune r, Buffer* b) {
+unsigned int utf8_encode(Rune r, Buffer* b) {
     if (r <= 0x7f) {
         // length 1, simple ASCII
         buffer_append_byte(b, (Byte) r);

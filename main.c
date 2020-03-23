@@ -105,7 +105,7 @@ static void test_utf8(void) {
     Buffer *enc = buffer_build();
     for (int j = 0; j < ulen; ++j) {
         Rune r = uni[j];
-        Byte len = utf8_encode(r, enc);
+        unsigned int len = utf8_encode(r, enc);
         if (len == 0) {
             fprintf(stderr, "FUCK\n");
             continue;

@@ -69,6 +69,13 @@ static void test_utf8(void) {
 
     setlocale(LC_ALL, ""); // just to print Unicode
 
+    fprintf(stderr, "sizeof(Slice) = %lu (Byte %lu, Size %lu, Byte* %lu)\n",
+            sizeof(Slice), sizeof(Byte), sizeof(Size), sizeof(Byte*));
+    fprintf(stderr, "sizeof(Buffer) = %lu (wanted %lu -> %s, data %lu, fields %lu)\n",
+            sizeof(Buffer), BUFFER_DESIRED_SIZE,
+            sizeof(Buffer) == BUFFER_DESIRED_SIZE ? "GOOD" : "BAD",
+            BUFFER_DATA_SIZE, BUFFER_FIELDS_SIZE);
+
     fprintf(stderr, "sizeof(Byte) = %lu\n", sizeof(Byte));
     fprintf(stderr, "sizeof(Rune) = %lu\n", sizeof(Rune));
     fprintf(stderr, "sizeof(wint_t) = %lu\n", sizeof(wint_t));
@@ -392,11 +399,6 @@ int main(int argc, char* argv[]) {
     test_pure_heap();
     test_dates();
 #endif
-
-    fprintf(stderr, "sizeof(Slice) = %lu (Byte %lu, Size %lu, Byte* %lu)\n",
-            sizeof(Slice), sizeof(Byte), sizeof(Size), sizeof(Byte*));
-    fprintf(stderr, "sizeof(Buffer) = %lu (wanted %lu, data %lu, fields %lu)\n",
-            sizeof(Buffer), BUFFER_DESIRED_SIZE, BUFFER_DATA_SIZE, BUFFER_FIELDS_SIZE);
 
     return 0;
 }

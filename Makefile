@@ -1,7 +1,10 @@
 NAME = pizza
 
-# uncomment to see logging messages
-# CFLAGS += -DLOG_LEVEL_DEFAULT=1
+# check memory allocations
+# CFLAGS += -DMEM_CHECK=1
+
+# see more log messages
+CFLAGS += -DLOG_LEVEL=1
 
 # uncomment to make warnings into errors
 # CFLAGS += -Werror
@@ -23,6 +26,7 @@ LIBRARY = lib$(NAME).a
 
 C_SRC_LIB = \
 	log.c \
+	mem.c \
 	slice.c \
 	buffer.c \
 	utf8.c \

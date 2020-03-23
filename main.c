@@ -114,6 +114,7 @@ static void test_utf8(void) {
     fprintf(stderr, "Encoded %d runes into %d bytes\n", ulen, buffer_length(enc));
     s = buffer_get_slice(enc);
     slice_dump(s);
+    buffer_destroy(enc);
 
     buffer_destroy(b);
 }
@@ -241,6 +242,7 @@ static void test_clone(void) {
         fprintf(stderr, "Cloning [%s]: [%d:%d:%p] [%d:%d:%p] %s\n",
                 data[j].s, b->pos, b->cap, b->ptr, n->pos, n->cap, n->ptr,
                 b->pos == n->pos && memcmp(b->ptr, n->ptr, b->pos) == 0 ? "OK" : "BAD");
+        buffer_destroy(n);
         buffer_destroy(b);
     }
 }

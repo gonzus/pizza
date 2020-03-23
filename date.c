@@ -14,7 +14,9 @@ const char* date_day_name(int d)
     };
 
     // day numbers are 0-based
-    return day_name[d % DATE_DAYS_PER_WEEK];
+    int dd = d % DATE_DAYS_PER_WEEK;
+    if (dd != d) return "";
+    return day_name[dd];
 }
 
 const char* date_month_name(int m)
@@ -36,7 +38,9 @@ const char* date_month_name(int m)
 
     // month numbers are 1-based
     --m;
-    return month_name[m % DATE_MONTHS_PER_YEAR];
+    int mm = m % DATE_MONTHS_PER_YEAR;
+    if (mm != m) return "";
+    return month_name[mm];
 }
 
 int date_decode(int date, int* y, int* m, int* d)

@@ -38,7 +38,7 @@
 
 // Macro to determine the day of the week given a Julian day
 // number.
-#define DATE_DOW(j) ((j) % DATE_DAYS_PER_WEEK)
+#define date_dow(j) ((j) % DATE_DAYS_PER_WEEK)
 
 // Return a string with the day name for a given day of the week.
 // d: 0 (Mon) to 6 (Sun).

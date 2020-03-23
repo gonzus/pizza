@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef uint8_t  Byte;  // type for bytes (0..255)
+typedef uint8_t  Byte;  // type for bytes (0..255 = 2^8-1)
 typedef uint32_t Size;  // type for sizes (0..2^32-1)
 
 typedef struct Slice {
@@ -23,13 +23,16 @@ typedef struct Slice {
 extern Slice SLICE_NULL;
 
 // Return true if Slice is null (no ptr).
-bool slice_is_null(Slice s);
+#define slice_is_null(s) ((s).ptr == 0)
 
 // Return true if Slice is empty (valid ptr, zero len).
-bool slice_is_empty(Slice s);
+#define slice_is_empty(s) ((s).ptr != 0 && (s).len == 0)
+
+// Return Slice pointer.
+#define slice_get_ptr(s) ((s).ptr)
 
 // Return Slice length.
-Size slice_get_length(Slice s);
+#define slice_get_len(s) ((s).len)
 
 // Wrap a string (const char*) into a Slice.
 // Computes the length using strlen(), so string MUST be null-terminated.

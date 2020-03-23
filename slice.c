@@ -10,18 +10,6 @@ Slice SLICE_NULL = { .ptr = 0, .len = 0 };
 
 static void slice_dump_file(Slice s, FILE* fp);
 
-bool slice_is_null(Slice s) {
-    return s.ptr == 0;
-}
-
-bool slice_is_empty(Slice s) {
-    return s.ptr != 0 && s.len == 0;
-}
-
-Size slice_get_length(Slice s) {
-    return s.len;
-}
-
 Slice slice_wrap_ptr_len(const Byte* ptr, Size len) {
     Slice s = { .ptr = ptr, .len = len };
     return s;
@@ -75,6 +63,7 @@ Slice slice_find_slice(Slice s, Slice t) {
         return SLICE_NULL;
     }
 
+    // TODO: implement a good search algorihtm here?
     Size j = 0;
     Size top = s.len - t.len + 1;
     for (j = 0; j < top; ++j) {
@@ -95,7 +84,6 @@ static void set_bitmap(Byte* map, Size len, Slice set) {
     }
 }
 
-// TODO: keep map between calls -- how?
 bool slice_tokenize(Slice s, Slice separators, Slice* token) {
     Size start = 0;
     if (token->ptr) {
@@ -107,6 +95,7 @@ bool slice_tokenize(Slice s, Slice separators, Slice* token) {
         return 0;
     }
 
+    // TODO: keep map between calls -- how?
     Byte map[256];
     set_bitmap(map, 256, separators);
 
@@ -120,11 +109,7 @@ bool slice_tokenize(Slice s, Slice separators, Slice* token) {
     }
 
     token->ptr = p;
-    if (j < l) {
-        token->len = j;
-    } else {
-        token->len = l;
-    }
+    token->len = (j < l) ? j : l;
     return 1;
 }
 

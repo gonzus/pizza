@@ -157,7 +157,7 @@ static void test_split(void) {
         for (int included = 1; 1; included = !included) {
             Slice l, r;
 
-            if (slice_get_length(s) == 0) break;
+            if (slice_get_len(s) == 0) break;
 
             slice_split(s, included, set, &l, &r);
             fprintf(stderr, "  L (%d) [%.*s]\n", included, l.len, l.ptr);

@@ -13,6 +13,13 @@
 
 static int runtime_level = -1;
 
+static const char* log_level_name[LOG_LEVEL_LAST] = {
+    "DEBUG",
+    "INFO",
+    "WARNING",
+    "ERROR",
+};
+
 static const char* log_level_label[LOG_LEVEL_LAST] = {
     "DBG",
     "INF",
@@ -25,9 +32,10 @@ static int log_get_runtime_level(int level) {
         const char* str = getenv(LOG_LEVEL_ENV);
         int val = -1;
         if (str) {
-            // try with log level names
+            // try with log level name / label
             for (int j = 0; val < 0 && j < LOG_LEVEL_LAST; ++j) {
-                if (strcmp(str, log_level_label[j]) == 0) {
+                if (strcmp(str, log_level_name[j]) == 0 ||
+                    strcmp(str, log_level_label[j]) == 0) {
                     val = j;
                     break;
                 }
@@ -67,10 +75,6 @@ static void log_print(int level, const char* fmt, va_list ap) {
     }
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
-
-    if (level >= LOG_LEVEL_ERROR) {
-        abort();
-    }
 }
 
 void log_print_debug(int level, const char* fmt, ...) {
@@ -111,4 +115,6 @@ void log_print_error(int level, const char* fmt, ...) {
     va_start(ap, fmt);
     log_print(LOG_LEVEL_ERROR, fmt, ap);
     va_end(ap);
+
+    abort();
 }

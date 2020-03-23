@@ -7,13 +7,14 @@
  * Depending on the compile-time value of macro LOG_LEVEL, some of the calls to
  * LOG_XXX will completely disappear from the code.  Example:
  *
- *   $ cc -c -DLOG_LEVEL=4 foo.c
- *
+ *   $ cc -c -DLOG_LEVEL=3 foo.c
  *
  * Depending on the run-time value of environment variable LOG_LEVEL, some of
  * the calls to LOG_XXX will remain in the code but become no-ops.  Example:
  *
- *   $ LOG_LEVEL=4 ./foo
+ *   $ LOG_LEVEL=3 ./foo
+ *   $ LOG_LEVEL=ERROR ./foo
+ *   $ LOG_LEVEL=ERR ./foo
  */
 
 #define LOG_LEVEL_DEBUG      0

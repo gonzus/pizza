@@ -55,9 +55,11 @@ void slice_dump(Slice s);
 int slice_compare(Slice l, Slice r);
 
 // Find byte in Slice.
+// Return SLICE_NULL if not found.
 Slice slice_find_byte(Slice s, Byte t);
 
 // Find Slice in Slice.
+// Return SLICE_NULL if not found.
 Slice slice_find_slice(Slice s, Slice t);
 
 // Tokenize Slice by repeatedly searching for bytes in separators.

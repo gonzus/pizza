@@ -33,19 +33,40 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define _MEM_RAW_MALLOC(scalar, type, size) \
-    do { \
-        scalar = (type) malloc(size); \
-    } while (0)
 #define _MEM_RAW_REALLOC(scalar, type, osize, nsize) \
     do { \
         scalar = (type) realloc(scalar, nsize); \
+    } while (0)
+
+#if !defined(MEM_USE_REALLOC_INSTEAD_OF_MALLOC_AND_FREE)
+#define MEM_USE_REALLOC_INSTEAD_OF_MALLOC_AND_FREE 0
+#endif
+
+#if MEM_USE_REALLOC_INSTEAD_OF_MALLOC_AND_FREE
+
+#define _MEM_RAW_MALLOC(scalar, type, size) \
+    do { \
+        scalar = (type) realloc(0, size); \
+    } while (0)
+#define _MEM_RAW_FREE(scalar, type, size) \
+    do { \
+        scalar = (type) realloc(scalar, 0); \
+        scalar = 0; \
+    } while (0)
+
+#else
+
+#define _MEM_RAW_MALLOC(scalar, type, size) \
+    do { \
+        scalar = (type) malloc(size); \
     } while (0)
 #define _MEM_RAW_FREE(scalar, type, size) \
     do { \
         free(scalar); \
         scalar = 0; \
     } while (0)
+
+#endif // #if MEM_USE_REALLOC_INSTEAD_OF_MALLOC_AND_FREE
 
 void mem_init(void);
 void mem_fini(void);

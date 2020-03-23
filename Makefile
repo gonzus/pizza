@@ -3,6 +3,9 @@ NAME = pizza
 # check memory allocations
 # CFLAGS += -DMEM_CHECK=1
 
+# use realloc instead of malloc / free
+# CFLAGS += -DMEM_USE_REALLOC_INSTEAD_OF_MALLOC_AND_FREE=1
+
 # see more log messages
 CFLAGS += -DLOG_LEVEL=1
 

@@ -3,7 +3,7 @@
 
 const char* date_day_name(int d)
 {
-    static const char* day_name[] = {
+    static const char* day_name[DATE_DAYS_PER_WEEK] = {
         "Monday",
         "Tuesday",
         "Wednesday",
@@ -19,7 +19,7 @@ const char* date_day_name(int d)
 
 const char* date_month_name(int m)
 {
-    static const char* month_name[] = {
+    static const char* month_name[DATE_MONTHS_PER_YEAR] = {
         "January",
         "February",
         "March",
@@ -37,11 +37,6 @@ const char* date_month_name(int m)
     // month numbers are 1-based
     --m;
     return month_name[m % DATE_MONTHS_PER_YEAR];
-}
-
-int date_encode(int y, int m, int d)
-{
-    return (y * 100 + m) * 100 + d;
 }
 
 int date_decode(int date, int* y, int* m, int* d)
@@ -142,6 +137,7 @@ int date_julian_to_ymd(int j, int* y, int* m, int* d)
     int dd = l - (2447 * h) / 80;
     int mm = h + 2 - (12 * k);
     int yy = 100 * (n - 49) + i + k;
+
     if (y) {
         *y = yy;
     }

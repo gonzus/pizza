@@ -1,11 +1,17 @@
 #include <string.h>
-#include <time.h>
 #include <tap.h>
 #include "slice.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 
 static const char* empty_string = "";
+
+static void test_sizes(void) {
+    int size_ptr = sizeof(void*);
+    cmp_ok(sizeof(Slice), "==", 2*size_ptr, "sizeof(Slice)");
+    cmp_ok(sizeof(Byte) , "==", 1         , "sizeof(Byte)");
+    cmp_ok(sizeof(Byte*), "==", size_ptr  , "sizeof(Byte*)");
+}
 
 static void test_slice_is_null(void) {
     cmp_ok(!!slice_is_null(SLICE_NULL), "==", !!1, "slice_is_null(SLICE_NULL)");
@@ -22,9 +28,16 @@ static void test_slice_compare(void) {
         const char* r;
         int cmp;
     } string_info[] = {
-        { "foo", "bar", 1 },
-        { "", "", 0 },
+        { "foo"  , "bar"  ,  1 },
+        { ""     , ""     ,  0 },
         { "bilbo", "frodo", -1 },
+        { "abc"  , "pqr"  , -1 },
+        { "pqr"  , "abc"  ,  1 },
+        { "pqr"  , "pqr"  ,  0 },
+        { ""     , ""     ,  0 },
+        { "abc"  , "abcd" , -1 },
+        { "abcd" , "abc"  ,  1 },
+        { "abcd" , "abcd" ,  0 },
     };
 
     for (int j = 0; j < ALEN(string_info); ++j) {
@@ -49,10 +62,13 @@ static void test_slice_find_byte(void) {
         Byte b;
         int pos;
     } string_info[] = {
-        { "foo", 'o', 1 },
-        { "foo", 'k', -1 },
-        { "", 'k', -1 },
-        { "", '\0', -1 },
+        { "foo"                 , 'o'  ,  1 },
+        { "foo"                 , 'k'  , -1 },
+        { ""                    , 'k'  , -1 },
+        { ""                    , '\0' , -1 },
+        { "you know it is there", 'k'  ,  4 },
+        { "this time it is not" , 'x'  , -1 },
+        { ""                    , 'x'  , -1 },
     };
 
     for (int j = 0; j < ALEN(string_info); ++j) {
@@ -78,10 +94,14 @@ static void test_slice_find_slice(void) {
         const char* n;
         int pos;
     } string_info[] = {
-        { "foo", "oo", 1 },
-        { "foo", "ok", -1 },
-        { "", "k", -1 },
-        { "", "foo", -1 },
+        { "foo"                 , "oo"    ,  1 },
+        { "foo"                 , "ok"    , -1 },
+        { ""                    , "k"     , -1 },
+        { ""                    , "foo"   , -1 },
+        { "you know it is there", "know"  ,  4 },
+        { "this time it is not" , "really", -1 },
+        { ""                    , "really", -1 },
+        { "hello"               , ""      ,  0 },
     };
 
     for (int j = 0; j < ALEN(string_info); ++j) {
@@ -118,6 +138,12 @@ static void test_slice_tokenize(void) {
         { "-+3+4*5", "+-*/" },
         { "3+4*5**//", "+-*/" },
         { "-+3+4*5", "%" },
+        { "simple-line-with-single-separator", "-" },
+        { "simple-line;-this-time,-with-multiple-separators", ",;" },
+        { "duplicated,;-separators;;;now", ",;" },
+        { "separators not found", ",;" },
+        { "", ",;" },
+        { "empty separators", "" },
     };
 
     for (int j = 0; j < ALEN(string_info); ++j) {
@@ -195,6 +221,9 @@ static void test_slice_split(void) {
         { "-+3+4*5", "+-*/" },
         { "3+4*5**//", "+-*/" },
         { "-+3+4*5", "%" },
+        { " this is  a   line with\tblanks ", " \t" },
+        { "123+34*-55-+/28+++--", "+-*/" },
+        { "--++123", "+-*/" },
     };
 
     for (int j = 0; j < ALEN(string_info); ++j) {
@@ -222,6 +251,7 @@ int main (int argc, char* argv[]) {
     (void) argc;
     (void) argv;
 
+    test_sizes();
     test_slice_is_null();
     test_slice_is_empty();
     test_slice_compare();

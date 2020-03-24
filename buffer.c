@@ -13,10 +13,6 @@
 #define BUFFER_DEFAULT_CAPACITY BUFFER_DESIRED_SIZE  // default size for Buffer
 #define BUFFER_GROWTH_FACTOR                      2  // how Buffer grows when needed
 
-#define BUFFER_FLAG_SET(b, f) do { (b)->flg |= ( f); } while (0)
-#define BUFFER_FLAG_CLR(b, f) do { (b)->flg &= (~f); } while (0)
-#define BUFFER_FLAG_CHK(b, f)    ( (b)->flg &  ( f) )
-
 #define buffer_ensure_extra(b, extra) \
     do { \
         Size total = (extra) + (b)->pos; \

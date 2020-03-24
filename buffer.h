@@ -18,6 +18,10 @@
 #include <stdarg.h>
 #include <slice.h>
 
+#define BUFFER_FLAG_SET(b, f) do { (b)->flg |= ( f); } while (0)
+#define BUFFER_FLAG_CLR(b, f) do { (b)->flg &= (~f); } while (0)
+#define BUFFER_FLAG_CHK(b, f)    ( (b)->flg &  ( f) )
+
 // Flags used for a Buffer.
 #define BUFFER_FLAG_BUF_IN_HEAP (1U<<0)
 #define BUFFER_FLAG_PTR_IN_HEAP (1U<<1)

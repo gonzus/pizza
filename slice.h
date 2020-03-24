@@ -28,12 +28,6 @@ extern Slice SLICE_NULL;
 // Return true if Slice is empty (valid ptr, zero len).
 #define slice_is_empty(s) ((s).ptr != 0 && (s).len == 0)
 
-// Return Slice pointer.
-#define slice_get_ptr(s) ((s).ptr)
-
-// Return Slice length.
-#define slice_get_len(s) ((s).len)
-
 // Wrap a string (const char*) into a Slice.
 // Computes the length using strlen(), so string MUST be null-terminated.
 Slice slice_wrap_string(const char* string);

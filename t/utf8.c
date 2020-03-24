@@ -79,7 +79,7 @@ static void test_encode(void) {
         cmp_ok(len, ">", 0, "utf8_encode(0x%x) => %u bytes", (int) r, len);
     }
     Slice s = buffer_get_slice(enc);
-    for (unsigned int j = 0; j < slice_get_len(s); ++j) {
+    for (unsigned int j = 0; j < s.len; ++j) {
         Byte b = s.ptr[j];
         cmp_ok(b, "==", utf8[j], "utf8_encode pos %d OK => 0x%x", j, b);
     }

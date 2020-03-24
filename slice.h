@@ -61,14 +61,14 @@ Slice slice_find_byte(Slice s, Byte t);
 Slice slice_find_slice(Slice s, Slice t);
 
 // Tokenize Slice by repeatedly searching for bytes in separators.
-// Return each token.
+// Return true if token was found, false otherwise.
+// Return each found token in tok.
 // Intended to be used like this:
 //
-//   for (Slice token = SLICE_NULL; slice_tokenize(s, separators, &token); ) {
-//     // do something with token
+//   for (Slice tok = SLICE_NULL; slice_tokenize(src, sep, &tok); ) {
+//     // do something with tok
 //   }
-bool slice_tokenize(Slice s, Slice separators, Slice* token);
-
+bool slice_tokenize(Slice src, Slice sep, Slice* tok);
 
 // Find longest span at beginning of Slice with characters included in / excluded from set.
 // Returns left and right Slices.

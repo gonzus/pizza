@@ -26,9 +26,9 @@ CFLAGS += -Wall -Wextra
 # CFLAGS += -std=c99
 CFLAGS += -std=c11
 
-all: main
-
 LIBRARY = lib$(NAME).a
+
+all: $(LIBRARY)
 
 C_SRC_LIB = \
 	log.c \
@@ -50,9 +50,6 @@ C_EXE_TEST = $(patsubst %.c, %, $(C_SRC_TEST))
 %.o: %.c
 	cc $(CFLAGS) -c -o $@ $^
 
-main: main.o $(LIBRARY)
-	cc $(CFLAGS) $(LDFLAGS) -o $@ $^
-
 $(C_EXE_TEST): %: %.o $(LIBRARY)
 	cc $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltap
 
@@ -64,5 +61,4 @@ test: tests
 clean:
 	rm -f *.o
 	rm -f $(LIBRARY)
-	rm -f main
 	rm -f $(C_OBJ_TEST) $(C_EXE_TEST)

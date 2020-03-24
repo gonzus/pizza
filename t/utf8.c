@@ -61,9 +61,7 @@ static void test_decode(void) {
     int pos = 0;
     for (Slice left = sutf8; !slice_is_empty(left); ) {
         Byte b = left.ptr[0];
-        Slice tail;
-        Rune r = utf8_decode(left, &tail);
-        left = tail;
+        Rune r = utf8_decode(&left);
         cmp_ok(r, "!=", UTF8_INVALID_RUNE, "utf8_decode(0x%x) pos %d OK", (int) b, pos);
         cmp_ok(r, "==", unicode[pos], "utf8_decode(0x%x) pos %d => [0x%x]", (int) b, pos, (unsigned int) r);
         ++pos;

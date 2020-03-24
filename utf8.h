@@ -14,9 +14,8 @@
 typedef uint32_t Rune;  // type for Unicode Runes
 
 // Decode the bytes in a Slice into a valid Unicode Rune.
-// If rest is not null, leave there the Slice pointing to the rest of the
-// original, still undecoded Slice.
-Rune utf8_decode(Slice s, Slice* rest);
+// Change the Slice to point to the still undecoded portion.
+Rune utf8_decode(Slice* s);
 
 // Encode a Unicode Rune into a Buffer (therefore, containing Bytes).
 // Return the number of bytes the Unicode Rune was encoded into.

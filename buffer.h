@@ -15,6 +15,7 @@
  * memory allocation functions?
  */
 
+#include <stdarg.h>
 #include <slice.h>
 
 // Flags used for a Buffer.
@@ -101,5 +102,6 @@ void buffer_format_double(Buffer* b, double d);
 
 // Append a printf-formatted string to current contents of Buffer.
 void buffer_format_print(Buffer* b, const char* fmt, ...);
+void buffer_format_vprint(Buffer* b, const char* fmt, va_list ap);
 
 #endif

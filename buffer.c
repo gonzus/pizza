@@ -134,23 +134,27 @@ void buffer_format_double(Buffer* b, double d) {
  * 1. to determine space required to format all args and ensure there is enough space
  * 2. to actually generate the results
  */
-void buffer_format_print(Buffer* b, const char* fmt, ...) {
-    va_list ap1;
-    va_list ap2;
+void buffer_format_vprint(Buffer* b, const char* fmt, va_list ap) {
+    va_list aq;
+    va_copy(aq, ap);
 
-    va_start(ap1, fmt);
-    va_copy(ap2, ap1);
-
-    Size size = vsnprintf(0, 0, fmt, ap1);
-    va_end(ap1);
+    Size size = vsnprintf(0, 0, fmt, ap);
+    va_end(ap);
     LOG_DEBUG("FORMAT [%s] => requires %d bytes", fmt, size);
 
     buffer_ensure_extra(b, size + 1);  // vsnprintf below will also include a '\0'
 
-    vsnprintf((char*) b->ptr + b->pos, size + 1, fmt, ap2);
+    vsnprintf((char*) b->ptr + b->pos, size + 1, fmt, aq);
     b->pos += size;
-    va_end(ap2);
+    va_end(aq);
     LOG_DEBUG("FORMAT [%d:%.*s]", size, size, b->ptr + b->pos);
+}
+
+void buffer_format_print(Buffer* b, const char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    buffer_format_vprint(b, fmt, ap);
+    va_end(ap);
 }
 
 

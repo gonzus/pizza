@@ -49,22 +49,18 @@ static void test_date_day_name(void) {
     for (int d = 0; d < ALEN(day_names); ++d) {
         const char* e = day_names[d];
         const char* n = date_day_name(d);
-        char label[50];
-        sprintf(label, "date_date_name %s", e);
-        is(n, e, label);
+        is(n, e, "date_day_name %s OK", e);
     }
-    is(date_day_name(99), "", "date_date_name 99");
+    is(date_day_name(99), "", "date_date_name 99 EMPTY");
 }
 
 static void test_date_month_name(void) {
     for (int m = 1; m < ALEN(month_names); ++m) {
         const char* e = month_names[m];
         const char* n = date_month_name(m);
-        char label[50];
-        sprintf(label, "date_month_name %s", e);
-        is(n, e, label);
+        is(n, e, "date_month_name %s OK", e);
     }
-    is(date_month_name(99), "", "date_month_name 99");
+    is(date_month_name(99), "", "date_month_name 99 EMPTY");
 }
 
 static void test_date_encode_decode(void) {
@@ -131,9 +127,7 @@ static void test_date_is_leap_year(void) {
         int y = year_info[j].year;
         int l = year_info[j].leap;
         int i = date_is_leap_year(y);
-        char label[50];
-        sprintf(label, "date_is_leap_year(%d)", y);
-        cmp_ok(!!i, "==", !!l, label);
+        cmp_ok(!!i, "==", !!l, "date_is_leap_year(%d) OK", y);
     }
 }
 
@@ -147,9 +141,7 @@ static void test_date_days_in_month(void) {
             if (l && m == 2) {
                 e = 29;
             }
-            char label[50];
-            sprintf(label, "date_days_in_month(%d, %d)", y, m);
-            cmp_ok(d, "==", e, label);
+            cmp_ok(d, "==", e, "date_days_in_month(%d, %d) OK", y, m);
         }
     }
 }
@@ -162,9 +154,7 @@ static void test_date_easter(void) {
         int m = 0;
         int d = 0;
         date_easter(Y, &m, &d);
-        char label[50];
-        sprintf(label, "date_easter(%d)", Y);
-        cmp_ok(m*100+d, "==", M*100+D, label);
+        cmp_ok(m*100+d, "==", M*100+D, "date_easter(%d) OK", Y);
     }
 }
 

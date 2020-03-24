@@ -50,9 +50,7 @@ static void test_slice_compare(void) {
         int ok = e == 0 ? c == 0
                : e >  0 ? c >  0
                :          c <  0;
-        char label[999];
-        sprintf(label, "slice_compare([%s], [%s]) => %d", L, R, e);
-        cmp_ok(!!ok, "==", !!1, label);
+        cmp_ok(!!ok, "==", !!1, "slice_compare([%s], [%s]) => %d OK", L, R, e);
     }
 }
 
@@ -77,13 +75,10 @@ static void test_slice_find_byte(void) {
         int e = string_info[j].pos;
         Slice w = slice_wrap_string(W);
         Slice f = slice_find_byte(w, B);
-        char label[999];
         if (e < 0) {
-            sprintf(label, "slice_find_byte([%s], [0x%02x]) => NOPE", W, (unsigned int) B);
-            cmp_ok(!!slice_is_null(f), "==", !!1, label);
+            cmp_ok(!!slice_is_null(f), "==", !!1, "slice_find_byte([%s], [0x%02x]) => ABSENT", W, (unsigned int) B);
         } else {
-            sprintf(label, "slice_find_byte([%s], [%c]) => OK", W, (unsigned int) B);
-            cmp_ok(*f.ptr, "==", W[e], label);
+            cmp_ok(*f.ptr, "==", W[e], "slice_find_byte([%s], [%c]) => FOUND", W, (unsigned int) B);
         }
     }
 }
@@ -111,16 +106,12 @@ static void test_slice_find_slice(void) {
         Slice w = slice_wrap_string(W);
         Slice n = slice_wrap_string(N);
         Slice f = slice_find_slice(w, n);
-        char label[999];
         if (e < 0) {
-            sprintf(label, "slice_find_slice([%s], [%s]) => NOPE", W, N);
-            cmp_ok(!!slice_is_null(f), "==", !!1, label);
+            cmp_ok(!!slice_is_null(f), "==", !!1, "slice_find_slice([%s], [%s]) => ABSENT", W, N);
         } else {
             int len = strlen(N);
-            sprintf(label, "slice_find_slice([%s], [%s]) => %d bytes", W, N, len);
-            cmp_ok(f.len, "==", len, label);
-            sprintf(label, "slice_find_slice([%s], [%s]) => OK", W, N);
-            cmp_mem(f.ptr, N, f.len, label);
+            cmp_ok(f.len, "==", len, "slice_find_slice([%s], [%s]) => has %d bytes", W, N, len);
+            cmp_mem(f.ptr, N, f.len, "slice_find_slice([%s], [%s]) => FOUND", W, N);
         }
     }
 }
@@ -174,29 +165,20 @@ static void test_slice_tokenize(void) {
             // if (pos > 0) cdone = 1;
 
             if (cdone && sdone) {
-                char label[999];
-                sprintf(label, "slice_tokenize([%s]) => %d tokens", STR, pos);
-                ok(1, label);
+                ok(1, "slice_tokenize([%s]) => FOUND %d tokens", STR, pos);
                 break;
             }
             if (cdone) {
-                char label[999];
-                sprintf(label, "slice_tokenize([%s]) token #%d sought by strtok", STR, pos);
-                ok(0, label);
+                ok(0, "slice_tokenize([%s]) token #%d found by slice, NOT by strtok", STR, pos);
                 break;
             }
             if (sdone) {
-                char label[999];
-                sprintf(label, "slice_tokenize([%s]) token #%d sought by Slice", STR, pos);
-                ok(0, label);
+                ok(0, "slice_tokenize([%s]) token #%d found by strtok, NOT by slice", STR, pos);
                 break;
             }
-            char label[999];
             int len = strlen(ctok);
-            sprintf(label, "slice_tokenize([%s]) => token %d with %d bytes", STR, pos, len);
-            cmp_ok(tok.len, "==", len, label);
-            sprintf(label, "slice_tokenize([%s]) => token %d = [%s]", STR, pos, ctok);
-            cmp_mem(tok.ptr, ctok, tok.len, label);
+            cmp_ok(tok.len, "==", len, "slice_tokenize([%s]) => token %d with %d bytes", STR, pos, len);
+            cmp_mem(tok.ptr, ctok, tok.len, "slice_tokenize([%s]) => token %d = [%s] OK", STR, pos, ctok);
             ++pos;
         }
     }
@@ -238,11 +220,8 @@ static void test_slice_split(void) {
             Slice l;
             slice_split(str, inc, set, &l, 0);
             int len = strfp(STR, SET);
-            char label[999];
-            sprintf(label, "slice_split([%s], [%s], %s) => string with %d bytes", STR, SET, inc ? "inc" : "exc", len);
-            cmp_ok(l.len, "==", len, label);
-            sprintf(label, "slice_split([%s], [%s], %s) => [%*.s]", STR, SET, inc ? "inc" : "exc", len, STR);
-            cmp_mem(l.ptr, STR, l.len, label);
+            cmp_ok(l.len, "==", len, "slice_split([%s], [%s], %s) => string with %d bytes", STR, SET, inc ? "inc" : "exc", len);
+            cmp_mem(l.ptr, STR, l.len, "slice_split([%s], [%s], %s) => [%*.s] OK", STR, SET, inc ? "inc" : "exc", len, STR);
         }
     }
 }

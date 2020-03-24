@@ -66,6 +66,7 @@ static void test_format_numbers(void) {
 
         Slice r = buffer_get_slice(b);
         cmp_mem(r.ptr, tmp, r.len, "buffer_format_NUMBER %s => OK", tmp);
+        buffer_destroy(b);
     }
 }
 

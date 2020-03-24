@@ -133,34 +133,34 @@ bool slice_tokenize(Slice src, Slice sep, Slice* tok) {
     return 1;
 }
 
-bool slice_split(Slice s, bool included, Slice set, Slice* l, Slice* r) {
+bool slice_split(Slice src, bool inc, Slice set, Slice* l, Slice* r) {
     Byte map[256];
     set_bitmap(map, 256, set);
 
     Size j = 0;
-    for (j = 0; j < s.len; ++j) {
-        bool match = map[s.ptr[j]];
-        if (included ? !match : match) {
+    for (j = 0; j < src.len; ++j) {
+        bool match = map[src.ptr[j]];
+        if (inc ? !match : match) {
             break;
         }
     }
     if (l) {
-        l->ptr = s.ptr;
+        l->ptr = src.ptr;
         l->len = j;
     }
     if (r) {
-        r->ptr = s.ptr + j;
-        r->len = s.len - j;
+        r->ptr = src.ptr + j;
+        r->len = src.len - j;
     }
     return j;
 }
 
-bool slice_split_included(Slice s, Slice set, Slice* l, Slice* r) {
-    return slice_split(s, 1, set, l, r);
+bool slice_split_included(Slice src, Slice set, Slice* l, Slice* r) {
+    return slice_split(src, 1, set, l, r);
 }
 
-bool slice_split_excluded(Slice s, Slice set, Slice* l, Slice* r) {
-    return slice_split(s, 0, set, l, r);
+bool slice_split_excluded(Slice src, Slice set, Slice* l, Slice* r) {
+    return slice_split(src, 0, set, l, r);
 }
 
 static void dump_line(Size row, const char* byte, Size white, const char* text, FILE* fp) {

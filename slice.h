@@ -70,18 +70,18 @@ Slice slice_find_slice(Slice s, Slice t);
 //   }
 bool slice_tokenize(Slice src, Slice sep, Slice* tok);
 
-// Find longest span at beginning of Slice with characters included in / excluded from set.
+// Find longest span at beginning of Slice src with characters included in / excluded from set.
 // Returns left and right Slices.
-bool slice_split(Slice s, bool included, Slice set, Slice* l, Slice* r);
+bool slice_split(Slice src, bool inc, Slice set, Slice* l, Slice* r);
 
-// Find longest span at beginning of Slice with characters included in set.
+// Find longest span at beginning of Slice src with characters included in set.
 // Returns left and right Slices.
-// Calls slice_split() with included=1.
-bool slice_split_included(Slice s, Slice set, Slice* l, Slice* r);
+// Calls slice_split() with inc=true.
+bool slice_split_included(Slice src, Slice set, Slice* l, Slice* r);
 
-// Find longest span at beginning of Slice with characters excluded from set.
+// Find longest span at beginning of Slice src with characters excluded from set.
 // Returns left and right Slices.
-// Calls slice_split() with included=0.
-bool slice_split_excluded(Slice s, Slice set, Slice* l, Slice* r);
+// Calls slice_split() with inc=false.
+bool slice_split_excluded(Slice src, Slice set, Slice* l, Slice* r);
 
 #endif

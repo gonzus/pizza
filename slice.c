@@ -63,6 +63,12 @@ Slice slice_find_slice(Slice s, Slice t) {
         return SLICE_NULL;
     }
 
+#if defined(_GNU_SOURCE)
+    Byte* p = memmem(s.ptr, s.len, t.ptr, t.len);
+    if (p) {
+        return slice_wrap_ptr_len(p, t.len);
+    }
+#else
     // TODO: implement a good search algorihtm here?
     Size j = 0;
     Size top = s.len - t.len + 1;
@@ -74,6 +80,8 @@ Slice slice_find_slice(Slice s, Slice t) {
     if (j < top) {
         return slice_wrap_ptr_len(s.ptr + j, t.len);
     }
+#endif
+
     return SLICE_NULL;
 }
 

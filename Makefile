@@ -9,6 +9,9 @@ NAME = pizza
 # see more log messages
 CFLAGS += -DLOG_LEVEL=1
 
+# use some GNU-only capabilities like memmem()
+# CFLAGS += -D_GNU_SOURCE
+
 # uncomment to make warnings into errors
 # CFLAGS += -Werror
 

@@ -128,6 +128,58 @@ static void test_pure_heap(void) {
     buffer_destroy(buf);
 }
 
+static void test_clone(void) {
+    static struct {
+        const char* s;
+    } data[] = {
+        { "you know it is there" },
+        { "" },
+        { "  this looks \t\t good " },
+    };
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
+        Slice s = slice_wrap_string(data[j].s);
+        Buffer* b = buffer_build();
+        buffer_append_slice(b, s);
+        Buffer* n = buffer_clone(b);
+        ok(b->ptr != n->ptr, "buffer_clone: pointers %p and %p are different OK", b->ptr, n->ptr);
+        cmp_ok(b->pos, "==", n->pos, "buffer_clone: lengths %d and %d are equal OK", b->pos, n->pos);
+        cmp_mem(b->ptr, n->ptr, b->pos, "buffer_clone: %d bytes OK", b->pos);
+        buffer_destroy(n);
+        buffer_destroy(b);
+    }
+}
+
+static void test_pack(void) {
+    static struct {
+        const char* s;
+    } data[] = {
+        { "you know it is there" },
+        { "" },
+        { "  this looks \t\t good, hopefully it is, because I am putting all my trust in it " },
+    };
+    for (unsigned int j = 0; j < ALEN(data); ++j) {
+        Slice s = slice_wrap_string(data[j].s);
+        Buffer* b = buffer_build();
+
+        buffer_append_slice(b, s);
+        cmp_ok(b->cap, ">=", b->pos, "buffer_pack: after append cap %d >= pos %d OK", b->cap, b->pos);
+
+        buffer_pack(b);
+        if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
+            cmp_ok(b->cap, "==", b->pos, "buffer_pack: afer pack cap %d == pos %d OK", b->cap, b->pos);
+        }
+
+        buffer_clear(b);
+        cmp_ok(b->pos, "==", 0, "buffer_pack: after clear pos %d OK", b->pos);
+
+        buffer_pack(b);
+        if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
+            cmp_ok(b->cap, "==", 0, "buffer_pack: after clear+pack cap %d OK)", b->cap);
+        }
+        buffer_destroy(b);
+    }
+}
+
 int main (int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -138,6 +190,8 @@ int main (int argc, char* argv[]) {
     test_stack();
     test_stack_heap();
     test_pure_heap();
+    test_clone();
+    test_pack();
 
     done_testing();
 }

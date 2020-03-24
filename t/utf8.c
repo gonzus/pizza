@@ -56,10 +56,10 @@ static void test_sizes(void) {
 
 static void test_decode(void) {
     int len = sizeof(utf8) / sizeof(utf8[0]);
-    Slice sutf8 = slice_wrap_ptr_len(utf8, len);
+    Slice encoded = slice_wrap_ptr_len(utf8, len);
 
     int pos = 0;
-    for (Slice left = sutf8; !slice_is_empty(left); ) {
+    for (Slice left = encoded; !slice_is_empty(left); ) {
         Byte b = left.ptr[0];
         Rune r = utf8_decode(&left);
         cmp_ok(r, "!=", UTF8_INVALID_RUNE, "utf8_decode(0x%x) pos %d OK", (int) b, pos);
@@ -70,18 +70,18 @@ static void test_decode(void) {
 
 static void test_encode(void) {
     int ulen = sizeof(unicode) / sizeof(unicode[0]);
-    Buffer *enc = buffer_build();
+    Buffer *encoded = buffer_build();
     for (int j = 0; j < ulen; ++j) {
         Rune r = unicode[j];
-        unsigned int len = utf8_encode(r, enc);
+        unsigned int len = utf8_encode(r, encoded);
         cmp_ok(len, ">", 0, "utf8_encode(0x%x) => %u bytes", (int) r, len);
     }
-    Slice s = buffer_get_slice(enc);
+    Slice s = buffer_get_slice(encoded);
     for (unsigned int j = 0; j < s.len; ++j) {
         Byte b = s.ptr[j];
         cmp_ok(b, "==", utf8[j], "utf8_encode pos %d OK => 0x%x", j, b);
     }
-    buffer_destroy(enc);
+    buffer_destroy(encoded);
 }
 
 int main (int argc, char* argv[]) {

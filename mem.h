@@ -68,9 +68,6 @@
 
 #endif // #if MEM_USE_REALLOC_INSTEAD_OF_MALLOC_AND_FREE
 
-void mem_init(void);
-void mem_fini(void);
-
 #if !defined(MEM_CHECK) || MEM_CHECK < 1
 
 #define MEM_MALLOC(scalar, type, size)           _MEM_RAW_MALLOC(scalar, type, size)
@@ -137,20 +134,26 @@ void mem_fini(void);
         _MEM_RAW_FREE(str, char*, l+1); \
     } while (0)
 
-extern long mem_alloc;
-extern long mem_freed;
-
-int mem_called_alloc(const char* file,
-        int line,
-        void* var,
-        int count,
-        long size);
-int mem_called_free(const char* file,
-        int line,
-        void* var,
-        int count,
-        long size);
-
 #endif /* #if !defined(MEM_CHECK) || MEM_CHECK < 1 */
+
+typedef struct MemInfo {
+    long mem_alloc;
+    long mem_freed;
+    char mem_inited;
+} MemInfo;
+
+void mem_init(void);
+void mem_fini(void);
+void mem_called_alloc(const char* file,
+        int line,
+        void* var,
+        int count,
+        long size);
+void mem_called_free(const char* file,
+        int line,
+        void* var,
+        int count,
+        long size);
+const MemInfo* mem_get_info(void);
 
 #endif

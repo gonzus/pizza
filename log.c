@@ -8,10 +8,16 @@
 #include <unistd.h>
 #include "log.h"
 
-// Name of environment variable to control run-time logging.
-#define LOG_LEVEL_ENV "LOG_LEVEL"
-
-static int runtime_level = -1;
+static LogInfo log_info = {
+    .level_compile_time = LOG_LEVEL_COMPILE_TIME,
+    .level_run_time = -1,
+    .skip_abort_on_error = 0,
+    .skip_print_output = 0,
+    .count[LOG_LEVEL_DEBUG] = 0,
+    .count[LOG_LEVEL_INFO] = 0,
+    .count[LOG_LEVEL_WARNING] = 0,
+    .count[LOG_LEVEL_ERROR] = 0,
+};
 
 static const char* log_level_name[LOG_LEVEL_LAST] = {
     "DEBUG",
@@ -27,8 +33,8 @@ static const char* log_level_label[LOG_LEVEL_LAST] = {
     "ERR",
 };
 
-static int log_get_runtime_level(int level) {
-    if (runtime_level < 0) {
+static int log_get_runtime_level(void) {
+    if (log_info.level_run_time < 0) {
         const char* str = getenv(LOG_LEVEL_ENV);
         int val = -1;
         if (str) {
@@ -48,14 +54,17 @@ static int log_get_runtime_level(int level) {
                 }
             }
         }
-        runtime_level = val < 0 ? level : val;
+        log_info.level_run_time = val < 0 ? LOG_LEVEL_COMPILE_TIME : val;
     }
-    return runtime_level;
+    return log_info.level_run_time;
 }
 
 static void log_print(int level, const char* fmt, va_list ap) {
-    int saved_errno = errno;
+    if (log_info.skip_print_output) {
+        return;
+    }
 
+    int saved_errno = errno;
     time_t seconds = time(0);
     struct tm* local = localtime(&seconds);
 
@@ -77,44 +86,70 @@ static void log_print(int level, const char* fmt, va_list ap) {
     fprintf(stderr, "\n");
 }
 
-void log_print_debug(int level, const char* fmt, ...) {
-    if (log_get_runtime_level(level) > LOG_LEVEL_DEBUG) {
+void log_reset(int skip_abort_on_error, int skip_print_output) {
+    log_info = (LogInfo) {
+        .level_compile_time = LOG_LEVEL_COMPILE_TIME,
+        .level_run_time = -1,
+        .skip_abort_on_error = skip_abort_on_error,
+        .skip_print_output = skip_print_output,
+        .count[LOG_LEVEL_DEBUG] = 0,
+        .count[LOG_LEVEL_INFO] = 0,
+        .count[LOG_LEVEL_WARNING] = 0,
+        .count[LOG_LEVEL_ERROR] = 0,
+    };
+    log_get_runtime_level();
+}
+
+void log_print_debug(const char* fmt, ...) {
+    if (log_get_runtime_level() > LOG_LEVEL_DEBUG) {
         return;
     }
+    ++log_info.count[LOG_LEVEL_DEBUG];
     va_list ap;
     va_start(ap, fmt);
     log_print(LOG_LEVEL_DEBUG, fmt, ap);
     va_end(ap);
 }
 
-void log_print_info(int level, const char* fmt, ...) {
-    if (log_get_runtime_level(level) > LOG_LEVEL_INFO) {
+void log_print_info(const char* fmt, ...) {
+    if (log_get_runtime_level() > LOG_LEVEL_INFO) {
         return;
     }
+    ++log_info.count[LOG_LEVEL_INFO];
     va_list ap;
     va_start(ap, fmt);
     log_print(LOG_LEVEL_INFO , fmt, ap);
     va_end(ap);
 }
 
-void log_print_warning(int level, const char* fmt, ...) {
-    if (log_get_runtime_level(level) > LOG_LEVEL_WARNING) {
+void log_print_warning(const char* fmt, ...) {
+    if (log_get_runtime_level() > LOG_LEVEL_WARNING) {
         return;
     }
+    ++log_info.count[LOG_LEVEL_WARNING];
     va_list ap;
     va_start(ap, fmt);
     log_print(LOG_LEVEL_WARNING , fmt, ap);
     va_end(ap);
 }
 
-void log_print_error(int level, const char* fmt, ...) {
-    if (log_get_runtime_level(level) > LOG_LEVEL_ERROR) {
+void log_print_error(const char* fmt, ...) {
+    if (log_get_runtime_level() > LOG_LEVEL_ERROR) {
         return;
     }
+    ++log_info.count[LOG_LEVEL_ERROR];
     va_list ap;
     va_start(ap, fmt);
     log_print(LOG_LEVEL_ERROR, fmt, ap);
     va_end(ap);
 
+    if (log_info.skip_abort_on_error) {
+        return;
+    }
+
     abort();
+}
+
+const LogInfo* log_get_info(void) {
+    return &log_info;
 }

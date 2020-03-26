@@ -37,6 +37,7 @@ C_SRC_LIB = \
 	buffer.c \
 	utf8.c \
 	date.c \
+	timer.c \
 
 C_OBJ_LIB = $(C_SRC_LIB:.c=.o)
 

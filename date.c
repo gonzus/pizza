@@ -50,6 +50,13 @@ int date_decode(int date, int* y, int* m, int* d)
     int mm = date % 100;
     date /= 100;
     int yy = date % 10000;
+    date /= 10000;
+
+    if (date != 0 ||
+        mm < 1 || mm > 12 ||
+        dd < 1 || dd > date_days_in_month(yy, mm)) {
+        yy = mm = dd = 0;
+    }
 
     if (y) {
         *y = yy;
@@ -62,6 +69,16 @@ int date_decode(int date, int* y, int* m, int* d)
     }
 
     return date_encode(yy, mm, dd);
+}
+
+// Given a y/m/d, return the date as an encoded value.
+// Return a value of the form YYYYMMDD.
+int date_encode(int y, int m, int d) {
+    if (m < 1 || m > 12 ||
+        d < 1 || d > date_days_in_month(y, m)) {
+        y = m = d = 0;
+    }
+    return (y * 100 + m) * 100 + d;
 }
 
 int date_today(int* y, int* m, int* d)

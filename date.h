@@ -32,10 +32,6 @@
 #define DATE_MOY_NOV 11
 #define DATE_MOY_DEC 12
 
-// Given a y/m/d, return the date as an encoded value.
-// Return a value of the form YYYYMMDD.
-#define date_encode(y, m, d) (((y) * 100 + (m)) * 100 + (d))
-
 // Macro to determine the day of the week given a Julian day
 // number.
 #define date_dow(j) ((j) % DATE_DAYS_PER_WEEK)
@@ -47,6 +43,10 @@ const char* date_day_name(int d);
 // Return a string with the month name for a given month of the year.
 // m: 1 (Jan) to 12 (Dec)
 const char* date_month_name(int m);
+
+// Given a y/m/d, return the date as an encoded value.
+// Return a value of the form YYYYMMDD.
+int date_encode(int y, int m, int d);
 
 // Given a date encoded as YYYYMMDD, break it into its components.
 // Return a reencoded value of the form YYYYMMDD.

@@ -64,45 +64,71 @@ static void test_date_month_name(void) {
 }
 
 static void test_date_encode_decode(void) {
-    int Y = 1990;
-    int M = 11;
-    int D = 20;
+    static struct {
+        int y;
+        int m;
+        int d;
+        int e;
+    } data[] = {
+        { 1990, 11, 20, 19901120 },
+        { 2000,  2, 29, 20000229 },
+        { 1990,  0, 20, 0 },
+        { 1990, 13, 20, 0 },
+        { 1990, 11,  0, 0 },
+        { 1990,  2, 29, 0 },
+        { 1990,  4, 31, 0 },
+        { 1990,  6, 31, 0 },
+        { 1990,  9, 31, 0 },
+        { 1990, 11, 31, 0 },
+    };
 
-    int y = Y;
-    int m = M;
-    int d = D;
-    int dec = 0;
+    for (int j = 0; j < ALEN(data); ++j) {
+        int Y = data[j].y;
+        int M = data[j].m;
+        int D = data[j].d;
+        int E = data[j].e;
+        int y = Y;
+        int m = M;
+        int d = D;
+        if (!E) {
+            Y = M = D = 0;
+        }
 
-    int enc = date_encode(y, m, d);
-    cmp_ok(enc, "==", 19901120, "date_encode");
+        int enc = date_encode(y, m, d);
+        cmp_ok(enc, "==", E, "date_encode(%d, %d, %d) %s", y, m, d, E ? "OK" : "BAD");
 
-    y = m = d = 0;
-    dec = date_decode(enc, &y, &m, &d);
-    cmp_ok(dec, "==", 19901120, "date_decode YMD");
-    cmp_ok(y, "==", Y, "date_decode Y");
-    cmp_ok(m, "==", M, "date_decode M");
-    cmp_ok(d, "==", D, "date_decode D");
-
-    y = m = d = 0;
-    dec = date_decode(enc, &y, &m, 0);
-    cmp_ok(dec, "==", 19901120, "date_decode YM");
-    cmp_ok(y, "==", Y, "date_decode Y");
-    cmp_ok(m, "==", M, "date_decode M");
-    cmp_ok(d, "==", 0, "date_decode D");
-
-    y = m = d = 0;
-    dec = date_decode(enc, &y, 0, 0);
-    cmp_ok(dec, "==", 19901120, "date_decode Y");
-    cmp_ok(y, "==", Y, "date_decode Y");
-    cmp_ok(m, "==", 0, "date_decode M");
-    cmp_ok(d, "==", 0, "date_decode D");
-
-    y = m = d = 0;
-    dec = date_decode(enc, 0, 0, 0);
-    cmp_ok(dec, "==", 19901120, "date_decode");
-    cmp_ok(y, "==", 0, "date_decode Y");
-    cmp_ok(m, "==", 0, "date_decode M");
-    cmp_ok(d, "==", 0, "date_decode D");
+        for (int k = 0; k < 4; ++k) {
+            int YY = Y;
+            int MM = M;
+            int DD = D;
+            int dec = 0;
+            y = m = d = 0;
+            switch (k) {
+                case 0:
+                    dec = date_decode(enc, &y, &m, &d);
+                    break;
+                case 1:
+                    dec = date_decode(enc, &y, &m, 0);
+                    DD = 0;
+                    break;
+                case 2:
+                    dec = date_decode(enc, &y, 0, 0);
+                    MM = 0;
+                    DD = 0;
+                    break;
+                case 3:
+                    dec = date_decode(enc, 0, 0, 0);
+                    YY = 0;
+                    MM = 0;
+                    DD = 0;
+                    break;
+            }
+            cmp_ok(dec, "==", E, "date_decode(%d) YMD %s", enc, E ? "OK" : "BAD");
+            cmp_ok(y, "==", YY, "date_decode(%d) %c %s", enc, YY ? 'Y' : '0', E ? "OK" : "BAD");
+            cmp_ok(m, "==", MM, "date_decode(%d) %c %s", enc, MM ? 'M' : '0', E ? "OK" : "BAD");
+            cmp_ok(d, "==", DD, "date_decode(%d) %c %s", enc, DD ? 'D' : '0', E ? "OK" : "BAD");
+        }
+    }
 }
 
 static void test_date_today(void) {
@@ -117,9 +143,9 @@ static void test_date_today(void) {
     int M = local->tm_mon  + 1;
     int D = local->tm_mday;
 
-    cmp_ok(y, "==", Y, "date_today Y");
-    cmp_ok(m, "==", M, "date_today M");
-    cmp_ok(d, "==", D, "date_today D");
+    cmp_ok(y, "==", Y, "date_today Y %d OK", Y);
+    cmp_ok(m, "==", M, "date_today M %d OK", M);
+    cmp_ok(d, "==", D, "date_today D %d OK", D);
 }
 
 static void test_date_is_leap_year(void) {
@@ -127,7 +153,7 @@ static void test_date_is_leap_year(void) {
         int y = year_info[j].year;
         int l = year_info[j].leap;
         int i = date_is_leap_year(y);
-        cmp_ok(!!i, "==", !!l, "date_is_leap_year(%d) OK", y);
+        cmp_ok(!!i, "==", !!l, "date_is_leap_year(%d) %s OK", y, l ? "yes" : "no");
     }
 }
 
@@ -141,7 +167,7 @@ static void test_date_days_in_month(void) {
             if (l && m == 2) {
                 e = 29;
             }
-            cmp_ok(d, "==", e, "date_days_in_month(%d, %d) OK", y, m);
+            cmp_ok(d, "==", e, "date_days_in_month(%d, %d) %d OK", y, m, e);
         }
     }
 }
@@ -154,7 +180,7 @@ static void test_date_easter(void) {
         int m = 0;
         int d = 0;
         date_easter(Y, &m, &d);
-        cmp_ok(m*100+d, "==", M*100+D, "date_easter(%d) OK", Y);
+        cmp_ok(m*100+d, "==", M*100+D, "date_easter(%d) %d %d (%s) OK", Y, M, D, month_names[M]);
     }
 }
 

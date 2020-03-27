@@ -5,7 +5,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define ALEN(a) (sizeof(a) / sizeof(a[0]))
+#define ALEN(a) (int) (sizeof(a) / sizeof(a[0]))
 
 static void test_sizes(void) {
     int sb = sizeof(Buffer);
@@ -44,7 +44,7 @@ static void test_format_numbers(void) {
         { 0, 0,  3.14, 2 },
         { 0, 0, -3.14, 2 },
     };
-    for (unsigned int j = 0; j < ALEN(data); ++j) {
+    for (int j = 0; j < ALEN(data); ++j) {
         char tmp[1024];
         Buffer* b = buffer_build();
         switch (data[j].t) {
@@ -137,7 +137,7 @@ static void test_clone(void) {
         { "" },
         { "  this looks \t\t good " },
     };
-    for (unsigned int j = 0; j < ALEN(data); ++j) {
+    for (int j = 0; j < ALEN(data); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Buffer* b = buffer_build();
         buffer_append_slice(b, s);
@@ -158,7 +158,7 @@ static void test_pack(void) {
         { "" },
         { "  this looks \t\t good, hopefully it is, because I am putting all my trust in it " },
     };
-    for (unsigned int j = 0; j < ALEN(data); ++j) {
+    for (int j = 0; j < ALEN(data); ++j) {
         Slice s = slice_wrap_string(data[j].s);
         Buffer* b = buffer_build();
 

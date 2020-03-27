@@ -61,7 +61,7 @@ int hms_now(int* h, int* m, int* s)
     return hms_encode(hh, mm, ss);
 }
 
-int hms_get_elapsed(int h, int m, int s)
+int hms_to_elapsed(int h, int m, int s)
 {
     return (h * HMS_MINUTES_PER_HOUR + m) * HMS_SECONDS_PER_MINUTE + s;
 }

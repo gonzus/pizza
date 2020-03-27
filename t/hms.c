@@ -84,12 +84,43 @@ static void test_hms_now(void) {
     cmp_ok(s, "==", S, "hms_now S %d OK", S);
 }
 
+static void test_hms_elapsed(void) {
+    static struct {
+        int beg;
+        int end;
+        int delta;
+    } data[] = {
+        { 134355, 134401, 6 },
+        {      0,      1, 1 },
+        {  95959, 100102, 63 },
+        { 135955, 140005, 10 },
+        { 195958, 200002, 4 },
+    };
+    for (int j = 0; j < ALEN(data); ++j) {
+        int bh, bm, bs;
+        hms_decode(data[j].beg, &bh, &bm, &bs);
+        int be = hms_to_elapsed(bh, bm, bs);
+        int benc = hms_from_elapsed(be, 0, 0, 0);
+        cmp_ok(data[j].beg, "==", benc, "hms elapsed (%d) roundtrips OK", data[j].beg);
+
+        int eh, em, es;
+        hms_decode(data[j].end, &eh, &em, &es);
+        int ee = hms_to_elapsed(eh, em, es);
+        int eenc = hms_from_elapsed(ee, 0, 0, 0);
+        cmp_ok(data[j].end, "==", eenc, "hms elapsed (%d) roundtrips OK", data[j].end);
+
+        int d = ee - be;
+        cmp_ok(d, "==", data[j].delta, "hmd difference %d - %d = %d OK", data[j].end, data[j].beg, d);
+    }
+}
+
 int main (int argc, char* argv[]) {
     (void) argc;
     (void) argv;
 
     test_hms_encode_decode();
     test_hms_now();
+    test_hms_elapsed();
 
     done_testing();
 }

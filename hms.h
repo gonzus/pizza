@@ -25,7 +25,7 @@ int hms_encode(int h, int m, int s);
 int hms_now(int* h, int* m, int* s);
 
 // Return the elapsed time since 00:00:00 for a given time.
-int hms_get_elapsed(int h, int m, int s);
+int hms_to_elapsed(int h, int m, int s);
 
 // Get the time for a given elapsed time since 00:00:00.
 // Return a value of the form HHMMSS.

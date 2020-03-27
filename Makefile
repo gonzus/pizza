@@ -36,7 +36,7 @@ C_SRC_LIB = \
 	slice.c \
 	buffer.c \
 	utf8.c \
-	date.c \
+	ymd.c \
 	hms.c \
 	timer.c \
 

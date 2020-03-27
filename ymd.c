@@ -1,9 +1,9 @@
 #include <time.h>
-#include "date.h"
+#include "ymd.h"
 
-const char* date_day_name(int d)
+const char* ymd_day_name(int d)
 {
-    static const char* day_name[DATE_DAYS_PER_WEEK] = {
+    static const char* day_name[YMD_DAYS_PER_WEEK] = {
         "Monday",
         "Tuesday",
         "Wednesday",
@@ -14,14 +14,14 @@ const char* date_day_name(int d)
     };
 
     // day numbers are 0-based
-    int dd = d % DATE_DAYS_PER_WEEK;
+    int dd = d % YMD_DAYS_PER_WEEK;
     if (dd != d) return "";
     return day_name[dd];
 }
 
-const char* date_month_name(int m)
+const char* ymd_month_name(int m)
 {
-    static const char* month_name[DATE_MONTHS_PER_YEAR] = {
+    static const char* month_name[YMD_MONTHS_PER_YEAR] = {
         "January",
         "February",
         "March",
@@ -38,23 +38,23 @@ const char* date_month_name(int m)
 
     // month numbers are 1-based
     --m;
-    int mm = m % DATE_MONTHS_PER_YEAR;
+    int mm = m % YMD_MONTHS_PER_YEAR;
     if (mm != m) return "";
     return month_name[mm];
 }
 
-int date_decode(int date, int* y, int* m, int* d)
+int ymd_decode(int ymd, int* y, int* m, int* d)
 {
-    int dd = date % 100;
-    date /= 100;
-    int mm = date % 100;
-    date /= 100;
-    int yy = date % 10000;
-    date /= 10000;
+    int dd = ymd % 100;
+    ymd /= 100;
+    int mm = ymd % 100;
+    ymd /= 100;
+    int yy = ymd % 10000;
+    ymd /= 10000;
 
-    if (date != 0 ||
+    if (ymd != 0 ||
         mm < 1 || mm > 12 ||
-        dd < 1 || dd > date_days_in_month(yy, mm)) {
+        dd < 1 || dd > ymd_days_in_month(yy, mm)) {
         yy = mm = dd = 0;
     }
 
@@ -68,20 +68,18 @@ int date_decode(int date, int* y, int* m, int* d)
         *d = dd;
     }
 
-    return date_encode(yy, mm, dd);
+    return ymd_encode(yy, mm, dd);
 }
 
-// Given a y/m/d, return the date as an encoded value.
-// Return a value of the form YYYYMMDD.
-int date_encode(int y, int m, int d) {
+int ymd_encode(int y, int m, int d) {
     if (m < 1 || m > 12 ||
-        d < 1 || d > date_days_in_month(y, m)) {
+        d < 1 || d > ymd_days_in_month(y, m)) {
         y = m = d = 0;
     }
     return (y * 100 + m) * 100 + d;
 }
 
-int date_today(int* y, int* m, int* d)
+int ymd_today(int* y, int* m, int* d)
 {
     time_t seconds = time(0);
     struct tm* local = localtime(&seconds);
@@ -100,34 +98,34 @@ int date_today(int* y, int* m, int* d)
         *d = dd;
     }
 
-    return date_encode(yy, mm, dd);
+    return ymd_encode(yy, mm, dd);
 }
 
-int date_is_leap_year(int y)
+int ymd_is_leap_year(int y)
 {
     return ((y % 4) == 0) && ((y % 100) != 0 || (y % 400) == 0);
 }
 
-int date_days_in_month(int y, int m)
+int ymd_days_in_month(int y, int m)
 {
     switch (m) {
-        case DATE_MOY_JAN:
-        case DATE_MOY_MAR:
-        case DATE_MOY_MAY:
-        case DATE_MOY_JUL:
-        case DATE_MOY_AUG:
-        case DATE_MOY_OCT:
-        case DATE_MOY_DEC:
+        case YMD_MOY_JAN:
+        case YMD_MOY_MAR:
+        case YMD_MOY_MAY:
+        case YMD_MOY_JUL:
+        case YMD_MOY_AUG:
+        case YMD_MOY_OCT:
+        case YMD_MOY_DEC:
             return 31;
 
-        case DATE_MOY_APR:
-        case DATE_MOY_JUN:
-        case DATE_MOY_SEP:
-        case DATE_MOY_NOV:
+        case YMD_MOY_APR:
+        case YMD_MOY_JUN:
+        case YMD_MOY_SEP:
+        case YMD_MOY_NOV:
             return 30;
 
-        case DATE_MOY_FEB:
-            return date_is_leap_year(y) ? 29 : 28;
+        case YMD_MOY_FEB:
+            return ymd_is_leap_year(y) ? 29 : 28;
 
         default:
             return 0;
@@ -135,7 +133,7 @@ int date_days_in_month(int y, int m)
 }
 
 // See https://www.hermetic.ch/cal_stud/jdn.htm for details.
-int date_ymd_to_julian(int y, int m, int d)
+int ymd_to_julian(int y, int m, int d)
 {
     int p = (m - 14) / 12;
     int j = (1461 * (y + 4800 + p)) / 4 +
@@ -146,7 +144,7 @@ int date_ymd_to_julian(int y, int m, int d)
 }
 
 // See https://www.hermetic.ch/cal_stud/jdn.htm for details.
-int date_julian_to_ymd(int j, int* y, int* m, int* d)
+int ymd_from_julian(int j, int* y, int* m, int* d)
 {
     int l = j + 68569;
     int n = (4 * l) / 146097;
@@ -168,13 +166,13 @@ int date_julian_to_ymd(int j, int* y, int* m, int* d)
     if (d) {
         *d = dd;
     }
-    return date_encode(yy, mm, dd);
+    return ymd_encode(yy, mm, dd);
 }
 
 // This algorithm to compute Easter was invented by Karl Friedrich Gauss.
 // So yes, karl RULES.
 // See http://aa.usno.navy.mil/faq/docs/easter.php for details.
-int date_easter(int y, int* m, int* d)
+int ymd_easter(int y, int* m, int* d)
 {
     int k = y / 100;
     int a = k / 4;
@@ -196,5 +194,5 @@ int date_easter(int y, int* m, int* d)
     if (d) {
         *d = dd;
     }
-    return date_encode(y, mm, dd);
+    return ymd_encode(y, mm, dd);
 }

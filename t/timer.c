@@ -31,7 +31,7 @@ static void test_timer(void) {
         timer_stop(&t);
         unsigned long us = timer_elapsed_us(&t);
 
-        cmp_ok(us * US_TO_NS, ">=", pause_ns, "slept for %lu us which is at least %d ms", us, pause_ns);
+        cmp_ok(us * US_TO_NS, ">=", pause_ns, "slept for %lu us which is at least %d ns", us, pause_ns);
     }
 }
 

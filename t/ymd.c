@@ -184,6 +184,47 @@ static void test_ymd_easter(void) {
     }
 }
 
+static void test_ymd_julian(void) {
+    static struct {
+        int beg;
+        int end;
+        int delta;
+    } data[] = {
+        { 20200320, 20200327, 7 },
+        { 19991231, 20000101, 1 },
+        { 20080229, 20080301, 1 },
+        { 20181231, 20190101, 1 },
+        { 20190131, 20190201, 1 },
+        { 20190228, 20190301, 1 },
+        { 20190331, 20190401, 1 },
+        { 20190430, 20190501, 1 },
+        { 20190531, 20190601, 1 },
+        { 20190630, 20190701, 1 },
+        { 20190731, 20190801, 1 },
+        { 20190831, 20190901, 1 },
+        { 20190930, 20191001, 1 },
+        { 20191031, 20191101, 1 },
+        { 20191130, 20191201, 1 },
+        { 20191231, 20200101, 1 },
+    };
+    for (int j = 0; j < ALEN(data); ++j) {
+        int by, bm, bd;
+        ymd_decode(data[j].beg, &by, &bm, &bd);
+        int bj = ymd_to_julian(by, bm, bd);
+        int benc = ymd_from_julian(bj, 0, 0, 0);
+        cmp_ok(data[j].beg, "==", benc, "ymd_julian(%d) roundtrips OK", data[j].beg);
+
+        int ey, em, ed;
+        ymd_decode(data[j].end, &ey, &em, &ed);
+        int ej = ymd_to_julian(ey, em, ed);
+        int eenc = ymd_from_julian(ej, 0, 0, 0);
+        cmp_ok(data[j].end, "==", eenc, "ymd_julian(%d) roundtrips OK", data[j].end);
+
+        int d = ej - bj;
+        cmp_ok(d, "==", data[j].delta, "ymd difference %d - %d = %d OK", data[j].end, data[j].beg, d);
+    }
+}
+
 int main (int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -195,6 +236,7 @@ int main (int argc, char* argv[]) {
     test_ymd_is_leap_year();
     test_ymd_days_in_month();
     test_ymd_easter();
+    test_ymd_julian();
 
     done_testing();
 }

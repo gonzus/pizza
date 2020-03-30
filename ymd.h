@@ -3,6 +3,7 @@
 
 /*
  * Date-related functions.
+ * YMD == Year Month Day
  */
 
 // Doh.
@@ -10,6 +11,7 @@
 #define YMD_MONTHS_PER_YEAR 12
 
 // Numeric values for days of the week.
+// Consistent with what's returned by ymd_to_julian() /  ymd_dow()
 #define YMD_DOW_MON 0
 #define YMD_DOW_TUE 1
 #define YMD_DOW_WED 2
@@ -19,6 +21,7 @@
 #define YMD_DOW_SUN 6
 
 // Numeric values for months of the year.
+// Consistent with what's commonly used.
 #define YMD_MOY_JAN  1
 #define YMD_MOY_FEB  2
 #define YMD_MOY_MAR  3
@@ -32,8 +35,7 @@
 #define YMD_MOY_NOV 11
 #define YMD_MOY_DEC 12
 
-// Macro to determine the day of the week given a Julian day
-// number.
+// Macro to determine the day of the week given a Julian day number.
 #define ymd_dow(j) ((j) % YMD_DAYS_PER_WEEK)
 
 // Return a string with the day name for a given day of the week.

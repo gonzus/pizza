@@ -3,6 +3,7 @@
 
 /*
  * Time-related functions.
+ * HMS == Hour Minute Second
  */
 
 // Doh.

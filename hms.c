@@ -74,8 +74,6 @@ int hms_from_elapsed(int e, int* h, int* m, int* s)
     e /= HMS_MINUTES_PER_HOUR;
     int hh = e % HMS_HOURS_PER_DAY;
     e /= HMS_HOURS_PER_DAY;
-    // TODO: check?
-    // TODO: check in date too?
 
     if (h) {
         *h = hh;
@@ -86,5 +84,6 @@ int hms_from_elapsed(int e, int* h, int* m, int* s)
     if (s) {
         *s = ss;
     }
+
     return hms_encode(hh, mm, ss);
 }

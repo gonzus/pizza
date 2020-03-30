@@ -101,6 +101,7 @@ int ymd_today(int* y, int* m, int* d)
     return ymd_encode(yy, mm, dd);
 }
 
+// See https://en.wikipedia.org/wiki/Leap_year#Algorithm for details.
 int ymd_is_leap_year(int y)
 {
     return ((y % 4) == 0) && ((y % 100) != 0 || (y % 400) == 0);
@@ -166,6 +167,7 @@ int ymd_from_julian(int j, int* y, int* m, int* d)
     if (d) {
         *d = dd;
     }
+
     return ymd_encode(yy, mm, dd);
 }
 
@@ -194,5 +196,6 @@ int ymd_easter(int y, int* m, int* d)
     if (d) {
         *d = dd;
     }
+
     return ymd_encode(y, mm, dd);
 }

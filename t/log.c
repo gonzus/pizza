@@ -1,4 +1,3 @@
-#define _XOPEN_SOURCE
 #include <stdlib.h>
 #include <tap.h>
 #include "log.h"
@@ -12,9 +11,9 @@ static void test_levels(void) {
     for (int r = 0; r < LOG_LEVEL_LAST; ++r) {
         cmp_ok(r, "<", LOG_LEVEL_LAST, "--- Checking runtime level %d ---", r);
 
-        char env[50];
-        sprintf(env, "%s=%d", LOG_LEVEL_ENV, r);
-        putenv(env);
+        char level[50];
+        sprintf(level, "%d", r);
+        setenv(LOG_LEVEL_ENV, level, 1);
         log_reset(1, 1);
 
         for (int l = 0; l < LOG_LEVEL_LAST; ++l) {

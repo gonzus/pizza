@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 199309L // for nanosleep
 #include <time.h>
 #include <tap.h>
 #include "timer.h"

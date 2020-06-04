@@ -20,7 +20,7 @@ CFLAGS += -DLOG_LEVEL=1
 
 CFLAGS += -I.
 CFLAGS += -g
-CFLAGS += -Wall -Wextra
+CFLAGS += -Wall -Wextra -Wshadow
 
 # CFLAGS += -std=c89 -Wno-gcc-compat -Wno-comment
 # CFLAGS += -std=c99

@@ -24,7 +24,7 @@
 #define LOG_LEVEL_LAST       4
 
 // Compile-time default log level
-#define LOG_LEVEL_DEFAULT LOG_LEVEL_WARNING
+#define LOG_LEVEL_DEFAULT LOG_LEVEL_INFO
 
 // Name of environment variable to control run-time logging.
 #define LOG_LEVEL_ENV "LOG_LEVEL"

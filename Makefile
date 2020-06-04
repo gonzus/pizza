@@ -60,6 +60,9 @@ tests: $(C_EXE_TEST)
 test: tests
 	@for t in $(C_EXE_TEST); do ./$$t; done
 
+valgrind: tests
+	@for t in $(C_EXE_TEST); do valgrind -q ./$$t; done
+
 clean:
 	rm -f *.o
 	rm -f $(LIBRARY)

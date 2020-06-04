@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "log.h"
 #include "buffer.h"
 
 #if !defined(va_copy)
@@ -22,10 +21,11 @@
     } while (0)
 
 static void buffer_ensure_total(Buffer* b, Size total);
-static void buffer_realloc(Buffer* b, Size cap);
+static void buffer_adjust(Buffer* b, Size cap);
+static void* buffer_realloc(void* ptr, Size len);
 
 Buffer* buffer_build(void) {
-    Buffer* b = (Buffer*) realloc(0, sizeof(Buffer));
+    Buffer* b = buffer_realloc(0, sizeof(Buffer));
     buffer_init(b);
     BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
     return b;
@@ -47,14 +47,12 @@ void buffer_init(Buffer* b) {
 void buffer_destroy(Buffer* b) {
     if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_PTR_IN_HEAP);
-        LOG_DEBUG("DESTROY deleting heap-allocated ptr with %u bytes", b->cap);
-        b->ptr = realloc(b->ptr, 0);
+        b->ptr = buffer_realloc(b->ptr, 0);
         assert(!b->ptr);
     }
     if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_BUF_IN_HEAP)) {
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_BUF_IN_HEAP);
-        LOG_DEBUG("DESTROY deleting heap-allocated buf");
-        b = realloc(b, 0);
+        b = buffer_realloc(b, 0);
         assert(!b);
     }
 }
@@ -74,20 +72,18 @@ void buffer_pack(Buffer* b) {
     // Buffer is using heap-allocated ptr
     if (b->len < BUFFER_DATA_SIZE) {
         // Enough space in buf, switch to it
-        LOG_DEBUG("MIGRATE heap [%p] to stack [%p]", b->ptr, b->buf);
         memcpy(b->buf, b->ptr, b->len);
-        buffer_realloc(b, 0);
+        buffer_adjust(b, 0);
         b->ptr = b->buf;
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_PTR_IN_HEAP);
     } else {
         // Not enough space in buf, remain in ptr
-        buffer_realloc(b, b->len);
+        buffer_adjust(b, b->len);
     }
 }
 
 void buffer_append_byte(Buffer* b, Byte u) {
     buffer_ensure_extra(b, 1);
-    LOG_DEBUG("APPENDB [0x%02x:%c]", (Size) u, isprint(u) ? u : '.');
     b->ptr[b->len++] = u;
 }
 
@@ -99,7 +95,6 @@ void buffer_append_string(Buffer* b, const char* str, int len) {
         return;
     }
     buffer_ensure_extra(b, len);
-    LOG_DEBUG("APPENDS [%u:%.*s]", len, len, str);
     memcpy(b->ptr + b->len, str, len);
     b->len += len;
 }
@@ -133,14 +128,12 @@ void buffer_format_vprint(Buffer* b, const char* fmt, va_list ap) {
 
     Size size = vsnprintf(0, 0, fmt, ap);
     va_end(ap);
-    LOG_DEBUG("FORMAT [%s] => requires %d bytes", fmt, size);
 
     buffer_ensure_extra(b, size + 1);  // vsnprintf below will also include a '\0'
 
     vsnprintf((char*) b->ptr + b->len, size + 1, fmt, aq);
     b->len += size;
     va_end(aq);
-    LOG_DEBUG("FORMAT [%d:%.*s]", size, size, b->ptr + b->len);
 }
 
 void buffer_format_print(Buffer* b, const char* fmt, ...) {
@@ -154,39 +147,45 @@ void buffer_format_print(Buffer* b, const char* fmt, ...) {
 static void buffer_ensure_total(Buffer* b, Size total) {
     Size changes = 0;
     Size current = b->cap;
-    LOG_DEBUG("ENSURE currently using %u out of %u", b->len, b->cap);
     while (total > current) {
         ++changes;
         Size next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
-        LOG_DEBUG("ENSURE %u -> %u", current, next);
         current = next;
     }
     if (changes) {
         if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
-            buffer_realloc(b, current);
+            buffer_adjust(b, current);
         } else {
             // Buffer is using stack-allocated buf and need more, switch to ptr
             Size old = b->cap;
             b->ptr = 0;
             b->cap = 0;
-            buffer_realloc(b, current);
+            buffer_adjust(b, current);
             memcpy(b->ptr, b->buf, old);
-            LOG_DEBUG("MIGRATE stack [%u:%p] to heap [%u:%p]", old, b->buf, current, b->ptr);
             BUFFER_FLAG_SET(b, BUFFER_FLAG_PTR_IN_HEAP);
         }
     }
     assert(b->cap >= total);
 }
 
-static void buffer_realloc(Buffer* b, Size cap) {
-    LOG_DEBUG("REALLOC %p: %u to %u bytes", b->ptr, b->cap, cap);
-    Byte* tmp = (Byte*) realloc(b->ptr, cap);
-    if (errno) { // ENOMEM
-        LOG_ERROR("Out of memory when reallocating %p from %u to %u bytes", b->ptr, b->cap, cap);
-    } else if (cap > 0 && !tmp) {
-        LOG_ERROR("Could not allocate memory when reallocating %p from %u to %u bytes", b->ptr, b->cap, cap);
-    }
+static void buffer_adjust(Buffer* b, Size cap) {
+    Byte* tmp = buffer_realloc(b->ptr, cap);
     b->ptr = tmp;
     b->cap = cap;
-    return;
+}
+
+static void* buffer_realloc(void* ptr, Size len) {
+    void* tmp = (void*) realloc(ptr, len);
+    if (errno) {
+        // most likely ENOMEM
+        fprintf(stderr, "Error %d (%s) calling realloc(%p, %u)",
+                errno, strerror(errno), ptr, len);
+        abort();
+    }
+    if (len > 0 && !tmp) {
+        fprintf(stderr, "Could not allocate memory calling realloc(%p, %u)\n",
+                ptr, len);
+        abort();
+    }
+    return tmp;
 }

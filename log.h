@@ -37,25 +37,25 @@
 #endif
 
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_DEBUG
-#define LOG_DEBUG(...)   do { log_print_debug  (__VA_ARGS__); } while (0)
+#define LOG_DEBUG(...)   do { log_print_debug  (__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_DEBUG(...)   do {} while (0)
 #endif
 
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_INFO
-#define LOG_INFO(...)    do { log_print_info   (__VA_ARGS__); } while (0)
+#define LOG_INFO(...)    do { log_print_info   (__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_INFO(...)    do {} while (0)
 #endif
 
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_WARNING
-#define LOG_WARNING(...) do { log_print_warning(__VA_ARGS__); } while (0)
+#define LOG_WARNING(...) do { log_print_warning(__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_WARNING(...) do {} while (0)
 #endif
 
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_ERROR
-#define LOG_ERROR(...)   do { log_print_error  (__VA_ARGS__); } while (0)
+#define LOG_ERROR(...)   do { log_print_error  (__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_ERROR(...)   do {} while (0)
 #endif
@@ -75,10 +75,10 @@ typedef struct LogInfo {
 void log_reset(int skip_abort_on_error, int skip_print_output);
 
 // Implementations of the real logging functions, per level.
-void log_print_debug  (const char* fmt, ...);
-void log_print_info   (const char* fmt, ...);
-void log_print_warning(const char* fmt, ...);
-void log_print_error  (const char* fmt, ...);
+void log_print_debug  (const char* file, int line, const char* fmt, ...);
+void log_print_info   (const char* file, int line, const char* fmt, ...);
+void log_print_warning(const char* file, int line, const char* fmt, ...);
+void log_print_error  (const char* file, int line, const char* fmt, ...);
 
 // get log information
 const LogInfo* log_get_info(void);

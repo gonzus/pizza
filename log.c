@@ -59,7 +59,7 @@ static int log_get_runtime_level(void) {
     return log_info.level_run_time;
 }
 
-static void log_print(int level, const char* fmt, va_list ap) {
+static void log_print(int level, const char* file, int line, const char* fmt, va_list ap) {
     if (log_info.skip_print_output) {
         return;
     }
@@ -70,11 +70,12 @@ static void log_print(int level, const char* fmt, va_list ap) {
 
     pid_t pid = getpid();
 
-    fprintf(stderr, "%%%.3s %04d%02d%02d %02d%02d%02d %5ld | ",
+    fprintf(stderr, "%%%.3s %04d%02d%02d %02d%02d%02d %5ld | %s:%d | ",
             log_level_label[level],
             local->tm_year + 1900, local->tm_mon + 1, local->tm_mday,
             local->tm_hour, local->tm_min, local->tm_sec,
-            (long int) pid);
+            (long int) pid,
+            file, line);
     if (level >= LOG_LEVEL_WARNING) {
         if (saved_errno) {
             fprintf(stderr, "(%d) %s | ", saved_errno, strerror(saved_errno));
@@ -100,47 +101,47 @@ void log_reset(int skip_abort_on_error, int skip_print_output) {
     log_get_runtime_level();
 }
 
-void log_print_debug(const char* fmt, ...) {
+void log_print_debug(const char* file, int line, const char* fmt, ...) {
     if (log_get_runtime_level() > LOG_LEVEL_DEBUG) {
         return;
     }
     ++log_info.count[LOG_LEVEL_DEBUG];
     va_list ap;
     va_start(ap, fmt);
-    log_print(LOG_LEVEL_DEBUG, fmt, ap);
+    log_print(LOG_LEVEL_DEBUG, file, line, fmt, ap);
     va_end(ap);
 }
 
-void log_print_info(const char* fmt, ...) {
+void log_print_info(const char* file, int line, const char* fmt, ...) {
     if (log_get_runtime_level() > LOG_LEVEL_INFO) {
         return;
     }
     ++log_info.count[LOG_LEVEL_INFO];
     va_list ap;
     va_start(ap, fmt);
-    log_print(LOG_LEVEL_INFO , fmt, ap);
+    log_print(LOG_LEVEL_INFO, file, line, fmt, ap);
     va_end(ap);
 }
 
-void log_print_warning(const char* fmt, ...) {
+void log_print_warning(const char* file, int line, const char* fmt, ...) {
     if (log_get_runtime_level() > LOG_LEVEL_WARNING) {
         return;
     }
     ++log_info.count[LOG_LEVEL_WARNING];
     va_list ap;
     va_start(ap, fmt);
-    log_print(LOG_LEVEL_WARNING , fmt, ap);
+    log_print(LOG_LEVEL_WARNING, file, line, fmt, ap);
     va_end(ap);
 }
 
-void log_print_error(const char* fmt, ...) {
+void log_print_error(const char* file, int line, const char* fmt, ...) {
     if (log_get_runtime_level() > LOG_LEVEL_ERROR) {
         return;
     }
     ++log_info.count[LOG_LEVEL_ERROR];
     va_list ap;
     va_start(ap, fmt);
-    log_print(LOG_LEVEL_ERROR, fmt, ap);
+    log_print(LOG_LEVEL_ERROR, file, line, fmt, ap);
     va_end(ap);
 
     if (log_info.skip_abort_on_error) {

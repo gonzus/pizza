@@ -79,9 +79,11 @@ static void test_hms_now(void) {
     int M = local->tm_min;
     int S = local->tm_sec;
 
-    cmp_ok(h, "==", H, "hms_now H %d OK", H);
-    cmp_ok(m, "==", M, "hms_now M %d OK", M);
-    cmp_ok(s, "==", S, "hms_now S %d OK", S);
+    // these tests could well fail if the call to hms_now() and the call to
+    // localtime() happen on a separate second -- such is life
+    cmp_ok(h, "==", H, "hms_now H %d == %d OK", h, H);
+    cmp_ok(m, "==", M, "hms_now M %d == %d OK", m, M);
+    cmp_ok(s, "==", S, "hms_now S %d == %d OK", s, S);
 }
 
 static void test_hms_elapsed(void) {

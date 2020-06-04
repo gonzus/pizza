@@ -5,6 +5,7 @@
  * Buffer -- write-only access to an array of bytes.
  * Space is automatically grown as needed -- hopefully no overflows.
  * Small buffers use an internal array, larger buffers allocate.
+ * User always looks at buffer->ptr, whether small or large.
  * It does NOT add a null terminator at the end.
  * Do NOT use with C standard strXXX() functions.
  *
@@ -16,7 +17,7 @@
  */
 
 #include <stdarg.h>
-#include <slice.h>
+#include <stdint.h>
 
 #define BUFFER_FLAG_SET(b, f) do { (b)->flg |= ( f); } while (0)
 #define BUFFER_FLAG_CLR(b, f) do { (b)->flg &= (~f); } while (0)
@@ -34,17 +35,21 @@
 #define BUFFER_FIELDS_SIZE (\
     sizeof(Byte*)  /* ptr */ + \
     sizeof(Size)   /* cap */ + \
-    sizeof(Size)   /* pos */ + \
+    sizeof(Size)   /* len */ + \
     sizeof(Byte)   /* flg */ + \
     0)
 
 // Size allowed for a Buffer's static data array.
 #define BUFFER_DATA_SIZE (BUFFER_DESIRED_SIZE - BUFFER_FIELDS_SIZE)
 
+
+typedef uint8_t  Byte;  // type for bytes (0..255 = 2^8-1)
+typedef uint32_t Size;  // type for sizes (0..2^32-1)
+
 typedef struct Buffer {
     Byte* ptr;                    // pointer to beginning of data
     Size cap;                     // total data capacity
-    Size pos;                     // position of next char written to Buffer
+    Size len;                     // current buffer length
     Byte flg;                     // flags for Buffer
     Byte buf[BUFFER_DATA_SIZE];   // stack space for small Buffer
 } Buffer;
@@ -55,16 +60,10 @@ typedef struct Buffer {
 static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
 #endif
 
-// Get current Buffer length.
-#define buffer_length(b)   (b)->pos
-
-// Get current Buffer capacity.
-#define buffer_capacity(b) (b)->cap
-
 // Clear the contents of Buffer -- does NOT reallocate current memory.
 #define buffer_clear(b) \
     do { \
-        (b)->pos = 0; \
+        (b)->len = 0; \
     } while (0)
 
 // Build an empty / default-sized Buffer.
@@ -82,20 +81,15 @@ void buffer_destroy(Buffer* b);
 // Clone an existing Buffer.
 Buffer* buffer_clone(const Buffer* b);
 
-// Dump a Buffer to stderr.
-void buffer_dump(Buffer* s);
-
-// Get a Slice to current contents of Buffer.
-Slice buffer_get_slice(const Buffer* b);
-
 // Reallocate memory so that current data fits exactly into Buffer.
 void buffer_pack(Buffer* b);
 
 // Append a single byte to current contents of Buffer.
 void buffer_append_byte(Buffer* b, Byte u);
 
-// Append a Slice to current contents of Buffer.
-void buffer_append_slice(Buffer* b, Slice s);
+// Append a string of given length to current contents of Buffer.
+// If len < 0, use null terminator, otherwise copy len bytes
+void buffer_append_string(Buffer* b, const char* str, int len);
 
 // Append a formatted signed / unsigned integer to current contents of Buffer.
 void buffer_format_signed(Buffer* b, long long l);

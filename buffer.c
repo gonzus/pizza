@@ -15,7 +15,7 @@
 
 #define buffer_ensure_extra(b, extra) \
     do { \
-        Size total = (extra) + (b)->pos; \
+        Size total = (extra) + (b)->len; \
         if (total > (b)->cap) { \
             buffer_ensure_total(b, total); \
         } \
@@ -23,7 +23,6 @@
 
 static void buffer_ensure_total(Buffer* b, Size total);
 static void buffer_realloc(Buffer* b, Size cap);
-static void buffer_dump_file(Buffer* b, FILE* fp);
 
 Buffer* buffer_build(void) {
     Buffer* b = 0;
@@ -42,7 +41,7 @@ Buffer* buffer_build_capacity(Size cap) {
 void buffer_init(Buffer* b) {
     b->ptr = b->buf;
     b->cap = BUFFER_DATA_SIZE;
-    b->pos = 0;
+    b->len = 0;
     b->flg = 0;
 }
 
@@ -60,18 +59,9 @@ void buffer_destroy(Buffer* b) {
 }
 
 Buffer* buffer_clone(const Buffer* b) {
-    Slice s = buffer_get_slice(b);
     Buffer* n = buffer_build();
-    buffer_append_slice(n, s);
+    buffer_append_string(n, (const char*) b->ptr, b->len);
     return n;
-}
-
-void buffer_dump(Buffer* b) {
-    buffer_dump_file(b, stderr);
-}
-
-Slice buffer_get_slice(const Buffer* b) {
-    return slice_wrap_ptr_len(b->ptr, b->pos);
 }
 
 void buffer_pack(Buffer* b) {
@@ -81,48 +71,54 @@ void buffer_pack(Buffer* b) {
     }
 
     // Buffer is using heap-allocated ptr
-    if (b->pos < BUFFER_DATA_SIZE) {
+    if (b->len < BUFFER_DATA_SIZE) {
         // Enough space in buf, switch to it
         LOG_DEBUG("MIGRATE heap [%p] to stack [%p]", b->ptr, b->buf);
-        memcpy(b->buf, b->ptr, b->pos);
+        memcpy(b->buf, b->ptr, b->len);
         buffer_realloc(b, 0);
         b->ptr = b->buf;
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_PTR_IN_HEAP);
     } else {
         // Not enough space in buf, remain in ptr
-        buffer_realloc(b, b->pos);
+        buffer_realloc(b, b->len);
     }
 }
 
 void buffer_append_byte(Buffer* b, Byte u) {
     buffer_ensure_extra(b, 1);
     LOG_DEBUG("APPENDB [0x%02x:%c]", (Size) u, isprint(u) ? u : '.');
-    b->ptr[b->pos++] = u;
+    b->ptr[b->len++] = u;
 }
 
-void buffer_append_slice(Buffer* b, Slice s) {
-    buffer_ensure_extra(b, s.len);
-    LOG_DEBUG("APPENDS [%u:%.*s]", s.len, s.len, s.ptr);
-    memcpy(b->ptr + b->pos, s.ptr, s.len);
-    b->pos += s.len;
+void buffer_append_string(Buffer* b, const char* str, int len) {
+    if (len < 0) {
+        len = str ? strlen(str) : 0;
+    }
+    if (len <= 0) {
+        return;
+    }
+    buffer_ensure_extra(b, len);
+    LOG_DEBUG("APPENDS [%u:%.*s]", len, len, str);
+    memcpy(b->ptr + b->len, str, len);
+    b->len += len;
 }
 
 void buffer_format_signed(Buffer* b, long long l) {
     char cstr[99];
     Size clen = sprintf(cstr, "%lld", l);
-    buffer_append_slice(b, slice_wrap_ptr_len((Byte*) cstr, clen));
+    buffer_append_string(b, cstr, clen);
 }
 
 void buffer_format_unsigned(Buffer* b, unsigned long long l) {
     char cstr[99];
     Size clen = sprintf(cstr, "%llu", l);
-    buffer_append_slice(b, slice_wrap_ptr_len((Byte*) cstr, clen));
+    buffer_append_string(b, cstr, clen);
 }
 
 void buffer_format_double(Buffer* b, double d) {
     char cstr[99];
     Size clen = sprintf(cstr, "%f", d);
-    buffer_append_slice(b, slice_wrap_ptr_len((Byte*) cstr, clen));
+    buffer_append_string(b, cstr, clen);
 }
 
 /*
@@ -140,10 +136,10 @@ void buffer_format_vprint(Buffer* b, const char* fmt, va_list ap) {
 
     buffer_ensure_extra(b, size + 1);  // vsnprintf below will also include a '\0'
 
-    vsnprintf((char*) b->ptr + b->pos, size + 1, fmt, aq);
-    b->pos += size;
+    vsnprintf((char*) b->ptr + b->len, size + 1, fmt, aq);
+    b->len += size;
     va_end(aq);
-    LOG_DEBUG("FORMAT [%d:%.*s]", size, size, b->ptr + b->pos);
+    LOG_DEBUG("FORMAT [%d:%.*s]", size, size, b->ptr + b->len);
 }
 
 void buffer_format_print(Buffer* b, const char* fmt, ...) {
@@ -157,7 +153,7 @@ void buffer_format_print(Buffer* b, const char* fmt, ...) {
 static void buffer_ensure_total(Buffer* b, Size total) {
     Size changes = 0;
     Size current = b->cap;
-    LOG_DEBUG("ENSURE currently using %u out of %u", b->pos, b->cap);
+    LOG_DEBUG("ENSURE currently using %u out of %u", b->len, b->cap);
     while (total > current) {
         ++changes;
         Size next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
@@ -193,13 +189,4 @@ static void buffer_realloc(Buffer* b, Size cap) {
     b->ptr = tmp;
     b->cap = cap;
     return;
-}
-
-static void buffer_dump_file(Buffer* b, FILE* fp) {
-    fprintf(fp, "buffer:");
-    fprintf(fp, " %s %c,", "BUF_IN_HEAP", BUFFER_FLAG_CHK(b, BUFFER_FLAG_BUF_IN_HEAP) ? 'Y' : 'N');
-    fprintf(fp, " %s %c,", "PTR_IN_HEAP", BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP) ? 'Y' : 'N');
-    fprintf(fp, " buf %p, ptr %p, cap %u, pos %u\n", b->buf, b->ptr, b->cap, b->pos);
-    Slice s = buffer_get_slice(b);
-    slice_dump(s);
 }

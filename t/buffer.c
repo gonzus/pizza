@@ -1,3 +1,4 @@
+#include <string.h>
 #include <tap.h>
 #include "buffer.h"
 
@@ -64,8 +65,7 @@ static void test_format_numbers(void) {
                 continue;
         }
 
-        Slice r = buffer_get_slice(b);
-        cmp_mem(r.ptr, tmp, r.len, "buffer_format_NUMBER %s => OK", tmp);
+        cmp_mem(b->ptr, tmp, b->len, "buffer_format_NUMBER %s => OK", tmp);
         buffer_destroy(b);
     }
 }
@@ -83,8 +83,7 @@ static void print_and_compare(Buffer* buf, char* str, const char* fmt, ...) {
     buffer_format_vprint(buf, fmt, aq);
     va_end(aq);
 
-    Slice r = buffer_get_slice(buf);
-    cmp_mem(r.ptr, str, r.len, "buffer_format_print {%s} => OK", str);
+    cmp_mem(buf->ptr, str, buf->len, "buffer_format_print {%s} => OK", str);
 }
 
 static void test_format_print(void) {
@@ -138,13 +137,14 @@ static void test_clone(void) {
         { "  this looks \t\t good " },
     };
     for (int j = 0; j < ALEN(data); ++j) {
-        Slice s = slice_wrap_string(data[j].s);
+        const char* ptr = data[j].s;
+        Size len = strlen(data[j].s);
         Buffer* b = buffer_build();
-        buffer_append_slice(b, s);
+        buffer_append_string(b, ptr, len);
         Buffer* n = buffer_clone(b);
         ok(b->ptr != n->ptr, "buffer_clone: pointers %p and %p are different OK", b->ptr, n->ptr);
-        cmp_ok(b->pos, "==", n->pos, "buffer_clone: lengths %d and %d are equal OK", b->pos, n->pos);
-        cmp_mem(b->ptr, n->ptr, b->pos, "buffer_clone: %d bytes OK", b->pos);
+        cmp_ok(b->len, "==", n->len, "buffer_clone: lengths %d and %d are equal OK", b->len, n->len);
+        cmp_mem(b->ptr, n->ptr, b->len, "buffer_clone: %d bytes OK", b->len);
         buffer_destroy(n);
         buffer_destroy(b);
     }
@@ -159,19 +159,20 @@ static void test_pack(void) {
         { "  this looks \t\t good, hopefully it is, because I am putting all my trust in it " },
     };
     for (int j = 0; j < ALEN(data); ++j) {
-        Slice s = slice_wrap_string(data[j].s);
+        const char* ptr = data[j].s;
+        Size len = strlen(data[j].s);
         Buffer* b = buffer_build();
 
-        buffer_append_slice(b, s);
-        cmp_ok(b->cap, ">=", b->pos, "buffer_pack: after append cap %d >= pos %d OK", b->cap, b->pos);
+        buffer_append_string(b, ptr, len);
+        cmp_ok(b->cap, ">=", b->len, "buffer_pack: after append cap %d >= len %d OK", b->cap, b->len);
 
         buffer_pack(b);
         if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
-            cmp_ok(b->cap, "==", b->pos, "buffer_pack: afer pack cap %d == pos %d OK", b->cap, b->pos);
+            cmp_ok(b->cap, "==", b->len, "buffer_pack: afer pack cap %d == len %d OK", b->cap, b->len);
         }
 
         buffer_clear(b);
-        cmp_ok(b->pos, "==", 0, "buffer_pack: after clear pos %d OK", b->pos);
+        cmp_ok(b->len, "==", 0, "buffer_pack: after clear len %d OK", b->len);
 
         buffer_pack(b);
         if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {

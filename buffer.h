@@ -13,7 +13,6 @@
  *
  * trim -- for a set of characters?
  * tolower, toupper
- * memory allocation functions?
  */
 
 #include <stdarg.h>

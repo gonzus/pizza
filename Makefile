@@ -1,16 +1,7 @@
 NAME = pizza
 
-# check memory allocations
-CFLAGS += -DMEM_CHECK=1
-
-# use realloc instead of malloc / free
-# CFLAGS += -DMEM_USE_REALLOC_INSTEAD_OF_MALLOC_AND_FREE=1
-
 # see more log messages
 CFLAGS += -DLOG_LEVEL=1
-
-# use some GNU-only capabilities like memmem()
-# CFLAGS += -D_GNU_SOURCE
 
 # uncomment to make warnings into errors
 # CFLAGS += -Werror
@@ -33,7 +24,6 @@ all: $(LIBRARY)
 
 C_SRC_LIB = \
 	log.c \
-	mem.c \
 	slice.c \
 	buffer.c \
 	utf8.c \

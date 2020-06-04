@@ -1,7 +1,7 @@
 #include <errno.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include "mem.h"
+#include <stdlib.h>
+#include <string.h>
 #include "log.h"
 #include "buffer.h"
 
@@ -25,8 +25,7 @@ static void buffer_ensure_total(Buffer* b, Size total);
 static void buffer_realloc(Buffer* b, Size cap);
 
 Buffer* buffer_build(void) {
-    Buffer* b = 0;
-    MEM_MALLOC(b, Buffer*, sizeof(Buffer));
+    Buffer* b = (Buffer*) realloc(0, sizeof(Buffer));
     buffer_init(b);
     BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
     return b;
@@ -49,12 +48,14 @@ void buffer_destroy(Buffer* b) {
     if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_PTR_IN_HEAP);
         LOG_DEBUG("DESTROY deleting heap-allocated ptr with %u bytes", b->cap);
-        MEM_FREE(b->ptr, Byte*, b->cap);
+        b->ptr = realloc(b->ptr, 0);
+        assert(!b->ptr);
     }
     if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_BUF_IN_HEAP)) {
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_BUF_IN_HEAP);
         LOG_DEBUG("DESTROY deleting heap-allocated buf");
-        MEM_FREE(b, Buffer*, sizeof(Buffer));
+        b = realloc(b, 0);
+        assert(!b);
     }
 }
 
@@ -179,8 +180,7 @@ static void buffer_ensure_total(Buffer* b, Size total) {
 
 static void buffer_realloc(Buffer* b, Size cap) {
     LOG_DEBUG("REALLOC %p: %u to %u bytes", b->ptr, b->cap, cap);
-    Byte* tmp = b->ptr;
-    MEM_REALLOC(tmp, Byte*, b->cap, cap);
+    Byte* tmp = (Byte*) realloc(b->ptr, cap);
     if (errno) { // ENOMEM
         LOG_ERROR("Out of memory when reallocating %p from %u to %u bytes", b->ptr, b->cap, cap);
     } else if (cap > 0 && !tmp) {

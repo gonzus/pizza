@@ -8,8 +8,6 @@
 
 Slice SLICE_NULL = { .ptr = 0, .len = 0 };
 
-static void slice_dump_file(Slice s, FILE* fp);
-
 Slice slice_wrap_ptr_len(const Byte* ptr, Size len) {
     Slice s = { .ptr = ptr, .len = len };
     return s;
@@ -17,10 +15,6 @@ Slice slice_wrap_ptr_len(const Byte* ptr, Size len) {
 
 Slice slice_wrap_string(const char* string) {
     return slice_wrap_ptr_len((const Byte*) string, string == 0 ? 0 : strlen(string));
-}
-
-void slice_dump(Slice s) {
-    slice_dump_file(s, stderr);
 }
 
 int slice_compare(Slice l, Slice r) {
@@ -161,33 +155,4 @@ bool slice_split_included(Slice src, Slice set, Slice* l, Slice* r) {
 
 bool slice_split_excluded(Slice src, Slice set, Slice* l, Slice* r) {
     return slice_split(src, 0, set, l, r);
-}
-
-static void dump_line(Size row, const char* byte, Size white, const char* text, FILE* fp) {
-    fprintf(fp, "%06x | %s%*s | %-16s |\n", row, byte, white, "", text);
-}
-
-static void slice_dump_file(Slice s, FILE* fp) {
-    fprintf(fp, "slice: ptr %p, len %u\n", s.ptr, s.len);
-    char byte[16*3+1];
-    Size bpos = 0;
-    char text[16+1];
-    Size dpos = 0;
-    Size row = 0;
-    Size col = 0;
-    for (Size j = 0; j < s.len; ++j) {
-        unsigned char uc = (unsigned char) s.ptr[j];
-        Size ui = (Size) uc;
-        bpos += sprintf(byte + bpos, "%s%02x", col ? " " : "", ui);
-        dpos += sprintf(text + dpos, "%c", uc <= 0x7f && isprint(uc) ? uc : '.');
-        col++;
-        if (col == 16) {
-            dump_line(row, byte, 0, text, fp);
-            col = bpos = dpos = 0;
-            row += 16;
-        }
-    }
-    if (dpos > 0) {
-        dump_line(row, byte, (16-col)*3, text, fp);
-    }
 }

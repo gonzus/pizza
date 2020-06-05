@@ -36,9 +36,6 @@ Slice slice_wrap_string(const char* string);
 // String doesn't have to be null-terminated.
 Slice slice_wrap_ptr_len(const Byte* ptr, Size len);
 
-// Dump a Slice to stderr.
-void slice_dump(Slice s);
-
 
 /*
  * Slice algorithms.

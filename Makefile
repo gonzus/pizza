@@ -30,6 +30,7 @@ C_SRC_LIB = \
 	ymd.c \
 	hms.c \
 	timer.c \
+	util.c \
 
 C_OBJ_LIB = $(C_SRC_LIB:.c=.o)
 

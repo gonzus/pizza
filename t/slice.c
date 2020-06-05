@@ -1,5 +1,6 @@
 #include <string.h>
 #include <tap.h>
+#include "util.h"
 #include "slice.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
@@ -74,6 +75,9 @@ static void test_slice_find_byte(void) {
         Byte B = string_info[j].b;
         int e = string_info[j].pos;
         Slice w = slice_wrap_string(W);
+#if 0
+        dump_bytes(stderr, w.ptr, w.len);
+#endif
         Slice f = slice_find_byte(w, B);
         if (e < 0) {
             cmp_ok(!!slice_is_null(f), "==", !!1, "slice_find_byte([%s], [0x%02x]) => ABSENT", W, (unsigned int) B);

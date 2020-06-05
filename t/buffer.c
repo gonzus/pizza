@@ -1,5 +1,6 @@
 #include <string.h>
 #include <tap.h>
+#include "util.h"
 #include "buffer.h"
 
 #ifndef M_PI
@@ -164,6 +165,9 @@ static void test_pack(void) {
         Buffer* b = buffer_build();
 
         buffer_append_string(b, ptr, len);
+#if 0
+        dump_bytes(stderr, b->ptr, b->len);
+#endif
         cmp_ok(b->cap, ">=", b->len, "buffer_pack: after append cap %d >= len %d OK", b->cap, b->len);
 
         buffer_pack(b);

@@ -1,8 +1,7 @@
 #include <time.h>
 #include "ymd.h"
 
-const char* ymd_day_name(int d)
-{
+const char* ymd_day_name(int d) {
     static const char* day_name[YMD_DAYS_PER_WEEK] = {
         "Monday",
         "Tuesday",
@@ -19,8 +18,7 @@ const char* ymd_day_name(int d)
     return day_name[dd];
 }
 
-const char* ymd_month_name(int m)
-{
+const char* ymd_month_name(int m) {
     static const char* month_name[YMD_MONTHS_PER_YEAR] = {
         "January",
         "February",
@@ -43,8 +41,7 @@ const char* ymd_month_name(int m)
     return month_name[mm];
 }
 
-int ymd_decode(int ymd, int* y, int* m, int* d)
-{
+int ymd_decode(int ymd, int* y, int* m, int* d) {
     int dd = ymd % 100;
     ymd /= 100;
     int mm = ymd % 100;
@@ -79,8 +76,7 @@ int ymd_encode(int y, int m, int d) {
     return (y * 100 + m) * 100 + d;
 }
 
-int ymd_today(int* y, int* m, int* d)
-{
+int ymd_today(int* y, int* m, int* d) {
     time_t seconds = time(0);
     struct tm* local = localtime(&seconds);
 
@@ -102,13 +98,11 @@ int ymd_today(int* y, int* m, int* d)
 }
 
 // See https://en.wikipedia.org/wiki/Leap_year#Algorithm for details.
-int ymd_is_leap_year(int y)
-{
+int ymd_is_leap_year(int y) {
     return ((y % 4) == 0) && ((y % 100) != 0 || (y % 400) == 0);
 }
 
-int ymd_days_in_month(int y, int m)
-{
+int ymd_days_in_month(int y, int m) {
     switch (m) {
         case YMD_MOY_JAN:
         case YMD_MOY_MAR:
@@ -134,8 +128,7 @@ int ymd_days_in_month(int y, int m)
 }
 
 // See https://www.hermetic.ch/cal_stud/jdn.htm for details.
-int ymd_to_julian(int y, int m, int d)
-{
+int ymd_to_julian(int y, int m, int d) {
     int p = (m - 14) / 12;
     int j = (1461 * (y + 4800 + p)) / 4 +
             (367 * (m - 2 - 12 * p)) / 12 -
@@ -145,8 +138,7 @@ int ymd_to_julian(int y, int m, int d)
 }
 
 // See https://www.hermetic.ch/cal_stud/jdn.htm for details.
-int ymd_from_julian(int j, int* y, int* m, int* d)
-{
+int ymd_from_julian(int j, int* y, int* m, int* d) {
     int l = j + 68569;
     int n = (4 * l) / 146097;
     l -= (146097 * n + 3) / 4;
@@ -171,11 +163,10 @@ int ymd_from_julian(int j, int* y, int* m, int* d)
     return ymd_encode(yy, mm, dd);
 }
 
-// This algorithm to compute Easter was invented by Karl Friedrich Gauss.
+// Algorithm to compute Easter -- invented by Karl Friedrich Gauss.
 // So yes, karl RULES.
 // See http://aa.usno.navy.mil/faq/docs/easter.php for details.
-int ymd_easter(int y, int* m, int* d)
-{
+int ymd_easter(int y, int* m, int* d) {
     int k = y / 100;
     int a = k / 4;
     int r = y % 19;

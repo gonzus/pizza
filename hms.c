@@ -1,8 +1,7 @@
 #include <time.h>
 #include "hms.h"
 
-int hms_decode(int hms, int* h, int* m, int* s)
-{
+int hms_decode(int hms, int* h, int* m, int* s) {
     int ss = hms % 100;
     hms /= 100;
     int mm = hms % 100;
@@ -39,8 +38,7 @@ int hms_encode(int h, int m, int s) {
     return (h * 100 + m) * 100 + s;
 }
 
-int hms_now(int* h, int* m, int* s)
-{
+int hms_now(int* h, int* m, int* s) {
     time_t seconds = time(0);
     struct tm* local = localtime(&seconds);
 
@@ -61,13 +59,11 @@ int hms_now(int* h, int* m, int* s)
     return hms_encode(hh, mm, ss);
 }
 
-int hms_to_elapsed(int h, int m, int s)
-{
+int hms_to_elapsed(int h, int m, int s) {
     return (h * HMS_MINUTES_PER_HOUR + m) * HMS_SECONDS_PER_MINUTE + s;
 }
 
-int hms_from_elapsed(int e, int* h, int* m, int* s)
-{
+int hms_from_elapsed(int e, int* h, int* m, int* s) {
     int ss = e % HMS_SECONDS_PER_MINUTE;
     e /= HMS_SECONDS_PER_MINUTE;
     int mm = e % HMS_MINUTES_PER_HOUR;

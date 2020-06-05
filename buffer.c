@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -176,6 +175,8 @@ static void buffer_adjust(Buffer* b, Size cap) {
 }
 
 static void* buffer_realloc(void* ptr, Size len) {
+    // this is a pain in the ass because it forces including errno.h, stdio.h
+    // and stdlib.h... yikes
     void* tmp = (void*) realloc(ptr, len);
     if (errno) {
         // most likely ENOMEM

@@ -30,6 +30,7 @@ C_SRC_LIB = \
 	ymd.c \
 	hms.c \
 	timer.c \
+	thrpool.c \
 	util.c \
 
 C_OBJ_LIB = $(C_SRC_LIB:.c=.o)
@@ -45,7 +46,7 @@ C_EXE_TEST = $(patsubst %.c, %, $(C_SRC_TEST))
 	cc $(CFLAGS) -c -o $@ $^
 
 $(C_EXE_TEST): %: %.o $(LIBRARY)
-	cc $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltap
+	cc $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltap -lpthread
 
 tests: $(C_EXE_TEST)
 

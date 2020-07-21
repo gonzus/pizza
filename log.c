@@ -69,12 +69,13 @@ static void log_print(int level, const char* file, int line, const char* fmt, va
     struct tm* local = localtime(&seconds);
 
     pid_t pid = getpid();
+    pid_t tid = gettid();
 
-    fprintf(stderr, "%%%.3s %04d%02d%02d %02d%02d%02d %5ld | %s:%d | ",
+    fprintf(stderr, "%%%.3s %04d%02d%02d %02d%02d%02d %6ld %6ld | %s:%d | ",
             log_level_label[level],
             local->tm_year + 1900, local->tm_mon + 1, local->tm_mday,
             local->tm_hour, local->tm_min, local->tm_sec,
-            (long int) pid,
+            (long int) pid, (long int) tid,
             file, line);
     if (level >= LOG_LEVEL_WARNING) {
         if (saved_errno) {

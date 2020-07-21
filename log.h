@@ -36,24 +36,28 @@
 #define LOG_LEVEL_COMPILE_TIME LOG_LEVEL_DEFAULT
 #endif
 
+// LOG_DEBUG -- print debug messages
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_DEBUG
 #define LOG_DEBUG(...)   do { log_print_debug  (__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_DEBUG(...)   do {} while (0)
 #endif
 
+// LOG_INFO -- print informational messages
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_INFO
 #define LOG_INFO(...)    do { log_print_info   (__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_INFO(...)    do {} while (0)
 #endif
 
+// LOG_WARNING -- print warning messages
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_WARNING
 #define LOG_WARNING(...) do { log_print_warning(__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_WARNING(...) do {} while (0)
 #endif
 
+// LOG_ERROR -- print error messages and call abort()
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_ERROR
 #define LOG_ERROR(...)   do { log_print_error  (__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else

@@ -212,8 +212,7 @@ int thrpool_add(ThrPool* tp, ThrPoolFn function, void* argument) {
         }
 
         // Add task to queue
-        tp->queue.tasks[tp->queue.tail].function = function;
-        tp->queue.tasks[tp->queue.tail].argument = argument;
+        tp->queue.tasks[tp->queue.tail] = (ThrPoolTask) { function, argument };
         tp->queue.tail = (tp->queue.tail + 1) % tp->queue.size;
         ++tp->queue.pending;
 
@@ -331,9 +330,10 @@ static void* thrpool_worker(void* arg) {
         }
 
         // Grab our task
-        ThrPoolTask task;
-        task.function = tp->queue.tasks[tp->queue.head].function;
-        task.argument = tp->queue.tasks[tp->queue.head].argument;
+        ThrPoolTask task = {
+            tp->queue.tasks[tp->queue.head].function,
+            tp->queue.tasks[tp->queue.head].argument,
+        };
         tp->queue.head = (tp->queue.head + 1) % tp->queue.size;
         tp->queue.pending -= 1;
 

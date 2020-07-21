@@ -179,16 +179,17 @@ static void* buffer_realloc(void* ptr, Size len) {
     // this is a pain in the ass because it forces including errno.h, stdio.h
     // and stdlib.h... yikes
     void* tmp = (void*) realloc(ptr, len);
+    if ((tmp && len > 0) || (!tmp && len <= 0)) {
+        return tmp;  // all good
+    }
+
     if (errno) {
-        // most likely ENOMEM
         fprintf(stderr, "Error %d (%s) calling realloc(%p, %u)",
                 errno, strerror(errno), ptr, len);
-        abort();
-    }
-    if (len > 0 && !tmp) {
+    } else {
         fprintf(stderr, "Could not allocate memory calling realloc(%p, %u)\n",
                 ptr, len);
-        abort();
     }
-    return tmp;
+    abort();
+    return 0;
 }

@@ -8,11 +8,14 @@
  * Small enough to be passed around by copying, not as a pointer.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
 
+#ifndef PIZZA_BYTE_SIZE
+#define PIZZA_BYTE_SIZE
+#include <stdint.h>
 typedef uint8_t  Byte;  // type for bytes (0..255 = 2^8-1)
 typedef uint32_t Size;  // type for sizes (0..2^32-1)
+#endif
 
 typedef struct Slice {
     const Byte* ptr;    // pointer to beginning of data

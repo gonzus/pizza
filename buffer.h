@@ -16,7 +16,13 @@
  */
 
 #include <stdarg.h>
+
+#ifndef PIZZA_BYTE_SIZE
+#define PIZZA_BYTE_SIZE
 #include <stdint.h>
+typedef uint8_t  Byte;  // type for bytes (0..255 = 2^8-1)
+typedef uint32_t Size;  // type for sizes (0..2^32-1)
+#endif
 
 #define BUFFER_FLAG_SET(b, f) do { (b)->flg |= ( f); } while (0)
 #define BUFFER_FLAG_CLR(b, f) do { (b)->flg &= (~f); } while (0)
@@ -40,10 +46,6 @@
 
 // Size allowed for a Buffer's static data array.
 #define BUFFER_DATA_SIZE (BUFFER_DESIRED_SIZE - BUFFER_FIELDS_SIZE)
-
-
-typedef uint8_t  Byte;  // type for bytes (0..255 = 2^8-1)
-typedef uint32_t Size;  // type for sizes (0..2^32-1)
 
 typedef struct Buffer {
     Byte* ptr;                    // pointer to beginning of data
@@ -98,6 +100,7 @@ void buffer_format_unsigned(Buffer* b, unsigned long long l);
 void buffer_format_double(Buffer* b, double d);
 
 // Append a printf-formatted string to current contents of Buffer.
+// THESE ARE EXPENSIVE.
 void buffer_format_print(Buffer* b, const char* fmt, ...);
 void buffer_format_vprint(Buffer* b, const char* fmt, va_list ap);
 

@@ -11,7 +11,7 @@ CFLAGS += -DLOG_LEVEL=1
 
 CFLAGS += -I.
 CFLAGS += -g
-CFLAGS += -Wall -Wextra -Wshadow
+CFLAGS += -Wall -Wextra -Wshadow -Wpedantic
 CFLAGS += -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE -D_GNU_SOURCE
 
 # CFLAGS += -std=c89 -Wno-gcc-compat -Wno-comment

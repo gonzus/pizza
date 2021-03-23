@@ -29,8 +29,7 @@ static void test_detailed_formatting(void) {
         int elen = strlen(expected);
         buffer_clear(b);
         format_detailed_us(us, b);
-        int cmp = memcmp(b->ptr, expected, elen);
-        cmp_ok(cmp, "==", 0, "detailed formatted %lu us correctly as [%s] (%d:%.*s)", us, expected, elen, elen, b->ptr);
+        cmp_mem(b->ptr, expected, elen, "detailed formatted %lu us correctly as [%s] (%d:%.*s)", us, expected, elen, elen, b->ptr);
     }
     buffer_destroy(b);
 }
@@ -58,8 +57,7 @@ static void test_abbreviated_formatting(void) {
         int elen = strlen(expected);
         buffer_clear(b);
         format_abbreviated_us(us, b);
-        int cmp = memcmp(b->ptr, expected, elen);
-        cmp_ok(cmp, "==", 0, "abbreviated formatted %lu us correctly as [%s] (%d:%.*s)", us, expected, elen, elen, b->ptr);
+        cmp_mem(b->ptr, expected, elen, "abbreviated formatted %lu us correctly as [%s] (%d:%.*s)", us, expected, elen, elen, b->ptr);
     }
     buffer_destroy(b);
 }

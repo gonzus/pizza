@@ -1,6 +1,8 @@
 #include <time.h>
 #include "ymd.h"
 
+#define YMD_ENCODE(y, m, d) (((y) * 100 + (m)) * 100 + (d))
+
 const char* ymd_day_name(int d) {
     static const char* day_name[YMD_DAYS_PER_WEEK] = {
         "Monday",
@@ -65,7 +67,7 @@ int ymd_decode(int ymd, int* y, int* m, int* d) {
         *d = dd;
     }
 
-    return ymd_encode(yy, mm, dd);
+    return YMD_ENCODE(yy, mm, dd);
 }
 
 int ymd_encode(int y, int m, int d) {
@@ -73,7 +75,7 @@ int ymd_encode(int y, int m, int d) {
         d < 1 || d > ymd_days_in_month(y, m)) {
         y = m = d = 0;
     }
-    return (y * 100 + m) * 100 + d;
+    return YMD_ENCODE(y, m, d);
 }
 
 int ymd_today(int* y, int* m, int* d) {
@@ -94,7 +96,7 @@ int ymd_today(int* y, int* m, int* d) {
         *d = dd;
     }
 
-    return ymd_encode(yy, mm, dd);
+    return YMD_ENCODE(yy, mm, dd);
 }
 
 // See https://en.wikipedia.org/wiki/Leap_year#Algorithm for details.
@@ -160,7 +162,7 @@ int ymd_from_julian(int j, int* y, int* m, int* d) {
         *d = dd;
     }
 
-    return ymd_encode(yy, mm, dd);
+    return YMD_ENCODE(yy, mm, dd);
 }
 
 // Algorithm to compute Easter -- invented by Karl Friedrich Gauss.
@@ -188,5 +190,5 @@ int ymd_easter(int y, int* m, int* d) {
         *d = dd;
     }
 
-    return ymd_encode(y, mm, dd);
+    return YMD_ENCODE(y, mm, dd);
 }

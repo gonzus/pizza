@@ -176,11 +176,17 @@ static void buffer_adjust(Buffer* b, Size cap) {
 }
 
 static void* buffer_realloc(void* ptr, Size len) {
-    // this is a pain in the ass because it forces including errno.h, stdio.h
-    // and stdlib.h... yikes
-    void* tmp = (void*) realloc(ptr, len);
-    if ((tmp && len > 0) || (!tmp && len <= 0)) {
-        return tmp;  // all good
+    // It seems realloc() works differently between MacOs and Linux.
+    // Since the intention when passing len==0 is to free the memory,
+    // lets just do it and return NULL, which is the expected behaviour.
+    if (len == 0) {
+        free(ptr);
+        return NULL;
+    } else {
+        void* tmp = (void*) realloc(ptr, len);
+        if ((tmp && len > 0) || (!tmp && len <= 0)) {
+            return tmp;  // all good
+        }
     }
 
     if (errno) {

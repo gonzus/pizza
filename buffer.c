@@ -15,15 +15,15 @@
 
 #define buffer_ensure_extra(b, extra) \
     do { \
-        Size total = (extra) + (b)->len; \
+        uint32_t total = (extra) + (b)->len; \
         if (total > (b)->cap) { \
             buffer_ensure_total(b, total); \
         } \
     } while (0)
 
-static void buffer_ensure_total(Buffer* b, Size total);
-static void buffer_adjust(Buffer* b, Size cap);
-static void* buffer_realloc(void* ptr, Size len);
+static void buffer_ensure_total(Buffer* b, uint32_t total);
+static void buffer_adjust(Buffer* b, uint32_t cap);
+static void* buffer_realloc(void* ptr, uint32_t len);
 
 Buffer* buffer_build(void) {
     Buffer* b = buffer_realloc(0, sizeof(Buffer));
@@ -32,7 +32,7 @@ Buffer* buffer_build(void) {
     return b;
 }
 
-Buffer* buffer_build_capacity(Size cap) {
+Buffer* buffer_build_capacity(uint32_t cap) {
     Buffer* b = buffer_build();
     buffer_ensure_total(b, cap);
     return b;
@@ -83,7 +83,7 @@ void buffer_pack(Buffer* b) {
     }
 }
 
-void buffer_append_byte(Buffer* b, Byte u) {
+void buffer_append_byte(Buffer* b, uint8_t u) {
     buffer_ensure_extra(b, 1);
     b->ptr[b->len++] = u;
 }
@@ -102,19 +102,19 @@ void buffer_append_string(Buffer* b, const char* str, int len) {
 
 void buffer_format_signed(Buffer* b, long long l) {
     char cstr[99];
-    Size clen = sprintf(cstr, "%lld", l);
+    uint32_t clen = sprintf(cstr, "%lld", l);
     buffer_append_string(b, cstr, clen);
 }
 
 void buffer_format_unsigned(Buffer* b, unsigned long long l) {
     char cstr[99];
-    Size clen = sprintf(cstr, "%llu", l);
+    uint32_t clen = sprintf(cstr, "%llu", l);
     buffer_append_string(b, cstr, clen);
 }
 
 void buffer_format_double(Buffer* b, double d) {
     char cstr[99];
-    Size clen = sprintf(cstr, "%f", d);
+    uint32_t clen = sprintf(cstr, "%f", d);
     buffer_append_string(b, cstr, clen);
 }
 
@@ -127,7 +127,7 @@ void buffer_format_vprint(Buffer* b, const char* fmt, va_list ap) {
     va_list aq;
     va_copy(aq, ap);
 
-    Size size = vsnprintf(0, 0, fmt, ap);
+    uint32_t size = vsnprintf(0, 0, fmt, ap);
     va_end(ap);
 
     buffer_ensure_extra(b, size + 1);  // vsnprintf below will also include a '\0'
@@ -145,12 +145,12 @@ void buffer_format_print(Buffer* b, const char* fmt, ...) {
 }
 
 
-static void buffer_ensure_total(Buffer* b, Size total) {
-    Size changes = 0;
-    Size current = b->cap;
+static void buffer_ensure_total(Buffer* b, uint32_t total) {
+    uint32_t changes = 0;
+    uint32_t current = b->cap;
     while (total > current) {
         ++changes;
-        Size next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
+        uint32_t next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
         current = next;
     }
     if (changes) {
@@ -158,7 +158,7 @@ static void buffer_ensure_total(Buffer* b, Size total) {
             buffer_adjust(b, current);
         } else {
             // Buffer is using stack-allocated buf and need more, switch to ptr
-            Size old = b->cap;
+            uint32_t old = b->cap;
             b->ptr = 0;
             b->cap = 0;
             buffer_adjust(b, current);
@@ -169,13 +169,13 @@ static void buffer_ensure_total(Buffer* b, Size total) {
     assert(b->cap >= total);
 }
 
-static void buffer_adjust(Buffer* b, Size cap) {
-    Byte* tmp = buffer_realloc(b->ptr, cap);
+static void buffer_adjust(Buffer* b, uint32_t cap) {
+    uint8_t* tmp = buffer_realloc(b->ptr, cap);
     b->ptr = tmp;
     b->cap = cap;
 }
 
-static void* buffer_realloc(void* ptr, Size len) {
+static void* buffer_realloc(void* ptr, uint32_t len) {
     // It seems realloc() works differently between MacOs and Linux.
     // Since the intention when passing len==0 is to free the memory,
     // lets just do it and return NULL, which is the expected behaviour.

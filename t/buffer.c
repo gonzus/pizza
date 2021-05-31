@@ -139,7 +139,7 @@ static void test_clone(void) {
     };
     for (int j = 0; j < ALEN(data); ++j) {
         const char* ptr = data[j].s;
-        Size len = strlen(data[j].s);
+        uint32_t len = strlen(data[j].s);
         Buffer* b = buffer_build();
         buffer_append_string(b, ptr, len);
         Buffer* n = buffer_clone(b);
@@ -161,7 +161,7 @@ static void test_pack(void) {
     };
     for (int j = 0; j < ALEN(data); ++j) {
         const char* ptr = data[j].s;
-        Size len = strlen(data[j].s);
+        uint32_t len = strlen(data[j].s);
         Buffer* b = buffer_build();
 
         buffer_append_string(b, ptr, len);

@@ -48,7 +48,7 @@ static void test_format_numbers(void) {
     };
     for (int j = 0; j < ALEN(data); ++j) {
         char tmp[1024];
-        Buffer* b = buffer_build();
+        Buffer* b = buffer_create();
         switch (data[j].t) {
             case 0:
                 buffer_format_unsigned(b, data[j].u);
@@ -89,7 +89,7 @@ static void print_and_compare(Buffer* buf, char* str, const char* fmt, ...) {
 
 static void test_format_print(void) {
     char str[1024];
-    Buffer* buf = buffer_build();
+    Buffer* buf = buffer_create();
 
     print_and_compare(buf, str, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
     print_and_compare(buf, str, "A more %-5.5s thing with pi=%7.4f", "complicated", M_PI);
@@ -121,7 +121,7 @@ static void test_stack_heap(void) {
 
 static void test_pure_heap(void) {
     char str[1024];
-    Buffer* buf = buffer_build();
+    Buffer* buf = buffer_create();
 
     const char* heap = "humongously useful heap";
     print_and_compare(buf, str, "Also large enough to need the %s %s %s", heap, heap, heap);
@@ -140,7 +140,7 @@ static void test_clone(void) {
     for (int j = 0; j < ALEN(data); ++j) {
         const char* ptr = data[j].s;
         uint32_t len = strlen(data[j].s);
-        Buffer* b = buffer_build();
+        Buffer* b = buffer_create();
         buffer_append_string(b, ptr, len);
         Buffer* n = buffer_clone(b);
         ok(b->ptr != n->ptr, "buffer_clone: pointers %p and %p are different OK", b->ptr, n->ptr);
@@ -162,7 +162,7 @@ static void test_pack(void) {
     for (int j = 0; j < ALEN(data); ++j) {
         const char* ptr = data[j].s;
         uint32_t len = strlen(data[j].s);
-        Buffer* b = buffer_build();
+        Buffer* b = buffer_create();
 
         buffer_append_string(b, ptr, len);
 #if 0

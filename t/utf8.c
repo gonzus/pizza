@@ -70,7 +70,7 @@ static void test_decode(void) {
 
 static void test_encode(void) {
     int ulen = sizeof(unicode) / sizeof(unicode[0]);
-    Buffer *encoded = buffer_build();
+    Buffer *encoded = buffer_create();
     for (int j = 0; j < ulen; ++j) {
         uint32_t r = unicode[j];
         unsigned int len = utf8_encode(r, encoded);

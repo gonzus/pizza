@@ -21,19 +21,18 @@
         } \
     } while (0)
 
-static void buffer_ensure_total(Buffer* b, uint32_t total);
 static void buffer_adjust(Buffer* b, uint32_t cap);
 static void* buffer_realloc(void* ptr, uint32_t len);
 
-Buffer* buffer_build(void) {
+Buffer* buffer_create(void) {
     Buffer* b = buffer_realloc(0, sizeof(Buffer));
     buffer_init(b);
     BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
     return b;
 }
 
-Buffer* buffer_build_capacity(uint32_t cap) {
-    Buffer* b = buffer_build();
+Buffer* buffer_create_capacity(uint32_t cap) {
+    Buffer* b = buffer_create();
     buffer_ensure_total(b, cap);
     return b;
 }
@@ -59,7 +58,7 @@ void buffer_destroy(Buffer* b) {
 }
 
 Buffer* buffer_clone(const Buffer* b) {
-    Buffer* n = buffer_build();
+    Buffer* n = buffer_create();
     buffer_append_string(n, (const char*) b->ptr, b->len);
     return n;
 }
@@ -98,6 +97,24 @@ void buffer_append_string(Buffer* b, const char* str, int len) {
     buffer_ensure_extra(b, len);
     memcpy(b->ptr + b->len, str, len);
     b->len += len;
+}
+
+void buffer_append_slice(Buffer* b, Slice s) {
+    if (s.len <= 0) {
+        return;
+    }
+    buffer_ensure_extra(b, s.len);
+    memcpy(b->ptr + b->len, s.ptr, s.len);
+    b->len += s.len;
+}
+
+void buffer_append_buffer(Buffer* b, const Buffer* buf) {
+    if (buf->len <= 0) {
+        return;
+    }
+    buffer_ensure_extra(b, buf->len);
+    memcpy(b->ptr + b->len, buf->ptr, buf->len);
+    b->len += buf->len;
 }
 
 void buffer_format_signed(Buffer* b, long long l) {
@@ -145,7 +162,7 @@ void buffer_format_print(Buffer* b, const char* fmt, ...) {
 }
 
 
-static void buffer_ensure_total(Buffer* b, uint32_t total) {
+void buffer_ensure_total(Buffer* b, uint32_t total) {
     uint32_t changes = 0;
     uint32_t current = b->cap;
     while (total > current) {

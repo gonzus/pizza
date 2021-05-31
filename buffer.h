@@ -18,6 +18,7 @@
 
 #include <stdarg.h>
 #include <stdint.h>
+#include "slice.h"
 
 #define BUFFER_FLAG_SET(b, f) do { (b)->flg |= ( f); } while (0)
 #define BUFFER_FLAG_CLR(b, f) do { (b)->flg &= (~f); } while (0)
@@ -63,16 +64,19 @@ static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
     } while (0)
 
 // Build an empty / default-sized Buffer.
-Buffer* buffer_build(void);
+Buffer* buffer_create(void);
 
 // Build a Buffer with defined capacity.
-Buffer* buffer_build_capacity(uint32_t cap);
+Buffer* buffer_create_capacity(uint32_t cap);
 
 // Initialize Buffer, whether allocated in stack or heap.
 void buffer_init(Buffer* b);
 
 // Destroy a Buffer.
 void buffer_destroy(Buffer* b);
+
+// Ensure buffer has space for total bytes.
+void buffer_ensure_total(Buffer* b, uint32_t total);
 
 // Clone an existing Buffer.
 Buffer* buffer_clone(const Buffer* b);
@@ -86,6 +90,12 @@ void buffer_append_byte(Buffer* b, uint8_t u);
 // Append a string of given length to current contents of Buffer.
 // If len < 0, use null terminator, otherwise copy len bytes
 void buffer_append_string(Buffer* b, const char* str, int len);
+
+// Append a slice to current contents of Buffer.
+void buffer_append_slice(Buffer* b, Slice s);
+
+// Append a buffer to current contents of Buffer.
+void buffer_append_buffer(Buffer* b, const Buffer* buf);
 
 // Append a formatted signed / unsigned integer to current contents of Buffer.
 void buffer_format_signed(Buffer* b, long long l);

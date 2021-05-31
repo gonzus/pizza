@@ -10,8 +10,8 @@ static const char* empty_string = "";
 static void test_sizes(void) {
     int size_ptr = sizeof(void*);
     cmp_ok(sizeof(Slice), "==", 2*size_ptr, "sizeof(Slice)");
-    cmp_ok(sizeof(Byte) , "==", 1         , "sizeof(Byte)");
-    cmp_ok(sizeof(Byte*), "==", size_ptr  , "sizeof(Byte*)");
+    cmp_ok(sizeof(uint8_t) , "==", 1         , "sizeof(uint8_t)");
+    cmp_ok(sizeof(uint8_t*), "==", size_ptr  , "sizeof(uint8_t*)");
 }
 
 static void test_slice_is_null(void) {
@@ -19,6 +19,7 @@ static void test_slice_is_null(void) {
 }
 
 static void test_slice_is_empty(void) {
+    cmp_ok(!!slice_is_empty(SLICE_NULL), "==", !!1, "slice_is_empty(SLICE_NULL)");
     Slice s = slice_wrap_string(empty_string);
     cmp_ok(!!slice_is_empty(s), "==", !!1, "slice_is_empty(\"\")");
 }
@@ -58,7 +59,7 @@ static void test_slice_compare(void) {
 static void test_slice_find_byte(void) {
     static struct {
         const char* w;
-        Byte b;
+        uint8_t b;
         int pos;
     } string_info[] = {
         { "foo"                 , 'o'  ,  1 },
@@ -72,7 +73,7 @@ static void test_slice_find_byte(void) {
 
     for (int j = 0; j < ALEN(string_info); ++j) {
         const char* W = string_info[j].w;
-        Byte B = string_info[j].b;
+        uint8_t B = string_info[j].b;
         int e = string_info[j].pos;
         Slice w = slice_wrap_string(W);
 #if 0
@@ -147,7 +148,7 @@ static void test_slice_tokenize(void) {
 
         Slice str = slice_wrap_string(STR);
         Slice sep = slice_wrap_string(SEP);
-        Slice tok = SLICE_NULL;
+        SliceLookup lookup = {0};
 
         char buf[1024];
         strcpy(buf, STR);
@@ -156,7 +157,7 @@ static void test_slice_tokenize(void) {
         int sdone = 0;
         int cdone = 0;
         while (1) {
-            if (!slice_tokenize(str, sep, &tok)) {
+            if (!slice_tokenize(str, sep, &lookup)) {
                 sdone = 1;
             }
             // if (pos > 0) sdone = 1;
@@ -181,20 +182,14 @@ static void test_slice_tokenize(void) {
                 break;
             }
             int len = strlen(ctok);
-            cmp_ok(tok.len, "==", len, "slice_tokenize([%s]) => token %d with %d bytes", STR, pos, len);
-            cmp_mem(tok.ptr, ctok, tok.len, "slice_tokenize([%s]) => token %d = [%s] OK", STR, pos, ctok);
+            cmp_ok(lookup.res.len, "==", len, "slice_tokenize([%s]) => token %d with %d bytes", STR, pos, len);
+            cmp_mem(lookup.res.ptr, ctok, lookup.res.len, "slice_tokenize([%s]) => token %d = [%s] OK", STR, pos, ctok);
             ++pos;
         }
     }
 }
 
 static void test_slice_split(void) {
-    typedef size_t (*Func)(const char *s, const char *reject);
-    static Func func[] = {
-        strcspn,
-        strspn,
-    };
-
     static struct {
         const char* str;
         const char* set;
@@ -218,14 +213,29 @@ static void test_slice_split(void) {
 
         Slice str = slice_wrap_string(STR);
         Slice set = slice_wrap_string(SET);
-        for (int k = 0; k < 2; ++k) {
-            Func strfp = func[k];
-            bool inc = (bool) k;
-            Slice l;
-            slice_split(str, inc, set, &l, 0);
-            int len = strfp(STR, SET);
-            cmp_ok(l.len, "==", len, "slice_split([%s], [%s], %s) => string with %d bytes", STR, SET, inc ? "inc" : "exc", len);
-            cmp_mem(l.ptr, STR, l.len, "slice_split([%s], [%s], %s) => [%*.s] OK", STR, SET, inc ? "inc" : "exc", len, STR);
+        {
+            SliceLookup lookup = {0};
+
+            int len = strcspn(STR, SET);
+            bool found = slice_split_excluded(str, set, &lookup);
+            if (!found) {
+                cmp_ok(0, "==", len, "slice_split_excluded([%s], [%s]) => not found, %d bytes", STR, SET, len);
+            } else {
+                cmp_ok(lookup.res.len, "==", len, "slice_split_excluded([%s], [%s]) => string with %d bytes", STR, SET, len);
+                cmp_mem(lookup.res.ptr, STR, lookup.res.len, "slice_split_excluded([%s], [%s]) => [%*.s] OK", STR, SET, len, STR);
+            }
+        }
+        {
+            SliceLookup lookup = {0};
+
+            int len = strspn(STR, SET);
+            bool found = slice_split_included(str, set, &lookup);
+            if (!found) {
+                cmp_ok(0, "==", len, "slice_split_included([%s], [%s]) => not found, %d bytes", STR, SET, len);
+            } else {
+                cmp_ok(lookup.res.len, "==", len, "slice_split_included([%s], [%s]) => string with %d bytes", STR, SET, len);
+                cmp_mem(lookup.res.ptr, STR, lookup.res.len, "slice_split_included([%s], [%s]) => [%*.s] OK", STR, SET, len, STR);
+            }
         }
     }
 }

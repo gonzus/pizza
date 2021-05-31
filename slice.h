@@ -2,34 +2,35 @@
 #define SLICE_H_
 
 /*
- * Slice -- read-only access to an array of bytes.
+ * Slice -- a purely value type
+ * read-only access to an array of bytes.
  * It does NOT assume data has a null terminator at the end.
  * Do NOT use with C standard strXXX() functions.
  * Small enough to be passed around by copying, not as a pointer.
  */
 
 #include <stdbool.h>
-
-#ifndef PIZZA_BYTE_SIZE
-#define PIZZA_BYTE_SIZE
 #include <stdint.h>
-typedef uint8_t  Byte;  // type for bytes (0..255 = 2^8-1)
-typedef uint32_t Size;  // type for sizes (0..2^32-1)
-#endif
 
 typedef struct Slice {
-    const Byte* ptr;    // pointer to beginning of data
-    Size len;           // length of data
+    const uint8_t* ptr; // pointer to beginning of data
+    uint32_t len;       // length of data
 } Slice;
 
-// The null Slice.
+// "context" when calling functions to tokenize / split
+typedef struct SliceLookup {
+    uint8_t map[256];
+    Slice res;
+} SliceLookup;
+
+// The single null Slice.
 extern Slice SLICE_NULL;
 
-// Return true if Slice is null (no ptr).
+// Return true if Slice is null (invalid ptr).
 #define slice_is_null(s) ((s).ptr == 0)
 
-// Return true if Slice is empty (valid ptr, zero len).
-#define slice_is_empty(s) ((s).ptr != 0 && (s).len == 0)
+// Return true if Slice is empty (invalid ptr OR zero len).
+#define slice_is_empty(s) ((s).ptr == 0 || (s).len == 0)
 
 // Wrap a string (const char*) into a Slice.
 // Computes the length using strlen(), so string MUST be null-terminated.
@@ -37,7 +38,7 @@ Slice slice_wrap_string(const char* string);
 
 // Wrap a given number of bytes from an array of Bytes (or a const char*) into a Slice.
 // String doesn't have to be null-terminated.
-Slice slice_wrap_ptr_len(const Byte* ptr, Size len);
+Slice slice_wrap_ptr_len(const uint8_t* ptr, uint32_t len);
 
 
 /*
@@ -50,7 +51,7 @@ int slice_compare(Slice l, Slice r);
 
 // Find byte in Slice.
 // Return SLICE_NULL if not found.
-Slice slice_find_byte(Slice s, Byte t);
+Slice slice_find_byte(Slice s, uint8_t t);
 
 // Find Slice in Slice.
 // Return SLICE_NULL if not found.
@@ -58,26 +59,35 @@ Slice slice_find_slice(Slice s, Slice t);
 
 // Tokenize Slice by repeatedly searching for bytes in separators.
 // Return true if token was found, false otherwise.
-// Return each found token in tok.
+// Return each token in lookup.res; only valid when true was returned.
 // Intended to be used like this:
 //
-//   for (Slice tok = SLICE_NULL; slice_tokenize(src, sep, &tok); ) {
-//     // do something with tok
+//   SliceLookup lookup = {0};
+//   while (slice_tokenize(src, sep, &lookup)) {
+//     // do something with lookup.res
 //   }
-bool slice_tokenize(Slice src, Slice sep, Slice* tok);
-
-// Find longest span at beginning of Slice src with characters included in / excluded from set.
-// Returns left and right Slices.
-bool slice_split(Slice src, bool inc, Slice set, Slice* l, Slice* r);
+bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup);
 
 // Find longest span at beginning of Slice src with characters included in set.
-// Returns left and right Slices.
-// Calls slice_split() with inc=true.
-bool slice_split_included(Slice src, Slice set, Slice* l, Slice* r);
+// Return true if span exists, false otherwise.
+// Return each span in lookup.res; only valid when true was returned.
+// Intended to be used like this:
+//
+//   SliceLookup lookup = {0};
+//   while (slice_split_included(src, set, &lookup)) {
+//     // do something with lookup.res
+//   }
+bool slice_split_included(Slice src, Slice set, SliceLookup* lookup);
 
 // Find longest span at beginning of Slice src with characters excluded from set.
-// Returns left and right Slices.
-// Calls slice_split() with inc=false.
-bool slice_split_excluded(Slice src, Slice set, Slice* l, Slice* r);
+// Return true if span exists, false otherwise.
+// Return each span in lookup.res; only valid when true was returned.
+// Intended to be used like this:
+//
+//   SliceLookup lookup = {0};
+//   while (slice_split_excluded(src, set, &lookup)) {
+//     // do something with lookup.res
+//   }
+bool slice_split_excluded(Slice src, Slice set, SliceLookup* lookup);
 
 #endif

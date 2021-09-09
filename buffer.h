@@ -17,6 +17,7 @@
  */
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 #include "slice.h"
 
@@ -25,8 +26,7 @@
 #define BUFFER_FLAG_CHK(b, f)    ( (b)->flg &  ( f) )
 
 // Flags used for a Buffer.
-#define BUFFER_FLAG_BUF_IN_HEAP (1U<<0)
-#define BUFFER_FLAG_PTR_IN_HEAP (1U<<1)
+#define BUFFER_FLAG_PTR_IN_HEAP (1U<<0)
 
 // Total size we want Buffer struct to have.
 #define BUFFER_DESIRED_SIZE 64UL
@@ -63,23 +63,28 @@ static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
         (b)->len = 0; \
     } while (0)
 
-// Build an empty / default-sized Buffer.
-Buffer* buffer_create(void);
+// Allocate a Buffer on heap memory.
+// After allocation, run the constructor on the buffer.
+Buffer* buffer_allocate(size_t cap);
 
-// Build a Buffer with defined capacity.
-Buffer* buffer_create_capacity(uint32_t cap);
+// Release a Buffer previously allocated on the heap.
+// Before releasing, run the destructor on the buffer.
+void buffer_release(Buffer* b);
 
-// Initialize Buffer, whether allocated in stack or heap.
-void buffer_init(Buffer* b);
+// Buffer constructor.
+// Can be run on a Buffer from the stack or heap.
+// Optionally pass in a minimum capacity; 0 means use the default.
+void buffer_build(Buffer* b, size_t cap);
 
-// Destroy a Buffer.
+// Buffer destructor.
+// Can be run on a Buffer from the stack or heap.
 void buffer_destroy(Buffer* b);
+
+// Clone an existing Buffer into another.
+void buffer_clone(const Buffer* b, Buffer* t);
 
 // Ensure buffer has space for total bytes.
 void buffer_ensure_total(Buffer* b, uint32_t total);
-
-// Clone an existing Buffer.
-Buffer* buffer_clone(const Buffer* b);
 
 // Reallocate memory so that current data fits exactly into Buffer.
 void buffer_pack(Buffer* b);
@@ -88,7 +93,7 @@ void buffer_pack(Buffer* b);
 void buffer_append_byte(Buffer* b, uint8_t u);
 
 // Append a string of given length to current contents of Buffer.
-// If len < 0, use null terminator, otherwise copy len bytes
+// If len < 0, use null terminator, otherwise copy len bytes.
 void buffer_append_string(Buffer* b, const char* str, int len);
 
 // Append a slice to current contents of Buffer.
@@ -106,7 +111,7 @@ void buffer_format_double(Buffer* b, double d);
 
 // Append a printf-formatted string to current contents of Buffer.
 // THESE ARE EXPENSIVE.
-void buffer_format_print(Buffer* b, const char* fmt, ...);
 void buffer_format_vprint(Buffer* b, const char* fmt, va_list ap);
+void buffer_format_print(Buffer* b, const char* fmt, ...);
 
 #endif

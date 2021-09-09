@@ -70,7 +70,7 @@ static void test_decode(void) {
 
 static void test_encode(void) {
     int ulen = sizeof(unicode) / sizeof(unicode[0]);
-    Buffer *encoded = buffer_create();
+    Buffer *encoded = buffer_allocate(0);
     for (int j = 0; j < ulen; ++j) {
         uint32_t r = unicode[j];
         unsigned int len = utf8_encode(r, encoded);
@@ -80,7 +80,7 @@ static void test_encode(void) {
         uint8_t b = encoded->ptr[j];
         cmp_ok(b, "==", utf8[j], "utf8_encode pos %d OK => 0x%x", j, b);
     }
-    buffer_destroy(encoded);
+    buffer_release(encoded);
 }
 
 int main (int argc, char* argv[]) {

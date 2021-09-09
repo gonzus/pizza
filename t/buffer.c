@@ -48,7 +48,7 @@ static void test_format_numbers(void) {
     };
     for (int j = 0; j < ALEN(data); ++j) {
         char tmp[1024];
-        Buffer* b = buffer_create();
+        Buffer* b = buffer_allocate(0);
         switch (data[j].t) {
             case 0:
                 buffer_format_unsigned(b, data[j].u);
@@ -67,7 +67,7 @@ static void test_format_numbers(void) {
         }
 
         cmp_mem(b->ptr, tmp, b->len, "buffer_format_NUMBER %s => OK", tmp);
-        buffer_destroy(b);
+        buffer_release(b);
     }
 }
 
@@ -89,18 +89,18 @@ static void print_and_compare(Buffer* buf, char* str, const char* fmt, ...) {
 
 static void test_format_print(void) {
     char str[1024];
-    Buffer* buf = buffer_create();
+    Buffer* b = buffer_allocate(0);
 
-    print_and_compare(buf, str, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
-    print_and_compare(buf, str, "A more %-5.5s thing with pi=%7.4f", "complicated", M_PI);
+    print_and_compare(b, str, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
+    print_and_compare(b, str, "A more %-5.5s thing with pi=%7.4f", "complicated", M_PI);
 
-    buffer_destroy(buf);
+    buffer_release(b);
 }
 
 static void test_stack(void) {
     char str[1024];
     Buffer buf;
-    buffer_init(&buf);
+    buffer_build(&buf, 0);
 
     print_and_compare(&buf, str, "This fits on the %s", "stack");
     print_and_compare(&buf, str, "This ALSO fits there");
@@ -111,7 +111,7 @@ static void test_stack(void) {
 static void test_stack_heap(void) {
     char str[1024];
     Buffer buf;
-    buffer_init(&buf);
+    buffer_build(&buf, 0);
 
     const char* heap = "extremely useful heap";
     print_and_compare(&buf, str, "This is large enough to need the %s %s %s", heap, heap, heap);
@@ -121,12 +121,12 @@ static void test_stack_heap(void) {
 
 static void test_pure_heap(void) {
     char str[1024];
-    Buffer* buf = buffer_create();
+    Buffer* b = buffer_allocate(0);
 
     const char* heap = "humongously useful heap";
-    print_and_compare(buf, str, "Also large enough to need the %s %s %s", heap, heap, heap);
+    print_and_compare(b, str, "Also large enough to need the %s %s %s", heap, heap, heap);
 
-    buffer_destroy(buf);
+    buffer_release(b);
 }
 
 static void test_clone(void) {
@@ -140,14 +140,15 @@ static void test_clone(void) {
     for (int j = 0; j < ALEN(data); ++j) {
         const char* ptr = data[j].s;
         uint32_t len = strlen(data[j].s);
-        Buffer* b = buffer_create();
+        Buffer* b = buffer_allocate(0);
         buffer_append_string(b, ptr, len);
-        Buffer* n = buffer_clone(b);
+        Buffer* n = buffer_allocate(0);
+        buffer_clone(b, n);
         ok(b->ptr != n->ptr, "buffer_clone: pointers %p and %p are different OK", b->ptr, n->ptr);
         cmp_ok(b->len, "==", n->len, "buffer_clone: lengths %d and %d are equal OK", b->len, n->len);
         cmp_mem(b->ptr, n->ptr, b->len, "buffer_clone: %d bytes OK", b->len);
-        buffer_destroy(n);
-        buffer_destroy(b);
+        buffer_release(n);
+        buffer_release(b);
     }
 }
 
@@ -162,7 +163,7 @@ static void test_pack(void) {
     for (int j = 0; j < ALEN(data); ++j) {
         const char* ptr = data[j].s;
         uint32_t len = strlen(data[j].s);
-        Buffer* b = buffer_create();
+        Buffer* b = buffer_allocate(0);
 
         buffer_append_string(b, ptr, len);
 #if 0

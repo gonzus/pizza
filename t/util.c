@@ -22,7 +22,7 @@ static void test_detailed_formatting(void) {
         { 9*86400000000, "1W2D" },
         { 100*86400000000+4*3600000000+15*60000000+9*1000000, "14W2D4h15m9s" },
     };
-    Buffer *b = buffer_create();
+    Buffer *b = buffer_allocate(0);
     for (int j = 0; j < ALEN(data); ++j) {
         unsigned long us = data[j].us;
         const char* expected = data[j].formatted;
@@ -50,7 +50,7 @@ static void test_abbreviated_formatting(void) {
         { 9*86400000000, "1.29W" },
         { 100*86400000000+4*3600000000+15*60000000+9*1000000, "14.31W" },
     };
-    Buffer *b = buffer_create();
+    Buffer *b = buffer_allocate(0);
     for (int j = 0; j < ALEN(data); ++j) {
         unsigned long us = data[j].us;
         const char* expected = data[j].formatted;

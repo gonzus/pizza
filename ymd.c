@@ -43,6 +43,12 @@ const char* ymd_month_name(int m) {
     return month_name[mm];
 }
 
+static int ymd_valid_ymd(int ymd, int y, int m, int d) {
+    return (ymd == 0 &&
+            m >= 1 && m <= YMD_MONTHS_PER_YEAR &&
+            d >= 1 && d <= ymd_days_in_month(y, m));
+}
+
 int ymd_decode(int ymd, int* y, int* m, int* d) {
     int dd = ymd % 100;
     ymd /= 100;
@@ -51,9 +57,7 @@ int ymd_decode(int ymd, int* y, int* m, int* d) {
     int yy = ymd % 10000;
     ymd /= 10000;
 
-    if (ymd != 0 ||
-        mm < 1 || mm > 12 ||
-        dd < 1 || dd > ymd_days_in_month(yy, mm)) {
+    if (!ymd_valid_ymd(ymd, yy, mm, dd)) {
         yy = mm = dd = 0;
     }
 
@@ -71,8 +75,7 @@ int ymd_decode(int ymd, int* y, int* m, int* d) {
 }
 
 int ymd_encode(int y, int m, int d) {
-    if (m < 1 || m > 12 ||
-        d < 1 || d > ymd_days_in_month(y, m)) {
+    if (!ymd_valid_ymd(0, y, m, d)) {
         y = m = d = 0;
     }
     return YMD_ENCODE(y, m, d);

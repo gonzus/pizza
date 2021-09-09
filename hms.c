@@ -1,6 +1,13 @@
 #include <time.h>
 #include "hms.h"
 
+static int hms_valid_hms(int hms, int h, int m, int s) {
+    return (hms == 0 &&
+            h >= 0 && h < HMS_HOURS_PER_DAY &&
+            m >= 0 && m < HMS_MINUTES_PER_HOUR &&
+            s >= 0 && s < HMS_SECONDS_PER_MINUTE);
+}
+
 int hms_decode(int hms, int* h, int* m, int* s) {
     int ss = hms % 100;
     hms /= 100;
@@ -9,10 +16,7 @@ int hms_decode(int hms, int* h, int* m, int* s) {
     int hh = hms % 100;
     hms /= 100;
 
-    if (hms != 0 ||
-        hh < 0 || hh > 23 ||
-        mm < 0 || mm > 59 ||
-        ss < 0 || ss > 59) {
+    if (!hms_valid_hms(hms, hh, mm, ss)) {
         hh = mm = ss = 0;
     }
 
@@ -30,9 +34,7 @@ int hms_decode(int hms, int* h, int* m, int* s) {
 }
 
 int hms_encode(int h, int m, int s) {
-    if (h < 0 || h > 23 ||
-        m < 0 || m > 59 ||
-        s < 0 || s > 59) {
+    if (!hms_valid_hms(0, h, m, s)) {
         h = m = s = 0;
     }
     return (h * 100 + m) * 100 + s;

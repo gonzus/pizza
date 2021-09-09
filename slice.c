@@ -6,17 +6,18 @@ Slice SLICE_NULL = { .ptr = 0, .len = 0 };
 static bool slice_split(Slice src, bool inc, Slice set, SliceLookup* lookup);
 static void lookup_init(SliceLookup* lookup, Slice src, Slice set);
 
-Slice slice_wrap_ptr_len(const uint8_t* ptr, uint32_t len) {
+Slice slice_build_from_ptr_len(const uint8_t* ptr, size_t len) {
     Slice s = { .ptr = ptr, .len = len };
     return s;
 }
 
-Slice slice_wrap_string(const char* string) {
-    return slice_wrap_ptr_len((const uint8_t*) string, string == 0 ? 0 : strlen(string));
+Slice slice_build_from_string(const char* string) {
+    int len = string == 0 ? 0 : strlen(string);
+    return slice_build_from_ptr_len((const uint8_t*) string, len);
 }
 
 int slice_compare(Slice l, Slice r) {
-    for (uint32_t j = 0; 1; ++j) {
+    for (size_t j = 0; 1; ++j) {
         if (j >= l.len && j >= r.len) {
             return 0;
         }
@@ -32,19 +33,20 @@ int slice_compare(Slice l, Slice r) {
         if (l.ptr[j] > r.ptr[j]) {
             return +1;
         }
+        // they are equal so far, must keep looking
     }
     return 0;
 }
 
 Slice slice_find_byte(Slice s, uint8_t t) {
-    uint32_t j = 0;
+    size_t j = 0;
     for (j = 0; j < s.len; ++j) {
         if (s.ptr[j] == t) {
             break;
         }
     }
     if (j < s.len) {
-        return slice_wrap_ptr_len(s.ptr + j, 1);
+        return slice_build_from_ptr_len(s.ptr + j, s.len - j);
     }
     return SLICE_NULL;
 }
@@ -57,19 +59,19 @@ Slice slice_find_slice(Slice s, Slice t) {
 #if defined(_GNU_SOURCE)
     uint8_t* p = memmem(s.ptr, s.len, t.ptr, t.len);
     if (p) {
-        return slice_wrap_ptr_len(p, t.len);
+        return slice_build_from_ptr_len(p, t.len);
     }
 #else
     // TODO: implement a good search algorihtm here?
-    uint32_t j = 0;
-    uint32_t top = s.len - t.len + 1;
+    size_t j = 0;
+    size_t top = s.len - t.len + 1;
     for (j = 0; j < top; ++j) {
         if (memcmp(s.ptr + j, t.ptr, t.len) == 0) {
             break;
         }
     }
     if (j < top) {
-        return slice_wrap_ptr_len(s.ptr + j, t.len);
+        return slice_build_from_ptr_len(s.ptr + j, t.len);
     }
 #endif
 
@@ -78,7 +80,7 @@ Slice slice_find_slice(Slice s, Slice t) {
 
 bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup) {
     bool first = !lookup->res.ptr;
-    uint32_t start = 0;
+    size_t start = 0;
     if (!first) {
         // not the first time we were called -- we already found a previous
         // token, and stopped at a separator.
@@ -96,10 +98,10 @@ bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup) {
 
     // current position and remaining length
     const uint8_t* p = src.ptr + start;
-    uint32_t l = src.len - start;
+    size_t l = src.len - start;
 
     // skip all separators
-    uint32_t j = 0;
+    size_t j = 0;
     for (; j < l; ++j) {
         if (!lookup->map[p[j]]) {
             break;
@@ -110,7 +112,7 @@ bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup) {
     }
 
     // we are looking at a token -- find separator after it
-    uint32_t k = j;
+    size_t k = j;
     for (; k < l; ++k) {
         if (lookup->map[p[k]]) {
             break;
@@ -118,7 +120,7 @@ bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup) {
     }
 
     // remember where separator was
-    lookup->res = slice_wrap_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
+    lookup->res = slice_build_from_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
 
     return true; // found next token
 }
@@ -133,7 +135,7 @@ bool slice_split_excluded(Slice src, Slice set, SliceLookup* lookup) {
 
 static bool slice_split(Slice src, bool inc, Slice set, SliceLookup* lookup) {
     bool first = !lookup->res.ptr;
-    uint32_t start = 0;
+    size_t start = 0;
     if (!first) {
         // not the first time we were called -- we already found a previous
         // span, and stopped at a non-span character.
@@ -151,9 +153,9 @@ static bool slice_split(Slice src, bool inc, Slice set, SliceLookup* lookup) {
 
     // current position and remaining length
     const uint8_t* p = src.ptr + start;
-    uint32_t l = src.len - start;
+    size_t l = src.len - start;
 
-    uint32_t j = 0;
+    size_t j = 0;
     if (!first) {
         // skip all non-span characters
         for (; j < l; ++j) {
@@ -168,7 +170,7 @@ static bool slice_split(Slice src, bool inc, Slice set, SliceLookup* lookup) {
     }
 
     // we are looking at a span -- find non-span character after it
-    uint32_t k = j;
+    size_t k = j;
     for (; k < l; ++k) {
         bool match = lookup->map[src.ptr[k]];
         if (inc ? !match : match) {
@@ -177,15 +179,15 @@ static bool slice_split(Slice src, bool inc, Slice set, SliceLookup* lookup) {
     }
 
     // remember where non-span character was
-    lookup->res = slice_wrap_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
+    lookup->res = slice_build_from_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
 
     return true; // found next span
 }
 
 static void lookup_init(SliceLookup* lookup, Slice src, Slice set) {
-    lookup->res = slice_wrap_ptr_len(src.ptr, 0);
+    lookup->res = slice_build_from_ptr_len(src.ptr, 0);
     memset(lookup->map, 0, 256);
-    for (uint32_t j = 0; j < set.len; ++j) {
+    for (size_t j = 0; j < set.len; ++j) {
         lookup->map[set.ptr[j]] = 1;
     }
 }

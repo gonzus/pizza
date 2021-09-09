@@ -10,11 +10,12 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct Slice {
     const uint8_t* ptr; // pointer to beginning of data
-    uint32_t len;       // length of data
+    size_t len;         // length of data
 } Slice;
 
 // "context" when calling functions to tokenize / split
@@ -32,13 +33,13 @@ extern Slice SLICE_NULL;
 // Return true if Slice is empty (invalid ptr OR zero len).
 #define slice_is_empty(s) ((s).ptr == 0 || (s).len == 0)
 
-// Wrap a string (const char*) into a Slice.
+// Slice constructor from a string (const char*).
 // Computes the length using strlen(), so string MUST be null-terminated.
-Slice slice_wrap_string(const char* string);
+Slice slice_build_from_string(const char* string);
 
-// Wrap a given number of bytes from an array of Bytes (or a const char*) into a Slice.
-// String doesn't have to be null-terminated.
-Slice slice_wrap_ptr_len(const uint8_t* ptr, uint32_t len);
+// Slice constructor from a pointer and a length.
+// Pointed data doesn't have to be null-terminated.
+Slice slice_build_from_ptr_len(const uint8_t* ptr, size_t len);
 
 
 /*
@@ -50,6 +51,7 @@ Slice slice_wrap_ptr_len(const uint8_t* ptr, uint32_t len);
 int slice_compare(Slice l, Slice r);
 
 // Find byte in Slice.
+// Return new Slice from byte found to the end of the given Slice.
 // Return SLICE_NULL if not found.
 Slice slice_find_byte(Slice s, uint8_t t);
 

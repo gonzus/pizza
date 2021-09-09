@@ -56,7 +56,7 @@ static void test_sizes(void) {
 
 static void test_decode(void) {
     int len = sizeof(utf8) / sizeof(utf8[0]);
-    Slice encoded = slice_wrap_ptr_len(utf8, len);
+    Slice encoded = slice_build_from_ptr_len(utf8, len);
 
     int pos = 0;
     for (Slice left = encoded; !slice_is_empty(left); ) {

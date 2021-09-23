@@ -1,6 +1,10 @@
 #ifndef MTWISTER_H_
 #define MTWISTER_H_
 
+/*
+ * Random number generation using Mersenne Twister.
+ */
+
 #include <stdint.h>
 
 #define MTWISTER_STATE 624
@@ -15,6 +19,9 @@ void mtwister_build_from_seed(MTwister* mt, const uint32_t seed);
 
 // Initialize with a numeric key in an array.
 void mtwister_build_from_key(MTwister* mt, const uint32_t key[], int len);
+
+// Initialize with a "random" seed.
+void mtwister_build_from_random_seed(MTwister* mt);
 
 // Generates a uint32_t random number on interval [0, 2^32 - 1]
 uint32_t mtwister_generate_u32(MTwister* mt);

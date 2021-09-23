@@ -1,3 +1,4 @@
+#include <time.h>
 #include "mtwister.h"
 
 // Define MT19937 constants (32-bit RNG)
@@ -64,6 +65,13 @@ void mtwister_build_from_key(MTwister* mt, const uint32_t key[], int len) {
 
     mt->state[0] = 0x80000000U; // MSB is 1; assuring non-zero initial array
     mt->index = N;
+}
+
+// Initialize with a "random" seed.
+void mtwister_build_from_random_seed(MTwister* mt) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    mtwister_build_from_seed(mt, ts.tv_nsec);
 }
 
 static void twist(MTwister* mt) {

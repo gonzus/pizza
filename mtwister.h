@@ -18,7 +18,7 @@ typedef struct MTwister {
 void mtwister_build_from_seed(MTwister* mt, const uint32_t seed);
 
 // Initialize with a numeric key in an array.
-void mtwister_build_from_key(MTwister* mt, const uint32_t key[], int len);
+void mtwister_build_from_key(MTwister* mt, const uint32_t key[], uint32_t len);
 
 // Initialize with a "random" seed.
 void mtwister_build_from_random_seed(MTwister* mt);

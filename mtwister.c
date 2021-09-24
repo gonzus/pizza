@@ -1,29 +1,28 @@
 #include <time.h>
 #include "mtwister.h"
 
-// Define MT19937 constants (32-bit RNG)
-enum {
-    // W = 32, (omitting this, implied in types)
-    D = 0xffffffffU,
-    N = MTWISTER_STATE,
-    M = 397,
-    R = 31,
-    A = 0X9908b0df,
-    F = 1812433253,
-    U = 11,
-    Q = 30,
+/*
+ * Define MT19937 constants (32-bit RNG)
+ */
+const uint32_t D = 0xffffffffU;
+const uint32_t N = MTWISTER_STATE;
+const uint32_t M = 397;
+const uint32_t R = 31;
+const uint32_t A = 0x9908b0df;
+const uint32_t F = 1812433253;
+const uint32_t U = 11;
+const uint32_t Q = 30;
 
-    S = 7,
-    B = 0X9d2c5680,
+const uint32_t S = 7;
+const uint32_t B = 0x9d2c5680;
 
-    T = 15,
-    C = 0Xefc60000,
+const uint32_t T = 15;
+const uint32_t C = 0xefc60000;
 
-    L = 18,
+const uint32_t L = 18;
 
-    MASK_LOWER = (1U << R) - 1,
-    MASK_UPPER = (1U << R)
-};
+const uint32_t MASK_LOWER = (1U << R) - 1;
+const uint32_t MASK_UPPER = (1U << R);
 
 // Initialize with a given numeric seed.
 void mtwister_build_from_seed(MTwister* mt, const uint32_t seed) {
@@ -35,12 +34,12 @@ void mtwister_build_from_seed(MTwister* mt, const uint32_t seed) {
 }
 
 // Initialize with a numeric key in an array.
-void mtwister_build_from_key(MTwister* mt, const uint32_t key[], int len) {
+void mtwister_build_from_key(MTwister* mt, const uint32_t key[], uint32_t len) {
     mtwister_build_from_seed(mt, 19650218U); // I suspect Takuji Nishimura was born on this date...
-    int i = 1;
-    int j = 0;
-    int k = (N > len ? N : len);
-    for (; k; --k) {
+    uint32_t i = 1;
+    uint32_t j = 0;
+    uint32_t k = 0;
+    for (k = N > len ? N : len; k; --k) {
         mt->state[i] = (mt->state[i] ^ ((mt->state[i - 1] ^ (mt->state[i - 1] >> Q)) * 1664525U)) + key[j] + j; // non linear
         mt->state[i] &= D; // for WORDSIZE > 32 machines
         ++i;

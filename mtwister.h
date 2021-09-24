@@ -3,6 +3,9 @@
 
 /*
  * Random number generation using Mersenne Twister.
+ *
+ * Stole most of the implementation and the tests from here:
+ * http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html
  */
 
 #include <stdint.h>

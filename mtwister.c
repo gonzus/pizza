@@ -2,6 +2,15 @@
 #include "mtwister.h"
 
 /*
+ * This will be the step in the twist() loop
+ */
+#define STEP(state, tgt, src, nxt, za) \
+    do { \
+        uint32_t y = (state[tgt] & MASK_UPPER) | (state[nxt] & MASK_LOWER); \
+        state[tgt] = state[src] ^ (y >> 1) ^ za[y & 1]; \
+    } while (0)
+
+/*
  * Define MT19937 constants (32-bit RNG)
  */
 const uint32_t D = 0xffffffffU;
@@ -11,7 +20,7 @@ const uint32_t R = 31;
 const uint32_t A = 0x9908b0df;
 const uint32_t F = 1812433253;
 const uint32_t U = 11;
-const uint32_t Q = 30;
+const uint32_t Q = R - 1;
 
 const uint32_t S = 7;
 const uint32_t B = 0x9d2c5680;
@@ -24,6 +33,9 @@ const uint32_t L = 18;
 const uint32_t MASK_LOWER = (1U << R) - 1;
 const uint32_t MASK_UPPER = (1U << R);
 
+// Use either a 0 or the A value
+static uint32_t zero_or_A[] = { 0, A };
+
 // Initialize with a given numeric seed.
 void mtwister_build_from_seed(MTwister* mt, const uint32_t seed) {
     mt->state[0] = seed;
@@ -35,7 +47,8 @@ void mtwister_build_from_seed(MTwister* mt, const uint32_t seed) {
 
 // Initialize with a numeric key in an array.
 void mtwister_build_from_key(MTwister* mt, const uint32_t key[], uint32_t len) {
-    mtwister_build_from_seed(mt, 19650218U); // I suspect Takuji Nishimura was born on this date...
+    // I suspect Takuji Nishimura was born on this date...
+    mtwister_build_from_seed(mt, 19650218U);
     uint32_t i = 1;
     uint32_t j = 0;
     uint32_t k = 0;
@@ -74,13 +87,15 @@ void mtwister_build_from_random_seed(MTwister* mt) {
 }
 
 static void twist(MTwister* mt) {
-    for (uint32_t j = 0; j < N; ++j) {
-        uint32_t x = (mt->state[j] & MASK_UPPER) + (mt->state[(j + 1) % N] & MASK_LOWER);
-        uint32_t xA = x >> 1;
-        if (x & 0x1) {
-            xA ^= A;
-        }
-        mt->state[j] = mt->state[(j + M) % N] ^ xA;
+    // This is just a loop in [0, N), but unrolled to avoid arithmetic % N
+    for (uint32_t j = 0; j < N - M; ++j) {
+        STEP(mt->state, j, j + M, j + 1, zero_or_A);
+    }
+    for (uint32_t j = N - M; j < N - 1; ++j) {
+        STEP(mt->state, j, j + M - N, j + 1, zero_or_A);
+    }
+    for (uint32_t j = N - 1; j < N; ++j) {
+        STEP(mt->state, j, j + M - N, 0, zero_or_A);
     }
     mt->index = 0;
 }

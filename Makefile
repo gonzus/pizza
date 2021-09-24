@@ -33,6 +33,7 @@ C_SRC_LIB = \
 	timer.c \
 	thrpool.c \
 	mtwister.c \
+	hash.c \
 	util.c \
 
 C_OBJ_LIB = $(C_SRC_LIB:.c=.o)

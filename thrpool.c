@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include "util.h"
 #include "thrpool.h"
 
 // Keep in mind that each pthread needs stack space
@@ -63,26 +64,31 @@ ThrPool* thrpool_create(int thread_count, int queue_size) {
             break;
         }
 
-        tp = (ThrPool*) malloc(sizeof(ThrPool));
+        size_t pool_bytes = sizeof(ThrPool);
+        tp = (ThrPool*) memory_realloc(0, pool_bytes);
         if (!tp) {
             break;
         }
 
         // Initialize
-        memset(tp, 0, sizeof(ThrPool));
+        memset(tp, 0, pool_bytes);
         tp->queue.size = queue_size;
 
         // Allocate array for threads
-        tp->pool.threads = (pthread_t*) calloc(thread_count, sizeof(pthread_t));
+        size_t thread_bytes = thread_count * sizeof(pthread_t);
+        tp->pool.threads = (pthread_t*) memory_realloc(0, thread_bytes);
         if (!tp->pool.threads) {
             break;
         }
+        memset(tp->pool.threads, 0, thread_bytes);
 
         // Allocate array for queue
-        tp->queue.tasks = (ThrPoolTask*) calloc(queue_size, sizeof(ThrPoolTask));
+        size_t queue_bytes = queue_size * sizeof(ThrPoolTask);
+        tp->queue.tasks = (ThrPoolTask*) memory_realloc(0, queue_bytes);
         if (!tp->queue.tasks) {
             break;
         }
+        memset(tp->queue.tasks, 0, queue_bytes);
 
         // Initialize pool mutex
         if (pthread_mutex_init(&tp->lock, 0) != 0) {

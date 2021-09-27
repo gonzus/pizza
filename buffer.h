@@ -101,7 +101,7 @@ void buffer_pack(Buffer* b);
 void buffer_append_byte(Buffer* b, Byte t);
 
 // Append a string of given length to current contents of Buffer.
-// If len < 0, use null terminator, otherwise copy len bytes
+// If len < 0, use null terminator, otherwise copy len bytes.
 void buffer_append_string(Buffer* b, const char* str, int len);
 
 // Append a slice to current contents of Buffer.

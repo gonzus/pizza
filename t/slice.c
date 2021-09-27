@@ -20,7 +20,7 @@ static void test_slice_is_null(void) {
 
 static void test_slice_is_empty(void) {
     cmp_ok(!!slice_is_empty(SLICE_NULL), "==", !!1, "slice_is_empty(SLICE_NULL)");
-    Slice s = slice_wrap_string(empty_string);
+    Slice s = slice_build_from_string(empty_string);
     cmp_ok(!!slice_is_empty(s), "==", !!1, "slice_is_empty(\"\")");
 }
 
@@ -45,8 +45,8 @@ static void test_slice_compare(void) {
     for (int j = 0; j < ALEN(string_info); ++j) {
         const char* L = string_info[j].l;
         const char* R = string_info[j].r;
-        Slice l = slice_wrap_string(L);
-        Slice r = slice_wrap_string(R);
+        Slice l = slice_build_from_string(L);
+        Slice r = slice_build_from_string(R);
         int e = string_info[j].cmp;
         int c = slice_compare(l, r);
         int ok = e == 0 ? c == 0
@@ -75,7 +75,7 @@ static void test_slice_find_byte(void) {
         const char* W = string_info[j].w;
         Byte B = string_info[j].b;
         int e = string_info[j].pos;
-        Slice w = slice_wrap_string(W);
+        Slice w = slice_build_from_string(W);
 #if 0
         dump_bytes(stderr, w.ptr, w.len);
 #endif
@@ -108,8 +108,8 @@ static void test_slice_find_slice(void) {
         const char* W = string_info[j].w;
         const char* N = string_info[j].n;
         int e = string_info[j].pos;
-        Slice w = slice_wrap_string(W);
-        Slice n = slice_wrap_string(N);
+        Slice w = slice_build_from_string(W);
+        Slice n = slice_build_from_string(N);
         Slice f = slice_find_slice(w, n);
         if (e < 0) {
             cmp_ok(!!slice_is_null(f), "==", !!1, "slice_find_slice([%s], [%s]) => ABSENT", W, N);
@@ -146,8 +146,8 @@ static void test_slice_tokenize(void) {
         const char* STR = string_info[j].str;
         const char* SEP = string_info[j].sep;
 
-        Slice str = slice_wrap_string(STR);
-        Slice sep = slice_wrap_string(SEP);
+        Slice str = slice_build_from_string(STR);
+        Slice sep = slice_build_from_string(SEP);
         SliceLookup lookup = {0};
 
         char buf[1024];

@@ -5,13 +5,13 @@ Slice SLICE_NULL = { .ptr = 0, .len = 0 };
 
 static void lookup_init(SliceLookup* lookup, Slice src, Slice set);
 
-Slice slice_wrap_ptr_len(const Byte* ptr, uint32_t len) {
+Slice slice_build_from_ptr_len(const Byte* ptr, uint32_t len) {
     Slice s = { .ptr = ptr, .len = len };
     return s;
 }
 
-Slice slice_wrap_string(const char* bytes) {
-    return slice_wrap_ptr_len((const Byte*) bytes, bytes == 0 ? 0 : strlen(bytes));
+Slice slice_build_from_string(const char* str) {
+    return slice_build_from_ptr_len((const Byte*) str, str == 0 ? 0 : strlen(str));
 }
 
 int slice_compare(Slice l, Slice r) {
@@ -43,7 +43,7 @@ Slice slice_find_byte(Slice s, Byte t) {
         }
     }
     if (j < s.len) {
-        return slice_wrap_ptr_len(s.ptr + j, 1);
+        return slice_build_from_ptr_len(s.ptr + j, 1);
     }
     return SLICE_NULL;
 }
@@ -56,7 +56,7 @@ Slice slice_find_slice(Slice s, Slice t) {
 #if defined(_GNU_SOURCE)
     const Byte* p = memmem(s.ptr, s.len, t.ptr, t.len);
     if (p) {
-        return slice_wrap_ptr_len(p, t.len);
+        return slice_build_from_ptr_len(p, t.len);
     }
 #else
     // TODO: implement a good search algorithm here?
@@ -68,7 +68,7 @@ Slice slice_find_slice(Slice s, Slice t) {
         }
     }
     if (j < top) {
-        return slice_wrap_ptr_len(s.ptr + j, t.len);
+        return slice_build_from_ptr_len(s.ptr + j, t.len);
     }
 #endif
 
@@ -118,7 +118,7 @@ static bool slice_tokenize(Slice src, Slice s, SliceLookup* lookup) {
     }
 
     // produce current result
-    lookup->result = slice_wrap_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
+    lookup->result = slice_build_from_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
 
     return true; // found next token
 }
@@ -129,38 +129,38 @@ bool slice_tokenize_by_slice(Slice src, Slice s, SliceLookup* lookup) {
 
 bool slice_tokenize_by_char(Slice src, Byte t, SliceLookup* lookup) {
     Byte tmp[2] = { t, '\0' };
-    return slice_tokenize(src, slice_wrap_ptr_len(tmp, 1), lookup);
+    return slice_tokenize(src, slice_build_from_ptr_len(tmp, 1), lookup);
 }
 
 int slice_split_by_char_l2r(Slice s, Byte t, Slice* l, Slice* r) {
     for (int32_t j = 0; j < (int32_t) s.len; ++j) {
         if (s.ptr[j] == t) {
-            *l = slice_wrap_ptr_len(s.ptr, j);
-            *r = slice_wrap_ptr_len(s.ptr + j + 1, s.len - j - 1);
+            *l = slice_build_from_ptr_len(s.ptr, j);
+            *r = slice_build_from_ptr_len(s.ptr + j + 1, s.len - j - 1);
             return 1;
         }
     }
     *l = s;
-    *r = slice_wrap_ptr_len(s.ptr + s.len, 0);
+    *r = slice_build_from_ptr_len(s.ptr + s.len, 0);
     return 0;
 }
 
 int slice_split_by_char_r2l(Slice s, Byte t, Slice* l, Slice* r) {
     for (int32_t j = (int32_t) s.len - 1; j >= 0; --j) {
         if (s.ptr[j] == t) {
-            *l = slice_wrap_ptr_len(s.ptr, j);
-            *r = slice_wrap_ptr_len(s.ptr + j + 1, s.len - j - 1);
+            *l = slice_build_from_ptr_len(s.ptr, j);
+            *r = slice_build_from_ptr_len(s.ptr + j + 1, s.len - j - 1);
             return 1;
         }
     }
-    *l = slice_wrap_ptr_len(s.ptr, 0);
+    *l = slice_build_from_ptr_len(s.ptr, 0);
     *r = s;
     return 0;
 }
 
 static void lookup_init(SliceLookup* lookup, Slice src, Slice set) {
     // reset result
-    lookup->result = slice_wrap_ptr_len(src.ptr, 0);
+    lookup->result = slice_build_from_ptr_len(src.ptr, 0);
 
     // create a quick map of the bytes / chars we are interested in
     memset(lookup->map, 0, 256);

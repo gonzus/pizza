@@ -1,8 +1,5 @@
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include "util.h"
 #include "buffer.h"
 
 #if !defined(va_copy)
@@ -22,10 +19,10 @@
     } while (0)
 
 static void buffer_adjust(Buffer* b, uint32_t cap);
-static void* buffer_realloc(void* ptr, uint32_t len);
+static void buffer_append_ptr_len(Buffer* b, const Byte* ptr, int len);
 
 Buffer* buffer_create(void) {
-    Buffer* b = buffer_realloc(0, sizeof(Buffer));
+    Buffer* b = memory_realloc(0, sizeof(Buffer));
     buffer_init(b);
     BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
     return b;
@@ -47,7 +44,7 @@ Buffer* buffer_create_from_slice(Slice s, bool zero) {
 }
 
 Buffer* buffer_create_from_string(const char* s, bool zero) {
-    return buffer_create_from_slice(slice_wrap_string(s), zero);
+    return buffer_create_from_slice(slice_build_from_string(s), zero);
 }
 
 void buffer_init(Buffer* b) {
@@ -60,12 +57,12 @@ void buffer_init(Buffer* b) {
 void buffer_destroy(Buffer* b) {
     if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_PTR_IN_HEAP);
-        b->ptr = buffer_realloc(b->ptr, 0);
+        b->ptr = memory_realloc(b->ptr, 0);
         assert(!b->ptr);
     }
     if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_BUF_IN_HEAP)) {
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_BUF_IN_HEAP);
-        b = buffer_realloc(b, 0);
+        b = memory_realloc(b, 0);
         assert(!b);
     }
 }
@@ -77,7 +74,7 @@ Buffer* buffer_clone(const Buffer* b) {
 }
 
 Slice buffer_slice(const Buffer* b) {
-    Slice s = slice_wrap_ptr_len(b->ptr, b->len);
+    Slice s = slice_build_from_ptr_len(b->ptr, b->len);
     return s;
 }
 
@@ -105,33 +102,18 @@ void buffer_append_byte(Buffer* b, Byte t) {
     b->ptr[b->len++] = t;
 }
 
-static void buffer_append_ptr_len(Buffer* b, const Byte* ptr, int len) {
-    buffer_ensure_extra(b, len);
-    memcpy(b->ptr + b->len, ptr, len);
-    b->len += len;
-}
-
 void buffer_append_string(Buffer* b, const char* str, int len) {
     if (len <= 0) {
         len = str ? strlen(str) : 0;
-    }
-    if (len <= 0) {
-        return;
     }
     buffer_append_ptr_len(b, (const Byte*) str, len);
 }
 
 void buffer_append_slice(Buffer* b, Slice s) {
-    if (s.len <= 0) {
-        return;
-    }
     buffer_append_ptr_len(b, s.ptr, s.len);
 }
 
 void buffer_append_buffer(Buffer* b, const Buffer* buf) {
-    if (buf->len <= 0) {
-        return;
-    }
     buffer_append_ptr_len(b, buf->ptr, buf->len);
 }
 
@@ -204,31 +186,16 @@ void buffer_ensure_total(Buffer* b, uint32_t total) {
 }
 
 static void buffer_adjust(Buffer* b, uint32_t cap) {
-    Byte* tmp = buffer_realloc(b->ptr, cap);
+    Byte* tmp = memory_realloc(b->ptr, cap);
     b->ptr = tmp;
     b->cap = cap;
 }
 
-static void* buffer_realloc(void* ptr, uint32_t len) {
-    // Since the intention when passing len==0 is to free the memory,
-    // lets just do it and return a null pointer.
-    if (len == 0) {
-        free(ptr);
-        return 0;
+static void buffer_append_ptr_len(Buffer* b, const Byte* ptr, int len) {
+    if (len <= 0) {
+        return;
     }
-
-    void* tmp = (void*) realloc(ptr, len);
-    if (tmp) {
-        return tmp;  // all good
-    }
-
-    if (errno) {
-        fprintf(stderr, "Error %d (%s) calling realloc(%p, %u)",
-                errno, strerror(errno), ptr, len);
-    } else {
-        fprintf(stderr, "Could not allocate memory calling realloc(%p, %u)\n",
-                ptr, len);
-    }
-    abort();
-    return 0;
+    buffer_ensure_extra(b, len);
+    memcpy(b->ptr + b->len, ptr, len);
+    b->len += len;
 }

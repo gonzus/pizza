@@ -36,13 +36,13 @@ extern Slice SLICE_NULL;
 // Return true if Slice is empty (invalid ptr OR zero len).
 #define slice_is_empty(s) ((s).ptr == 0 || (s).len == 0)
 
-// Wrap a string (const char*) into a Slice.
+// Slice constructor from a string (const char*).
 // Computes the length using strlen(), so string MUST be null-terminated.
-Slice slice_wrap_string(const char* bytes);
+Slice slice_build_from_string(const char* str);
 
-// Wrap a given number of bytes from an array of Bytes (or a const char*) into a Slice.
-// String doesn't have to be null-terminated.
-Slice slice_wrap_ptr_len(const Byte* ptr, uint32_t len);
+// Slice constructor from a pointer and a length.
+// Pointed data doesn't have to be null-terminated.
+Slice slice_build_from_ptr_len(const Byte* ptr, uint32_t len);
 
 
 /*
@@ -66,7 +66,7 @@ Slice slice_find_slice(Slice s, Slice t);
 // Return each token in lookup.result; only valid when true was returned.
 // Intended to be used like this:
 //
-//   Slice sep = slice_wrap_string(":");
+//   Slice sep = slice_build_from_string(":");
 //   SliceLookup lookup = {0};
 //   while (slice_tokenize(src, sep, &lookup)) {
 //     // do something with lookup.result

@@ -34,21 +34,21 @@
 // Total size used up by Buffer fields, EXCEPT buf.
 // MUST BE KEPT IN SYNC WITH DECLARATION OF struct Buffer.
 #define BUFFER_FIELDS_SIZE (\
-    sizeof(uint8_t*)  /* ptr */ + \
+    sizeof(Byte*)     /* ptr */ + \
     sizeof(uint32_t)  /* cap */ + \
     sizeof(uint32_t)  /* len */ + \
-    sizeof(uint8_t)   /* flg */ + \
+    sizeof(Byte)      /* flg */ + \
     0)
 
 // Size allowed for a Buffer's static data array.
 #define BUFFER_DATA_SIZE (BUFFER_DESIRED_SIZE - BUFFER_FIELDS_SIZE)
 
 typedef struct Buffer {
-    uint8_t* ptr;                    // pointer to beginning of data
-    uint32_t cap;                    // total data capacity
-    uint32_t len;                    // current buffer length
-    uint8_t flg;                     // flags for Buffer
-    uint8_t buf[BUFFER_DATA_SIZE];   // stack space for small Buffer
+    Byte* ptr;                    // pointer to beginning of data
+    uint32_t cap;                 // total data capacity
+    uint32_t len;                 // current buffer length
+    Byte flg;                     // flags for Buffer
+    Byte buf[BUFFER_DATA_SIZE];   // stack space for small Buffer
 } Buffer;
 
 #if __STDC_VERSION__ >= 201112L
@@ -63,11 +63,21 @@ static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
         (b)->len = 0; \
     } while (0)
 
+// Append a NUL (\0) character to the buffer
+#define buffer_null_terminate(b) \
+    do { \
+        buffer_append_byte(b, '\0'); \
+    } while (0)
+
 // Build an empty / default-sized Buffer.
 Buffer* buffer_create(void);
 
 // Build a Buffer with defined capacity.
 Buffer* buffer_create_capacity(uint32_t cap);
+
+// helpers to build already-initialized, maybe-null-terminated buffers
+Buffer* buffer_create_from_slice(Slice s, bool zero);
+Buffer* buffer_create_from_string(const char* s, bool zero);
 
 // Initialize Buffer, whether allocated in stack or heap.
 void buffer_init(Buffer* b);
@@ -81,11 +91,14 @@ void buffer_ensure_total(Buffer* b, uint32_t total);
 // Clone an existing Buffer.
 Buffer* buffer_clone(const Buffer* b);
 
+// Create a slice that wraps the contents of the buffer.
+Slice buffer_slice(const Buffer* b);
+
 // Reallocate memory so that current data fits exactly into Buffer.
 void buffer_pack(Buffer* b);
 
 // Append a single byte to current contents of Buffer.
-void buffer_append_byte(Buffer* b, uint8_t u);
+void buffer_append_byte(Buffer* b, Byte t);
 
 // Append a string of given length to current contents of Buffer.
 // If len < 0, use null terminator, otherwise copy len bytes

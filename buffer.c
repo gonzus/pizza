@@ -37,6 +37,19 @@ Buffer* buffer_create_capacity(uint32_t cap) {
     return b;
 }
 
+Buffer* buffer_create_from_slice(Slice s, bool zero) {
+    Buffer* b = buffer_create();
+    buffer_append_slice(b, s);
+    if (zero) {
+        buffer_null_terminate(b);
+    }
+    return b;
+}
+
+Buffer* buffer_create_from_string(const char* s, bool zero) {
+    return buffer_create_from_slice(slice_wrap_string(s), zero);
+}
+
 void buffer_init(Buffer* b) {
     b->ptr = b->buf;
     b->cap = BUFFER_DATA_SIZE;
@@ -59,8 +72,13 @@ void buffer_destroy(Buffer* b) {
 
 Buffer* buffer_clone(const Buffer* b) {
     Buffer* n = buffer_create();
-    buffer_append_string(n, (const char*) b->ptr, b->len);
+    buffer_append_buffer(n, b);
     return n;
+}
+
+Slice buffer_slice(const Buffer* b) {
+    Slice s = slice_wrap_ptr_len(b->ptr, b->len);
+    return s;
 }
 
 void buffer_pack(Buffer* b) {
@@ -82,57 +100,57 @@ void buffer_pack(Buffer* b) {
     }
 }
 
-void buffer_append_byte(Buffer* b, uint8_t u) {
+void buffer_append_byte(Buffer* b, Byte t) {
     buffer_ensure_extra(b, 1);
-    b->ptr[b->len++] = u;
+    b->ptr[b->len++] = t;
+}
+
+static void buffer_append_ptr_len(Buffer* b, const Byte* ptr, int len) {
+    buffer_ensure_extra(b, len);
+    memcpy(b->ptr + b->len, ptr, len);
+    b->len += len;
 }
 
 void buffer_append_string(Buffer* b, const char* str, int len) {
-    if (len < 0) {
+    if (len <= 0) {
         len = str ? strlen(str) : 0;
     }
     if (len <= 0) {
         return;
     }
-    buffer_ensure_extra(b, len);
-    memcpy(b->ptr + b->len, str, len);
-    b->len += len;
+    buffer_append_ptr_len(b, (const Byte*) str, len);
 }
 
 void buffer_append_slice(Buffer* b, Slice s) {
     if (s.len <= 0) {
         return;
     }
-    buffer_ensure_extra(b, s.len);
-    memcpy(b->ptr + b->len, s.ptr, s.len);
-    b->len += s.len;
+    buffer_append_ptr_len(b, s.ptr, s.len);
 }
 
 void buffer_append_buffer(Buffer* b, const Buffer* buf) {
     if (buf->len <= 0) {
         return;
     }
-    buffer_ensure_extra(b, buf->len);
-    memcpy(b->ptr + b->len, buf->ptr, buf->len);
-    b->len += buf->len;
+    buffer_append_ptr_len(b, buf->ptr, buf->len);
 }
 
 void buffer_format_signed(Buffer* b, long long l) {
     char cstr[99];
     uint32_t clen = sprintf(cstr, "%lld", l);
-    buffer_append_string(b, cstr, clen);
+    buffer_append_ptr_len(b, (const Byte*) cstr, clen);
 }
 
 void buffer_format_unsigned(Buffer* b, unsigned long long l) {
     char cstr[99];
     uint32_t clen = sprintf(cstr, "%llu", l);
-    buffer_append_string(b, cstr, clen);
+    buffer_append_ptr_len(b, (const Byte*) cstr, clen);
 }
 
 void buffer_format_double(Buffer* b, double d) {
     char cstr[99];
     uint32_t clen = sprintf(cstr, "%f", d);
-    buffer_append_string(b, cstr, clen);
+    buffer_append_ptr_len(b, (const Byte*) cstr, clen);
 }
 
 /*
@@ -161,7 +179,6 @@ void buffer_format_print(Buffer* b, const char* fmt, ...) {
     va_end(ap);
 }
 
-
 void buffer_ensure_total(Buffer* b, uint32_t total) {
     uint32_t changes = 0;
     uint32_t current = b->cap;
@@ -187,23 +204,22 @@ void buffer_ensure_total(Buffer* b, uint32_t total) {
 }
 
 static void buffer_adjust(Buffer* b, uint32_t cap) {
-    uint8_t* tmp = buffer_realloc(b->ptr, cap);
+    Byte* tmp = buffer_realloc(b->ptr, cap);
     b->ptr = tmp;
     b->cap = cap;
 }
 
 static void* buffer_realloc(void* ptr, uint32_t len) {
-    // It seems realloc() works differently between MacOs and Linux.
     // Since the intention when passing len==0 is to free the memory,
-    // lets just do it and return NULL, which is the expected behaviour.
+    // lets just do it and return a null pointer.
     if (len == 0) {
         free(ptr);
-        return NULL;
-    } else {
-        void* tmp = (void*) realloc(ptr, len);
-        if ((tmp && len > 0) || (!tmp && len <= 0)) {
-            return tmp;  // all good
-        }
+        return 0;
+    }
+
+    void* tmp = (void*) realloc(ptr, len);
+    if (tmp) {
+        return tmp;  // all good
     }
 
     if (errno) {

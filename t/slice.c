@@ -10,8 +10,8 @@ static const char* empty_string = "";
 static void test_sizes(void) {
     int size_ptr = sizeof(void*);
     cmp_ok(sizeof(Slice), "==", 2*size_ptr, "sizeof(Slice)");
-    cmp_ok(sizeof(Byte) , "==", 1         , "sizeof(Byte)");
-    cmp_ok(sizeof(Byte*), "==", size_ptr  , "sizeof(Byte*)");
+    cmp_ok(sizeof(char) , "==", 1         , "sizeof(char)");
+    cmp_ok(sizeof(char*), "==", size_ptr  , "sizeof(char*)");
 }
 
 static void test_slice_is_null(void) {
@@ -59,7 +59,7 @@ static void test_slice_compare(void) {
 static void test_slice_find_byte(void) {
     static struct {
         const char* w;
-        Byte b;
+        char b;
         int pos;
     } string_info[] = {
         { "foo"                 , 'o'  ,  1 },
@@ -73,7 +73,7 @@ static void test_slice_find_byte(void) {
 
     for (int j = 0; j < ALEN(string_info); ++j) {
         const char* W = string_info[j].w;
-        Byte B = string_info[j].b;
+        char B = string_info[j].b;
         int e = string_info[j].pos;
         Slice w = slice_build_from_string(W);
 #if 0

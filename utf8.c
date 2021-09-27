@@ -3,28 +3,35 @@
 uint32_t utf8_decode(Slice* s) {
     uint8_t l = 0;
     uint32_t r = UTF8_INVALID_RUNE;
-    if (s->len >= 1 && s->ptr[0] < 0x80) {
+    uint8_t p0 = (uint8_t) s->ptr[0];
+    if (s->len >= 1 && p0 < 0x80) {
         // length 1, simple ASCII
         l = 1;
-        r = (uint32_t) s->ptr[0];
-    } else if (s->len >= 2 && (s->ptr[0] & 0xe0) == 0xc0) {
+        r = (uint32_t) p0;
+    } else if (s->len >= 2 && (p0 & 0xe0) == 0xc0) {
         // length 2
+        uint8_t p1 = (uint8_t) s->ptr[1];
         l = 2;
-        r = ((uint32_t)(s->ptr[0] & 0x1f) <<  6) |
-            ((uint32_t)(s->ptr[1] & 0x3f) <<  0);
-    } else if (s->len >= 3 && (s->ptr[0] & 0xf0) == 0xe0) {
+        r = ((uint32_t)(p0 & 0x1f) <<  6) |
+            ((uint32_t)(p1 & 0x3f) <<  0);
+    } else if (s->len >= 3 && (p0 & 0xf0) == 0xe0) {
         // length 3
+        uint8_t p1 = (uint8_t) s->ptr[1];
+        uint8_t p2 = (uint8_t) s->ptr[2];
         l = 3;
-        r = ((uint32_t)(s->ptr[0] & 0x0f) << 12) |
-            ((uint32_t)(s->ptr[1] & 0x3f) <<  6) |
-            ((uint32_t)(s->ptr[2] & 0x3f) <<  0);
-    } else if (s->len >= 4 && (s->ptr[0] & 0xf8) == 0xf0 && s->ptr[0] <= 0xf4) {
+        r = ((uint32_t)(p0 & 0x0f) << 12) |
+            ((uint32_t)(p1 & 0x3f) <<  6) |
+            ((uint32_t)(p2 & 0x3f) <<  0);
+    } else if (s->len >= 4 && (p0 & 0xf8) == 0xf0 && p0 <= 0xf4) {
         // length 4 and valid
+        uint8_t p1 = (uint8_t) s->ptr[1];
+        uint8_t p2 = (uint8_t) s->ptr[2];
+        uint8_t p3 = (uint8_t) s->ptr[3];
         l = 4;
-        r = ((uint32_t)(s->ptr[0] & 0x07) << 18) |
-            ((uint32_t)(s->ptr[1] & 0x3f) << 12) |
-            ((uint32_t)(s->ptr[2] & 0x3f) <<  6) |
-            ((uint32_t)(s->ptr[3] & 0x3f) <<  0);
+        r = ((uint32_t)(p0 & 0x07) << 18) |
+            ((uint32_t)(p1 & 0x3f) << 12) |
+            ((uint32_t)(p2 & 0x3f) <<  6) |
+            ((uint32_t)(p3 & 0x3f) <<  0);
     }
 
     if (r >= 0xd800 && r <= 0xdfff) {

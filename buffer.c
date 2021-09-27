@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include "util.h"
 #include "buffer.h"
@@ -19,7 +20,7 @@
     } while (0)
 
 static void buffer_adjust(Buffer* b, uint32_t cap);
-static void buffer_append_ptr_len(Buffer* b, const Byte* ptr, int len);
+static void buffer_append_ptr_len(Buffer* b, const char* ptr, int len);
 
 Buffer* buffer_create(void) {
     Buffer* b = memory_realloc(0, sizeof(Buffer));
@@ -67,6 +68,30 @@ void buffer_destroy(Buffer* b) {
     }
 }
 
+void buffer_ensure_total(Buffer* b, uint32_t total) {
+    uint32_t changes = 0;
+    uint32_t current = b->cap;
+    while (total > current) {
+        ++changes;
+        uint32_t next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
+        current = next;
+    }
+    if (changes) {
+        if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
+            buffer_adjust(b, current);
+        } else {
+            // Buffer is using stack-allocated buf and need more, switch to ptr
+            uint32_t old = b->cap;
+            b->ptr = 0;
+            b->cap = 0;
+            buffer_adjust(b, current);
+            memcpy(b->ptr, b->buf, old);
+            BUFFER_FLAG_SET(b, BUFFER_FLAG_PTR_IN_HEAP);
+        }
+    }
+    assert(b->cap >= total);
+}
+
 Buffer* buffer_clone(const Buffer* b) {
     Buffer* n = buffer_create();
     buffer_append_buffer(n, b);
@@ -97,7 +122,7 @@ void buffer_pack(Buffer* b) {
     }
 }
 
-void buffer_append_byte(Buffer* b, Byte t) {
+void buffer_append_byte(Buffer* b, char t) {
     buffer_ensure_extra(b, 1);
     b->ptr[b->len++] = t;
 }
@@ -106,7 +131,7 @@ void buffer_append_string(Buffer* b, const char* str, int len) {
     if (len <= 0) {
         len = str ? strlen(str) : 0;
     }
-    buffer_append_ptr_len(b, (const Byte*) str, len);
+    buffer_append_ptr_len(b, str, len);
 }
 
 void buffer_append_slice(Buffer* b, Slice s) {
@@ -120,19 +145,19 @@ void buffer_append_buffer(Buffer* b, const Buffer* buf) {
 void buffer_format_signed(Buffer* b, long long l) {
     char cstr[99];
     uint32_t clen = sprintf(cstr, "%lld", l);
-    buffer_append_ptr_len(b, (const Byte*) cstr, clen);
+    buffer_append_ptr_len(b, cstr, clen);
 }
 
 void buffer_format_unsigned(Buffer* b, unsigned long long l) {
     char cstr[99];
     uint32_t clen = sprintf(cstr, "%llu", l);
-    buffer_append_ptr_len(b, (const Byte*) cstr, clen);
+    buffer_append_ptr_len(b, cstr, clen);
 }
 
 void buffer_format_double(Buffer* b, double d) {
     char cstr[99];
     uint32_t clen = sprintf(cstr, "%f", d);
-    buffer_append_ptr_len(b, (const Byte*) cstr, clen);
+    buffer_append_ptr_len(b, cstr, clen);
 }
 
 /*
@@ -161,37 +186,13 @@ void buffer_format_print(Buffer* b, const char* fmt, ...) {
     va_end(ap);
 }
 
-void buffer_ensure_total(Buffer* b, uint32_t total) {
-    uint32_t changes = 0;
-    uint32_t current = b->cap;
-    while (total > current) {
-        ++changes;
-        uint32_t next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
-        current = next;
-    }
-    if (changes) {
-        if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
-            buffer_adjust(b, current);
-        } else {
-            // Buffer is using stack-allocated buf and need more, switch to ptr
-            uint32_t old = b->cap;
-            b->ptr = 0;
-            b->cap = 0;
-            buffer_adjust(b, current);
-            memcpy(b->ptr, b->buf, old);
-            BUFFER_FLAG_SET(b, BUFFER_FLAG_PTR_IN_HEAP);
-        }
-    }
-    assert(b->cap >= total);
-}
-
 static void buffer_adjust(Buffer* b, uint32_t cap) {
-    Byte* tmp = memory_realloc(b->ptr, cap);
+    char* tmp = memory_realloc(b->ptr, cap);
     b->ptr = tmp;
     b->cap = cap;
 }
 
-static void buffer_append_ptr_len(Buffer* b, const Byte* ptr, int len) {
+static void buffer_append_ptr_len(Buffer* b, const char* ptr, int len) {
     if (len <= 0) {
         return;
     }

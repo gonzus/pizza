@@ -2,7 +2,7 @@
 #include <tap.h>
 #include "utf8.h"
 
-static unsigned char utf8[] = {
+static uint8_t utf8[] = {
     0x45, // E
     0x79, // y
     0x6A, // j
@@ -56,7 +56,7 @@ static void test_sizes(void) {
 
 static void test_decode(void) {
     int len = sizeof(utf8) / sizeof(utf8[0]);
-    Slice encoded = slice_build_from_ptr_len(utf8, len);
+    Slice encoded = slice_build_from_ptr_len((const char*) utf8, len);
 
     int pos = 0;
     for (Slice left = encoded; !slice_is_empty(left); ) {

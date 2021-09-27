@@ -5,13 +5,13 @@ Slice SLICE_NULL = { .ptr = 0, .len = 0 };
 
 static void lookup_init(SliceLookup* lookup, Slice src, Slice set);
 
-Slice slice_build_from_ptr_len(const Byte* ptr, uint32_t len) {
+Slice slice_build_from_ptr_len(const char* ptr, uint32_t len) {
     Slice s = { .ptr = ptr, .len = len };
     return s;
 }
 
 Slice slice_build_from_string(const char* str) {
-    return slice_build_from_ptr_len((const Byte*) str, str == 0 ? 0 : strlen(str));
+    return slice_build_from_ptr_len(str, str == 0 ? 0 : strlen(str));
 }
 
 int slice_compare(Slice l, Slice r) {
@@ -35,7 +35,7 @@ int slice_compare(Slice l, Slice r) {
     return 0;
 }
 
-Slice slice_find_byte(Slice s, Byte t) {
+Slice slice_find_byte(Slice s, char t) {
     uint32_t j = 0;
     for (j = 0; j < s.len; ++j) {
         if (s.ptr[j] == t) {
@@ -54,7 +54,7 @@ Slice slice_find_slice(Slice s, Slice t) {
     }
 
 #if defined(_GNU_SOURCE)
-    const Byte* p = memmem(s.ptr, s.len, t.ptr, t.len);
+    const char* p = memmem(s.ptr, s.len, t.ptr, t.len);
     if (p) {
         return slice_build_from_ptr_len(p, t.len);
     }
@@ -94,13 +94,13 @@ static bool slice_tokenize(Slice src, Slice s, SliceLookup* lookup) {
     }
 
     // current position and remaining length
-    const Byte* p = src.ptr + start;
+    const char* p = src.ptr + start;
     uint32_t l = src.len - start;
 
     // skip all separators using our map
     uint32_t j = 0;
     for (; j < l; ++j) {
-        if (!lookup->map[p[j]]) {
+        if (!lookup->map[(int)p[j]]) {
             break;
         }
     }
@@ -112,7 +112,7 @@ static bool slice_tokenize(Slice src, Slice s, SliceLookup* lookup) {
     // find separator after token using our map
     uint32_t k = j;
     for (; k < l; ++k) {
-        if (lookup->map[p[k]]) {
+        if (lookup->map[(int)p[k]]) {
             break;
         }
     }
@@ -127,12 +127,12 @@ bool slice_tokenize_by_slice(Slice src, Slice s, SliceLookup* lookup) {
     return slice_tokenize(src, s, lookup);
 }
 
-bool slice_tokenize_by_char(Slice src, Byte t, SliceLookup* lookup) {
-    Byte tmp[2] = { t, '\0' };
+bool slice_tokenize_by_byte(Slice src, char t, SliceLookup* lookup) {
+    const char tmp[2] = { t, '\0' };
     return slice_tokenize(src, slice_build_from_ptr_len(tmp, 1), lookup);
 }
 
-int slice_split_by_char_l2r(Slice s, Byte t, Slice* l, Slice* r) {
+int slice_split_by_byte_l2r(Slice s, char t, Slice* l, Slice* r) {
     for (int32_t j = 0; j < (int32_t) s.len; ++j) {
         if (s.ptr[j] == t) {
             *l = slice_build_from_ptr_len(s.ptr, j);
@@ -145,7 +145,7 @@ int slice_split_by_char_l2r(Slice s, Byte t, Slice* l, Slice* r) {
     return 0;
 }
 
-int slice_split_by_char_r2l(Slice s, Byte t, Slice* l, Slice* r) {
+int slice_split_by_byte_r2l(Slice s, char t, Slice* l, Slice* r) {
     for (int32_t j = (int32_t) s.len - 1; j >= 0; --j) {
         if (s.ptr[j] == t) {
             *l = slice_build_from_ptr_len(s.ptr, j);
@@ -165,6 +165,6 @@ static void lookup_init(SliceLookup* lookup, Slice src, Slice set) {
     // create a quick map of the bytes / chars we are interested in
     memset(lookup->map, 0, 256);
     for (uint32_t j = 0; j < set.len; ++j) {
-        lookup->map[set.ptr[j]] = 1;
+        lookup->map[(int)set.ptr[j]] = 1;
     }
 }

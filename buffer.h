@@ -34,21 +34,21 @@
 // Total size used up by Buffer fields, EXCEPT buf.
 // MUST BE KEPT IN SYNC WITH DECLARATION OF struct Buffer.
 #define BUFFER_FIELDS_SIZE (\
-    sizeof(Byte*)     /* ptr */ + \
+    sizeof(char*)     /* ptr */ + \
     sizeof(uint32_t)  /* cap */ + \
     sizeof(uint32_t)  /* len */ + \
-    sizeof(Byte)      /* flg */ + \
+    sizeof(uint8_t)   /* flg */ + \
     0)
 
 // Size allowed for a Buffer's static data array.
 #define BUFFER_DATA_SIZE (BUFFER_DESIRED_SIZE - BUFFER_FIELDS_SIZE)
 
 typedef struct Buffer {
-    Byte* ptr;                    // pointer to beginning of data
+    char* ptr;                    // pointer to beginning of data
     uint32_t cap;                 // total data capacity
     uint32_t len;                 // current buffer length
-    Byte flg;                     // flags for Buffer
-    Byte buf[BUFFER_DATA_SIZE];   // stack space for small Buffer
+    uint8_t flg;                  // flags for Buffer
+    char buf[BUFFER_DATA_SIZE];   // stack space for small Buffer
 } Buffer;
 
 #if __STDC_VERSION__ >= 201112L
@@ -98,7 +98,7 @@ Slice buffer_slice(const Buffer* b);
 void buffer_pack(Buffer* b);
 
 // Append a single byte to current contents of Buffer.
-void buffer_append_byte(Buffer* b, Byte t);
+void buffer_append_byte(Buffer* b, char t);
 
 // Append a string of given length to current contents of Buffer.
 // If len < 0, use null terminator, otherwise copy len bytes.

@@ -4,6 +4,7 @@
 
 void timer_start(Timer* t) {
     clock_gettime(CLOCK_MONOTONIC, &t->ts0);
+    t->ts1 = t->ts0;
 }
 
 void timer_stop(Timer* t) {

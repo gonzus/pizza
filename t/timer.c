@@ -19,6 +19,7 @@ static void test_timer(void) {
         1000,
     };
     for (int j = 0; j < ALEN(pauses_ms); ++j) {
+        unsigned long us = 0;
         unsigned long pause_ns = pauses_ms[j] * MS_TO_NS;
         struct timespec pause;
         pause.tv_nsec = pause_ns % S_TO_NS;
@@ -26,9 +27,12 @@ static void test_timer(void) {
 
         Timer t;
         timer_start(&t);
+        us = timer_elapsed_us(&t);
+        cmp_ok(us, "==", 0, "elapsed for just-started timer is zero");
+
         nanosleep(&pause, 0);
         timer_stop(&t);
-        unsigned long us = timer_elapsed_us(&t);
+        us = timer_elapsed_us(&t);
 
         cmp_ok(us * US_TO_NS, ">=", pause_ns, "slept for %lu us which is at least %d ns", us, pause_ns);
     }

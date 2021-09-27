@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "util.h"
+#include "memory.h"
 #include "buffer.h"
 
 #if !defined(va_copy)

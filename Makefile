@@ -25,6 +25,7 @@ all: $(LIBRARY)
 
 C_SRC_LIB = \
 	log.c \
+	memory.c \
 	slice.c \
 	buffer.c \
 	utf8.c \

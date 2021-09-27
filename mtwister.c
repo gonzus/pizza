@@ -2,12 +2,34 @@
 #include "mtwister.h"
 
 /*
- * This will be the step in the twist() loop
+ * This is the step in the twist() loop.
  */
-#define STEP(state, tgt, src, nxt, za) \
+#define SHAKE(state, tgt, src, nxt, za) \
     do { \
         uint32_t y = (state[tgt] & MASK_UPPER) | (state[nxt] & MASK_LOWER); \
         state[tgt] = state[src] ^ (y >> 1) ^ za[y & 1]; \
+    } while (0)
+
+/*
+ * This is how we mix state when initializing the twister.
+ */
+#define RATTLE(state, pos, first, factor, extra) \
+    do { \
+        state[pos] = ((first) ^ ((state[pos - 1] ^ (state[pos - 1] >> (R - 1))) * (factor))) + (extra); \
+        state[pos] &= D; \
+    } while (0)
+
+/*
+ * This is the step in the initialization by key loop.
+ */
+#define ROLL(state, pos, factor, extra) \
+    do { \
+        RATTLE(state, pos, state[pos], factor, extra); \
+        ++pos; \
+        if (pos >= N) { \
+            state[0] = state[N - 1]; \
+            pos = 1; \
+        } \
     } while (0)
 
 /*
@@ -20,7 +42,6 @@ const uint32_t R = 31;
 const uint32_t A = 0x9908b0df;
 const uint32_t F = 1812433253;
 const uint32_t U = 11;
-const uint32_t Q = R - 1;
 
 const uint32_t S = 7;
 const uint32_t B = 0x9d2c5680;
@@ -39,8 +60,8 @@ static uint32_t zero_or_A[] = { 0, A };
 // Initialize with a given numeric seed.
 void mtwister_build_from_seed(MTwister* mt, const uint32_t seed) {
     mt->state[0] = seed;
-    for (uint32_t j = 1; j < N; ++j) {
-        mt->state[j] = (F * (mt->state[j - 1] ^ (mt->state[j - 1] >> Q)) + j);
+    for (uint32_t k = 1; k < N; ++k) {
+        RATTLE(mt->state, k, 0, F, k);
     }
     mt->index = N;
 }
@@ -53,26 +74,14 @@ void mtwister_build_from_key(MTwister* mt, const uint32_t key[], uint32_t len) {
     uint32_t j = 0;
     uint32_t k = 0;
     for (k = N > len ? N : len; k; --k) {
-        mt->state[i] = (mt->state[i] ^ ((mt->state[i - 1] ^ (mt->state[i - 1] >> Q)) * 1664525U)) + key[j] + j; // non linear
-        mt->state[i] &= D; // for WORDSIZE > 32 machines
-        ++i;
+        ROLL(mt->state, i, 1664525U, key[j] + j); // non linear
         ++j;
-        if (i >= N) {
-            mt->state[0] = mt->state[N - 1];
-            i = 1;
-        }
         if (j >= len) {
             j = 0;
         }
     }
     for (k = N - 1; k; --k) {
-        mt->state[i] = (mt->state[i] ^ ((mt->state[i - 1] ^ (mt->state[i - 1] >> Q)) * 1566083941U)) - i; // non linear
-        mt->state[i] &= D; // for WORDSIZE > 32 machines
-        ++i;
-        if (i >= N) {
-            mt->state[0] = mt->state[N - 1];
-            i = 1;
-        }
+        ROLL(mt->state, i, 1566083941U, -i); // non linear
     }
 
     mt->state[0] = 0x80000000U; // MSB is 1; assuring non-zero initial array
@@ -89,13 +98,13 @@ void mtwister_build_from_random_seed(MTwister* mt) {
 static void twist(MTwister* mt) {
     // This is just a loop in [0, N), but unrolled to avoid arithmetic % N
     for (uint32_t j = 0; j < N - M; ++j) {
-        STEP(mt->state, j, j + M, j + 1, zero_or_A);
+        SHAKE(mt->state, j, j + M, j + 1, zero_or_A);
     }
     for (uint32_t j = N - M; j < N - 1; ++j) {
-        STEP(mt->state, j, j + M - N, j + 1, zero_or_A);
+        SHAKE(mt->state, j, j + M - N, j + 1, zero_or_A);
     }
     for (uint32_t j = N - 1; j < N; ++j) {
-        STEP(mt->state, j, j + M - N, 0, zero_or_A);
+        SHAKE(mt->state, j, j + M - N, 0, zero_or_A);
     }
     mt->index = 0;
 }
@@ -105,7 +114,6 @@ uint32_t mtwister_generate_u32(MTwister* mt) {
     if (mt->index >= N) {
         twist(mt);
     }
-
     uint32_t y = mt->state[mt->index++];
 
     // Tempering

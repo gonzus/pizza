@@ -10,8 +10,8 @@ static const char* empty_string = "";
 static void test_sizes(void) {
     int size_ptr = sizeof(void*);
     cmp_ok(sizeof(Slice), "==", 2*size_ptr, "sizeof(Slice)");
-    cmp_ok(sizeof(uint8_t) , "==", 1         , "sizeof(uint8_t)");
-    cmp_ok(sizeof(uint8_t*), "==", size_ptr  , "sizeof(uint8_t*)");
+    cmp_ok(sizeof(Byte) , "==", 1         , "sizeof(Byte)");
+    cmp_ok(sizeof(Byte*), "==", size_ptr  , "sizeof(Byte*)");
 }
 
 static void test_slice_is_null(void) {
@@ -59,7 +59,7 @@ static void test_slice_compare(void) {
 static void test_slice_find_byte(void) {
     static struct {
         const char* w;
-        uint8_t b;
+        Byte b;
         int pos;
     } string_info[] = {
         { "foo"                 , 'o'  ,  1 },
@@ -73,7 +73,7 @@ static void test_slice_find_byte(void) {
 
     for (int j = 0; j < ALEN(string_info); ++j) {
         const char* W = string_info[j].w;
-        uint8_t B = string_info[j].b;
+        Byte B = string_info[j].b;
         int e = string_info[j].pos;
         Slice w = slice_wrap_string(W);
 #if 0
@@ -157,7 +157,7 @@ static void test_slice_tokenize(void) {
         int sdone = 0;
         int cdone = 0;
         while (1) {
-            if (!slice_tokenize(str, sep, &lookup)) {
+            if (!slice_tokenize_by_slice(str, sep, &lookup)) {
                 sdone = 1;
             }
             // if (pos > 0) sdone = 1;
@@ -182,60 +182,9 @@ static void test_slice_tokenize(void) {
                 break;
             }
             int len = strlen(ctok);
-            cmp_ok(lookup.res.len, "==", len, "slice_tokenize([%s]) => token %d with %d bytes", STR, pos, len);
-            cmp_mem(lookup.res.ptr, ctok, lookup.res.len, "slice_tokenize([%s]) => token %d = [%s] OK", STR, pos, ctok);
+            cmp_ok(lookup.result.len, "==", len, "slice_tokenize([%s]) => token %d with %d bytes", STR, pos, len);
+            cmp_mem(lookup.result.ptr, ctok, lookup.result.len, "slice_tokenize([%s]) => token %d = [%s] OK", STR, pos, ctok);
             ++pos;
-        }
-    }
-}
-
-static void test_slice_split(void) {
-    static struct {
-        const char* str;
-        const char* set;
-    } string_info[] = {
-        { "", " " },
-        { "X", " " },
-        { "X", "X" },
-        { "foo bar baz", " " },
-        { "3+4*5-11+323", "+-*/" },
-        { "-+3+4*5", "+-*/" },
-        { "3+4*5**//", "+-*/" },
-        { "-+3+4*5", "%" },
-        { " this is  a   line with\tblanks ", " \t" },
-        { "123+34*-55-+/28+++--", "+-*/" },
-        { "--++123", "+-*/" },
-    };
-
-    for (int j = 0; j < ALEN(string_info); ++j) {
-        const char* STR = string_info[j].str;
-        const char* SET = string_info[j].set;
-
-        Slice str = slice_wrap_string(STR);
-        Slice set = slice_wrap_string(SET);
-        {
-            SliceLookup lookup = {0};
-
-            int len = strcspn(STR, SET);
-            bool found = slice_split_excluded(str, set, &lookup);
-            if (!found) {
-                cmp_ok(0, "==", len, "slice_split_excluded([%s], [%s]) => not found, %d bytes", STR, SET, len);
-            } else {
-                cmp_ok(lookup.res.len, "==", len, "slice_split_excluded([%s], [%s]) => string with %d bytes", STR, SET, len);
-                cmp_mem(lookup.res.ptr, STR, lookup.res.len, "slice_split_excluded([%s], [%s]) => [%*.s] OK", STR, SET, len, STR);
-            }
-        }
-        {
-            SliceLookup lookup = {0};
-
-            int len = strspn(STR, SET);
-            bool found = slice_split_included(str, set, &lookup);
-            if (!found) {
-                cmp_ok(0, "==", len, "slice_split_included([%s], [%s]) => not found, %d bytes", STR, SET, len);
-            } else {
-                cmp_ok(lookup.res.len, "==", len, "slice_split_included([%s], [%s]) => string with %d bytes", STR, SET, len);
-                cmp_mem(lookup.res.ptr, STR, lookup.res.len, "slice_split_included([%s], [%s]) => [%*.s] OK", STR, SET, len, STR);
-            }
         }
     }
 }
@@ -251,7 +200,6 @@ int main (int argc, char* argv[]) {
     test_slice_find_byte();
     test_slice_find_slice();
     test_slice_tokenize();
-    test_slice_split();
 
     done_testing();
 }

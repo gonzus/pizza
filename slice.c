@@ -3,16 +3,15 @@
 
 Slice SLICE_NULL = { .ptr = 0, .len = 0 };
 
-static bool slice_split(Slice src, bool inc, Slice set, SliceLookup* lookup);
 static void lookup_init(SliceLookup* lookup, Slice src, Slice set);
 
-Slice slice_wrap_ptr_len(const uint8_t* ptr, uint32_t len) {
+Slice slice_wrap_ptr_len(const Byte* ptr, uint32_t len) {
     Slice s = { .ptr = ptr, .len = len };
     return s;
 }
 
-Slice slice_wrap_string(const char* string) {
-    return slice_wrap_ptr_len((const uint8_t*) string, string == 0 ? 0 : strlen(string));
+Slice slice_wrap_string(const char* bytes) {
+    return slice_wrap_ptr_len((const Byte*) bytes, bytes == 0 ? 0 : strlen(bytes));
 }
 
 int slice_compare(Slice l, Slice r) {
@@ -36,7 +35,7 @@ int slice_compare(Slice l, Slice r) {
     return 0;
 }
 
-Slice slice_find_byte(Slice s, uint8_t t) {
+Slice slice_find_byte(Slice s, Byte t) {
     uint32_t j = 0;
     for (j = 0; j < s.len; ++j) {
         if (s.ptr[j] == t) {
@@ -55,12 +54,12 @@ Slice slice_find_slice(Slice s, Slice t) {
     }
 
 #if defined(_GNU_SOURCE)
-    uint8_t* p = memmem(s.ptr, s.len, t.ptr, t.len);
+    const Byte* p = memmem(s.ptr, s.len, t.ptr, t.len);
     if (p) {
         return slice_wrap_ptr_len(p, t.len);
     }
 #else
-    // TODO: implement a good search algorihtm here?
+    // TODO: implement a good search algorithm here?
     uint32_t j = 0;
     uint32_t top = s.len - t.len + 1;
     for (j = 0; j < top; ++j) {
@@ -76,13 +75,13 @@ Slice slice_find_slice(Slice s, Slice t) {
     return SLICE_NULL;
 }
 
-bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup) {
-    bool first = !lookup->res.ptr;
+static bool slice_tokenize(Slice src, Slice s, SliceLookup* lookup) {
+    bool first = !lookup->result.ptr;
     uint32_t start = 0;
     if (!first) {
         // not the first time we were called -- we already found a previous
         // token, and stopped at a separator.
-        start = (lookup->res.ptr - src.ptr) + lookup->res.len + 1;
+        start = (lookup->result.ptr - src.ptr) + lookup->result.len + 1;
     }
 
     if (start >= src.len) {
@@ -91,14 +90,14 @@ bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup) {
 
     if (first) {
         // first time we are called -- initialize lookup
-        lookup_init(lookup, src, sep);
+        lookup_init(lookup, src, s);
     }
 
     // current position and remaining length
-    const uint8_t* p = src.ptr + start;
+    const Byte* p = src.ptr + start;
     uint32_t l = src.len - start;
 
-    // skip all separators
+    // skip all separators using our map
     uint32_t j = 0;
     for (; j < l; ++j) {
         if (!lookup->map[p[j]]) {
@@ -109,7 +108,8 @@ bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup) {
         return false; // no bytes left
     }
 
-    // we are looking at a token -- find separator after it
+    // we are looking at a token
+    // find separator after token using our map
     uint32_t k = j;
     for (; k < l; ++k) {
         if (lookup->map[p[k]]) {
@@ -117,73 +117,52 @@ bool slice_tokenize(Slice src, Slice sep, SliceLookup* lookup) {
         }
     }
 
-    // remember where separator was
-    lookup->res = slice_wrap_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
+    // produce current result
+    lookup->result = slice_wrap_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
 
     return true; // found next token
 }
 
-bool slice_split_included(Slice src, Slice set, SliceLookup* lookup) {
-    return slice_split(src, true, set, lookup);
+bool slice_tokenize_by_slice(Slice src, Slice s, SliceLookup* lookup) {
+    return slice_tokenize(src, s, lookup);
 }
 
-bool slice_split_excluded(Slice src, Slice set, SliceLookup* lookup) {
-    return slice_split(src, false, set, lookup);
+bool slice_tokenize_by_char(Slice src, Byte t, SliceLookup* lookup) {
+    Byte tmp[2] = { t, '\0' };
+    return slice_tokenize(src, slice_wrap_ptr_len(tmp, 1), lookup);
 }
 
-static bool slice_split(Slice src, bool inc, Slice set, SliceLookup* lookup) {
-    bool first = !lookup->res.ptr;
-    uint32_t start = 0;
-    if (!first) {
-        // not the first time we were called -- we already found a previous
-        // span, and stopped at a non-span character.
-        start = (lookup->res.ptr - src.ptr) + lookup->res.len + 1;
-    }
-
-    if (start >= src.len) {
-        return false; // no bytes left
-    }
-
-    if (first) {
-        // first time we are called -- initialize lookup
-        lookup_init(lookup, src, set);
-    }
-
-    // current position and remaining length
-    const uint8_t* p = src.ptr + start;
-    uint32_t l = src.len - start;
-
-    uint32_t j = 0;
-    if (!first) {
-        // skip all non-span characters
-        for (; j < l; ++j) {
-            bool match = lookup->map[src.ptr[j]];
-            if (inc ? match : !match) {
-                break;
-            }
-        }
-        if (j >= l) {
-            return false; // no bytes left
+int slice_split_by_char_l2r(Slice s, Byte t, Slice* l, Slice* r) {
+    for (int32_t j = 0; j < (int32_t) s.len; ++j) {
+        if (s.ptr[j] == t) {
+            *l = slice_wrap_ptr_len(s.ptr, j);
+            *r = slice_wrap_ptr_len(s.ptr + j + 1, s.len - j - 1);
+            return 1;
         }
     }
+    *l = s;
+    *r = slice_wrap_ptr_len(s.ptr + s.len, 0);
+    return 0;
+}
 
-    // we are looking at a span -- find non-span character after it
-    uint32_t k = j;
-    for (; k < l; ++k) {
-        bool match = lookup->map[src.ptr[k]];
-        if (inc ? !match : match) {
-            break;
+int slice_split_by_char_r2l(Slice s, Byte t, Slice* l, Slice* r) {
+    for (int32_t j = (int32_t) s.len - 1; j >= 0; --j) {
+        if (s.ptr[j] == t) {
+            *l = slice_wrap_ptr_len(s.ptr, j);
+            *r = slice_wrap_ptr_len(s.ptr + j + 1, s.len - j - 1);
+            return 1;
         }
     }
-
-    // remember where non-span character was
-    lookup->res = slice_wrap_ptr_len(p + j, (k < l) ? (k-j) : (l-j));
-
-    return true; // found next span
+    *l = slice_wrap_ptr_len(s.ptr, 0);
+    *r = s;
+    return 0;
 }
 
 static void lookup_init(SliceLookup* lookup, Slice src, Slice set) {
-    lookup->res = slice_wrap_ptr_len(src.ptr, 0);
+    // reset result
+    lookup->result = slice_wrap_ptr_len(src.ptr, 0);
+
+    // create a quick map of the bytes / chars we are interested in
     memset(lookup->map, 0, 256);
     for (uint32_t j = 0; j < set.len; ++j) {
         lookup->map[set.ptr[j]] = 1;

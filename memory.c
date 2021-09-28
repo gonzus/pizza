@@ -36,7 +36,9 @@ void dump_bytes(FILE* fp, const void* ptr, size_t len) {
 void* memory_realloc(void* ptr, size_t len) {
     if (len <= 0) {
         // want to release the memory
-        free(ptr);
+        if (ptr) {
+            free(ptr);
+        }
         return 0;
     }
 

@@ -22,33 +22,7 @@
 static void buffer_adjust(Buffer* b, uint32_t cap);
 static void buffer_append_ptr_len(Buffer* b, const char* ptr, int len);
 
-Buffer* buffer_create(void) {
-    Buffer* b = memory_realloc(0, sizeof(Buffer));
-    buffer_init(b);
-    BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
-    return b;
-}
-
-Buffer* buffer_create_capacity(uint32_t cap) {
-    Buffer* b = buffer_create();
-    buffer_ensure_total(b, cap);
-    return b;
-}
-
-Buffer* buffer_create_from_slice(Slice s, bool zero) {
-    Buffer* b = buffer_create();
-    buffer_append_slice(b, s);
-    if (zero) {
-        buffer_null_terminate(b);
-    }
-    return b;
-}
-
-Buffer* buffer_create_from_string(const char* s, bool zero) {
-    return buffer_create_from_slice(slice_build_from_string(s), zero);
-}
-
-void buffer_init(Buffer* b) {
+void buffer_build(Buffer* b) {
     b->ptr = b->buf;
     b->cap = BUFFER_DATA_SIZE;
     b->len = 0;
@@ -58,14 +32,26 @@ void buffer_init(Buffer* b) {
 void buffer_destroy(Buffer* b) {
     if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_PTR_IN_HEAP);
-        b->ptr = memory_realloc(b->ptr, 0);
+        MEMORY_FREE_ARRAY(b->ptr, char, b->cap);
         assert(!b->ptr);
     }
-    if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_BUF_IN_HEAP)) {
-        BUFFER_FLAG_CLR(b, BUFFER_FLAG_BUF_IN_HEAP);
-        b = memory_realloc(b, 0);
-        assert(!b);
-    }
+}
+
+Buffer* buffer_allocate(void) {
+    Buffer* b = 0;
+    MEMORY_ALLOC(b, Buffer);
+    buffer_build(b);
+    BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
+    assert(b);
+    return b;
+}
+
+void buffer_release(Buffer* b) {
+    assert(BUFFER_FLAG_CHK(b, BUFFER_FLAG_BUF_IN_HEAP));
+    BUFFER_FLAG_CLR(b, BUFFER_FLAG_BUF_IN_HEAP);
+    buffer_destroy(b);
+    MEMORY_FREE(b, Buffer);
+    assert(!b);
 }
 
 void buffer_ensure_total(Buffer* b, uint32_t total) {
@@ -89,11 +75,10 @@ void buffer_ensure_total(Buffer* b, uint32_t total) {
             BUFFER_FLAG_SET(b, BUFFER_FLAG_PTR_IN_HEAP);
         }
     }
-    assert(b->cap >= total);
 }
 
 Buffer* buffer_clone(const Buffer* b) {
-    Buffer* n = buffer_create();
+    Buffer* n = buffer_allocate();
     buffer_append_buffer(n, b);
     return n;
 }
@@ -119,6 +104,14 @@ void buffer_pack(Buffer* b) {
     } else {
         // Not enough space in buf, remain in ptr
         buffer_adjust(b, b->len);
+    }
+}
+
+void buffer_set_to_slice(Buffer* b, Slice s, bool zero) {
+    buffer_clear(b);
+    buffer_append_slice(b, s);
+    if (zero) {
+        buffer_null_terminate(b);
     }
 }
 
@@ -187,7 +180,8 @@ void buffer_format_print(Buffer* b, const char* fmt, ...) {
 }
 
 static void buffer_adjust(Buffer* b, uint32_t cap) {
-    char* tmp = memory_realloc(b->ptr, cap);
+    char* tmp = 0;
+    MEMORY_ADJUST(tmp, b->ptr, b->cap, cap);
     b->ptr = tmp;
     b->cap = cap;
 }

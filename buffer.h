@@ -9,11 +9,6 @@
  * User always looks at buffer->ptr, whether small or large.
  * It does NOT add a null terminator at the end.
  * Do NOT use with C standard strXXX() functions.
- *
- * TODO
- *
- * trim -- for a set of characters?
- * tolower, toupper
  */
 
 #include <stdarg.h>
@@ -69,26 +64,22 @@ static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
         buffer_append_byte(b, '\0'); \
     } while (0)
 
-// Build an empty / default-sized Buffer.
-Buffer* buffer_create(void);
+// Buffer default constructor.
+void buffer_build(Buffer* b);
 
-// Build a Buffer with defined capacity.
-Buffer* buffer_create_capacity(uint32_t cap);
-
-// helpers to build already-initialized, maybe-null-terminated buffers
-Buffer* buffer_create_from_slice(Slice s, bool zero);
-Buffer* buffer_create_from_string(const char* s, bool zero);
-
-// Initialize Buffer, whether allocated in stack or heap.
-void buffer_init(Buffer* b);
-
-// Destroy a Buffer.
+// Buffer destructor.
 void buffer_destroy(Buffer* b);
+
+// Allocate and build a Buffer in the heap.
+Buffer* buffer_allocate(void);
+
+// Destroy and release a Buffer in the heap.
+void buffer_release(Buffer* b);
 
 // Ensure buffer has space for total bytes.
 void buffer_ensure_total(Buffer* b, uint32_t total);
 
-// Clone an existing Buffer.
+// Clone an existing Buffer -- clone lives in the heap.
 Buffer* buffer_clone(const Buffer* b);
 
 // Create a slice that wraps the contents of the buffer.
@@ -96,6 +87,9 @@ Slice buffer_slice(const Buffer* b);
 
 // Reallocate memory so that current data fits exactly into Buffer.
 void buffer_pack(Buffer* b);
+
+// Set contents of Buffer to a Slice, optionally null-terminated.
+void buffer_set_to_slice(Buffer* b, Slice s, bool zero);
 
 // Append a single byte to current contents of Buffer.
 void buffer_append_byte(Buffer* b, char t);

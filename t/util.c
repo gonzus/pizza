@@ -22,16 +22,16 @@ static void test_detailed_formatting(void) {
         { 9*86400000000, "1W2D" },
         { 100*86400000000+4*3600000000+15*60000000+9*1000000, "14W2D4h15m9s" },
     };
-    Buffer *b = buffer_allocate();
+    Buffer b; buffer_build(&b);
     for (int j = 0; j < ALEN(data); ++j) {
         unsigned long us = data[j].us;
         const char* expected = data[j].formatted;
         int elen = strlen(expected);
-        buffer_clear(b);
-        format_detailed_us(us, b);
-        cmp_mem(b->ptr, expected, elen, "detailed formatted %lu us correctly as [%s] (%d:%.*s)", us, expected, elen, elen, b->ptr);
+        buffer_clear(&b);
+        format_detailed_us(us, &b);
+        cmp_mem(b.ptr, expected, elen, "detailed formatted %lu us correctly as [%s] (%d:%.*s)", us, expected, elen, elen, b.ptr);
     }
-    buffer_release(b);
+    buffer_destroy(&b);
 }
 
 static void test_abbreviated_formatting(void) {
@@ -50,16 +50,16 @@ static void test_abbreviated_formatting(void) {
         { 9*86400000000, "1.29W" },
         { 100*86400000000+4*3600000000+15*60000000+9*1000000, "14.31W" },
     };
-    Buffer *b = buffer_allocate();
+    Buffer b; buffer_build(&b);
     for (int j = 0; j < ALEN(data); ++j) {
         unsigned long us = data[j].us;
         const char* expected = data[j].formatted;
         int elen = strlen(expected);
-        buffer_clear(b);
-        format_abbreviated_us(us, b);
-        cmp_mem(b->ptr, expected, elen, "abbreviated formatted %lu us correctly as [%s] (%d:%.*s)", us, expected, elen, elen, b->ptr);
+        buffer_clear(&b);
+        format_abbreviated_us(us, &b);
+        cmp_mem(b.ptr, expected, elen, "abbreviated formatted %lu us correctly as [%s] (%d:%.*s)", us, expected, elen, elen, b.ptr);
     }
-    buffer_release(b);
+    buffer_destroy(&b);
 }
 
 int main (int argc, char* argv[]) {

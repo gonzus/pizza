@@ -48,30 +48,30 @@ static void test_format_numbers(void) {
     };
     for (int j = 0; j < ALEN(data); ++j) {
         char tmp[1024];
-        Buffer* b = buffer_allocate();
+        Buffer b; buffer_build(&b);
         switch (data[j].t) {
             case 0:
-                buffer_format_unsigned(b, data[j].u);
+                buffer_format_unsigned(&b, data[j].u);
                 sprintf(tmp, "%llu", data[j].u);
                 break;
             case 1:
-                buffer_format_signed(b, data[j].s);
+                buffer_format_signed(&b, data[j].s);
                 sprintf(tmp, "%lld", data[j].s);
                 break;
             case 2:
-                buffer_format_double(b, data[j].d);
+                buffer_format_double(&b, data[j].d);
                 sprintf(tmp, "%f", data[j].d);
                 break;
             default:
                 continue;
         }
 
-        cmp_mem(b->ptr, tmp, b->len, "buffer_format_NUMBER %s => OK", tmp);
-        buffer_release(b);
+        cmp_mem(b.ptr, tmp, b.len, "buffer_format_NUMBER %s => OK", tmp);
+        buffer_destroy(&b);
     }
 }
 
-static void print_and_compare(Buffer* buf, char* str, const char* fmt, ...) {
+static void print_and_compare(Buffer* b, char* str, const char* fmt, ...) {
     va_list ap;
     va_list aq;
     va_start(ap, fmt);
@@ -80,53 +80,51 @@ static void print_and_compare(Buffer* buf, char* str, const char* fmt, ...) {
     vsprintf(str, fmt, ap);
     va_end(ap);
 
-    buffer_clear(buf);
-    buffer_format_vprint(buf, fmt, aq);
+    buffer_clear(b);
+    buffer_format_vprint(b, fmt, aq);
     va_end(aq);
 
-    cmp_mem(buf->ptr, str, buf->len, "buffer_format_print {%s} => OK", str);
+    cmp_mem(b->ptr, str, b->len, "buffer_format_print {%s} => OK", str);
 }
 
 static void test_format_print(void) {
     char str[1024];
-    Buffer* buf = buffer_allocate();
+    Buffer b; buffer_build(&b);
 
-    print_and_compare(buf, str, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
-    print_and_compare(buf, str, "A more %-5.5s thing with pi=%7.4f", "complicated", M_PI);
+    print_and_compare(&b, str, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
+    print_and_compare(&b, str, "A more %-5.5s thing with pi=%7.4f", "complicated", M_PI);
 
-    buffer_release(buf);
+    buffer_destroy(&b);
 }
 
 static void test_stack(void) {
     char str[1024];
-    Buffer buf;
-    buffer_build(&buf);
+    Buffer b; buffer_build(&b);
 
-    print_and_compare(&buf, str, "This fits on the %s", "stack");
-    print_and_compare(&buf, str, "This ALSO fits there");
+    print_and_compare(&b, str, "This fits on the %s", "stack");
+    print_and_compare(&b, str, "This ALSO fits there");
 
-    buffer_destroy(&buf);
+    buffer_destroy(&b);
 }
 
 static void test_stack_heap(void) {
     char str[1024];
-    Buffer buf;
-    buffer_build(&buf);
+    Buffer b; buffer_build(&b);
 
     const char* heap = "extremely useful heap";
-    print_and_compare(&buf, str, "This is large enough to need the %s %s %s", heap, heap, heap);
+    print_and_compare(&b, str, "This is large enough to need the %s %s %s", heap, heap, heap);
 
-    buffer_destroy(&buf);
+    buffer_destroy(&b);
 }
 
 static void test_pure_heap(void) {
     char str[1024];
-    Buffer* buf = buffer_allocate();
+    Buffer* b = buffer_allocate();
 
     const char* heap = "humongously useful heap";
-    print_and_compare(buf, str, "Also large enough to need the %s %s %s", heap, heap, heap);
+    print_and_compare(b, str, "Also large enough to need the %s %s %s", heap, heap, heap);
 
-    buffer_release(buf);
+    buffer_release(b);
 }
 
 static void test_clone(void) {
@@ -140,14 +138,14 @@ static void test_clone(void) {
     for (int j = 0; j < ALEN(data); ++j) {
         const char* ptr = data[j].s;
         uint32_t len = strlen(data[j].s);
-        Buffer* b = buffer_allocate();
-        buffer_append_string(b, ptr, len);
-        Buffer* n = buffer_clone(b);
-        ok(b->ptr != n->ptr, "buffer_clone: pointers %p and %p are different OK", b->ptr, n->ptr);
-        cmp_ok(b->len, "==", n->len, "buffer_clone: lengths %d and %d are equal OK", b->len, n->len);
-        cmp_mem(b->ptr, n->ptr, b->len, "buffer_clone: %d bytes OK", b->len);
+        Buffer b; buffer_build(&b);
+        buffer_append_string(&b, ptr, len);
+        Buffer* n = buffer_clone(&b);
+        ok(b.ptr != n->ptr, "buffer_clone: pointers %p and %p are different OK", b.ptr, n->ptr);
+        cmp_ok(b.len, "==", n->len, "buffer_clone: lengths %d and %d are equal OK", b.len, n->len);
+        cmp_mem(b.ptr, n->ptr, b.len, "buffer_clone: %d bytes OK", b.len);
         buffer_release(n);
-        buffer_release(b);
+        buffer_destroy(&b);
     }
 }
 
@@ -162,27 +160,27 @@ static void test_pack(void) {
     for (int j = 0; j < ALEN(data); ++j) {
         const char* ptr = data[j].s;
         uint32_t len = strlen(data[j].s);
-        Buffer* b = buffer_allocate();
+        Buffer b; buffer_build(&b);
 
-        buffer_append_string(b, ptr, len);
+        buffer_append_string(&b, ptr, len);
 #if 0
-        dump_bytes(stderr, b->ptr, b->len);
+        dump_bytes(stderr, b.ptr, b.len);
 #endif
-        cmp_ok(b->cap, ">=", b->len, "buffer_pack: after append cap %d >= len %d OK", b->cap, b->len);
+        cmp_ok(b.cap, ">=", b.len, "buffer_pack: after append cap %d >= len %d OK", b.cap, b.len);
 
-        buffer_pack(b);
-        if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
-            cmp_ok(b->cap, "==", b->len, "buffer_pack: afer pack cap %d == len %d OK", b->cap, b->len);
+        buffer_pack(&b);
+        if (BUFFER_FLAG_CHK(&b, BUFFER_FLAG_PTR_IN_HEAP)) {
+            cmp_ok(b.cap, "==", b.len, "buffer_pack: afer pack cap %d == len %d OK", b.cap, b.len);
         }
 
-        buffer_clear(b);
-        cmp_ok(b->len, "==", 0, "buffer_pack: after clear len %d OK", b->len);
+        buffer_clear(&b);
+        cmp_ok(b.len, "==", 0, "buffer_pack: after clear len %d OK", b.len);
 
-        buffer_pack(b);
-        if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
-            cmp_ok(b->cap, "==", 0, "buffer_pack: after clear+pack cap %d OK)", b->cap);
+        buffer_pack(&b);
+        if (BUFFER_FLAG_CHK(&b, BUFFER_FLAG_PTR_IN_HEAP)) {
+            cmp_ok(b.cap, "==", 0, "buffer_pack: after clear+pack cap %d OK)", b.cap);
         }
-        buffer_release(b);
+        buffer_destroy(&b);
     }
 }
 

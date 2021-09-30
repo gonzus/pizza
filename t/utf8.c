@@ -70,17 +70,17 @@ static void test_decode(void) {
 
 static void test_encode(void) {
     int ulen = sizeof(unicode) / sizeof(unicode[0]);
-    Buffer *encoded = buffer_allocate();
+    Buffer encoded; buffer_build(&encoded);
     for (int j = 0; j < ulen; ++j) {
         uint32_t r = unicode[j];
-        unsigned int len = utf8_encode(r, encoded);
+        unsigned int len = utf8_encode(r, &encoded);
         cmp_ok(len, ">", 0, "utf8_encode(0x%x) => %u bytes", (int) r, len);
     }
-    for (unsigned int j = 0; j < encoded->len; ++j) {
-        uint8_t b = encoded->ptr[j];
+    for (unsigned int j = 0; j < encoded.len; ++j) {
+        uint8_t b = encoded.ptr[j];
         cmp_ok(b, "==", utf8[j], "utf8_encode pos %d OK => 0x%x", j, b);
     }
-    buffer_release(encoded);
+    buffer_destroy(&encoded);
 }
 
 int main (int argc, char* argv[]) {

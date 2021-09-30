@@ -20,4 +20,8 @@ uint32_t utf8_decode(Slice* s);
 // If the rune was not valid Unicode, return 0.
 unsigned int utf8_encode(uint32_t r, Buffer* b);
 
+// TODO
+// Use https://www.fileformat.info/info/unicode/char/fffd/index.htm
+// to indicate errors in UTF-8 decoding
+
 #endif

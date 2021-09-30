@@ -1,19 +1,17 @@
 #ifndef WEDGE_H_
 #define WEDGE_H_
 
+/*
+ * A Wedge is a Slice but which guarantes a null-terminator.
+ * Needed for the sad case of C libraries that expect a null-terminated string.
+ */
+
 #include "slice.h"
 #include "buffer.h"
 
-// MAYBE
-// s always points to the null-terminated string
-// b gets built and keeps its own copy if the string is not null-terminated; s would point to b in this case
-//
-// MAYBE
-// we should always create b, because it is safer to keep our internal copy?
-// needed for char anyway
 typedef struct Wedge {
     Slice s;
-    Buffer* b;
+    Buffer* b; // if needed, it will live in the heap
 } Wedge;
 
 void wedge_build_from_string(Wedge* w, const char* str);
@@ -24,10 +22,4 @@ void wedge_build_from_slice(Wedge* w, Slice s);
 
 void wedge_destroy(Wedge* w);
 
-// TODO
-// Use https://www.fileformat.info/info/unicode/char/fffd/index.htm
-// to indicate errors in UTF-8 decoding
-
-// TODO
-// Where possible, change buffer allocate / release by build / destroy (ex: tests)
 #endif

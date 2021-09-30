@@ -47,12 +47,22 @@ static void test_murmur3(void) {
     }
 }
 
+static void test_wang(void) {
+    ok(1, "DON'T HAVE ANY DATA TO COMPARE WITH FOR hash_wang()");
+}
+
+static void test_pcg(void) {
+    ok(1, "DON'T HAVE ANY DATA TO COMPARE WITH FOR hash_pcg()");
+}
+
 int main (int argc, char* argv[]) {
     (void) argc;
     (void) argv;
 
     test_djb2();
     test_murmur3();
+    test_wang();
+    test_pcg();
 
     done_testing();
 }

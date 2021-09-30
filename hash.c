@@ -62,3 +62,19 @@ uint32_t hash_murmur3(const char* str, uint32_t len, uint32_t seed) {
     h ^= (h >> 16);
     return h;
 }
+
+uint32_t hash_wang(uint32_t input) {
+    input = (input ^ 61) ^ (input >> 16);
+    input *= 9;
+    input = input ^ (input >> 4);
+    input = input * 0x27d4eb2d;
+    input = input ^ (input >> 15);
+    return input;
+}
+
+uint32_t hash_pcg(uint32_t input)
+{
+    uint32_t state = input * 747796405u + 2891336453u;
+    uint32_t word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}

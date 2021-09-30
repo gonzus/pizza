@@ -1,7 +1,7 @@
 #include <string.h>
 #include "slice.h"
 
-Slice SLICE_NULL = { .ptr = 0, .len = 0 };
+static Slice slice_null = { .ptr = 0, .len = 0 };
 
 static void lookup_init(SliceLookup* lookup, Slice src, Slice set);
 
@@ -45,12 +45,12 @@ Slice slice_find_byte(Slice s, char t) {
     if (j < s.len) {
         return slice_build_from_ptr_len(s.ptr + j, 1);
     }
-    return SLICE_NULL;
+    return slice_null;
 }
 
 Slice slice_find_slice(Slice s, Slice t) {
     if (s.len < t.len) {
-        return SLICE_NULL;
+        return slice_null;
     }
 
 #if defined(_GNU_SOURCE)
@@ -72,7 +72,7 @@ Slice slice_find_slice(Slice s, Slice t) {
     }
 #endif
 
-    return SLICE_NULL;
+    return slice_null;
 }
 
 static bool slice_tokenize(Slice src, Slice s, SliceLookup* lookup) {

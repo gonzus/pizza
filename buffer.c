@@ -38,8 +38,7 @@ void buffer_destroy(Buffer* b) {
 }
 
 Buffer* buffer_allocate(void) {
-    Buffer* b = 0;
-    MEMORY_ALLOC(b, Buffer);
+    Buffer* b = 0; MEMORY_ALLOC(b, Buffer);
     buffer_build(b);
     BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
     assert(b);

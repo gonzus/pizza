@@ -34,12 +34,6 @@ typedef struct SliceLookup {
     Slice result;
 } SliceLookup;
 
-// The single null Slice.
-extern Slice SLICE_NULL;
-
-// Return true if Slice is null (invalid ptr).
-#define slice_is_null(s) ((s).ptr == 0)
-
 // Return true if Slice is empty (invalid ptr OR zero len).
 #define slice_is_empty(s) ((s).ptr == 0 || (s).len == 0)
 
@@ -61,11 +55,11 @@ Slice slice_build_from_ptr_len(const char* ptr, uint32_t len);
 int slice_compare(Slice l, Slice r);
 
 // Find byte in Slice.
-// Return SLICE_NULL if not found.
+// Return an empty slice if not found.
 Slice slice_find_byte(Slice s, char t);
 
 // Find Slice in Slice.
-// Return SLICE_NULL if not found.
+// Return an empty slice if not found.
 Slice slice_find_slice(Slice s, Slice t);
 
 // Tokenize Slice by repeatedly searching for any character in a separator slice.

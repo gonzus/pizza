@@ -28,6 +28,7 @@ C_SRC_LIB = \
 	memory.c \
 	slice.c \
 	buffer.c \
+	wedge.c \
 	utf8.c \
 	ymd.c \
 	hms.c \

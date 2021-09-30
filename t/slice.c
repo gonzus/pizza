@@ -14,12 +14,7 @@ static void test_sizes(void) {
     cmp_ok(sizeof(char*), "==", size_ptr  , "sizeof(char*)");
 }
 
-static void test_slice_is_null(void) {
-    cmp_ok(!!slice_is_null(SLICE_NULL), "==", !!1, "slice_is_null(SLICE_NULL)");
-}
-
 static void test_slice_is_empty(void) {
-    cmp_ok(!!slice_is_empty(SLICE_NULL), "==", !!1, "slice_is_empty(SLICE_NULL)");
     Slice s = slice_build_from_string(empty_string);
     cmp_ok(!!slice_is_empty(s), "==", !!1, "slice_is_empty(\"\")");
 }
@@ -81,7 +76,7 @@ static void test_slice_find_byte(void) {
 #endif
         Slice f = slice_find_byte(w, B);
         if (e < 0) {
-            cmp_ok(!!slice_is_null(f), "==", !!1, "slice_find_byte([%s], [0x%02x]) => ABSENT", W, (unsigned int) B);
+            cmp_ok(!!slice_is_empty(f), "==", !!1, "slice_find_byte([%s], [0x%02x]) => ABSENT", W, (unsigned int) B);
         } else {
             cmp_ok(*f.ptr, "==", W[e], "slice_find_byte([%s], [%c]) => FOUND", W, (unsigned int) B);
         }
@@ -112,7 +107,7 @@ static void test_slice_find_slice(void) {
         Slice n = slice_build_from_string(N);
         Slice f = slice_find_slice(w, n);
         if (e < 0) {
-            cmp_ok(!!slice_is_null(f), "==", !!1, "slice_find_slice([%s], [%s]) => ABSENT", W, N);
+            cmp_ok(!!slice_is_empty(f), "==", !!1, "slice_find_slice([%s], [%s]) => ABSENT", W, N);
         } else {
             int len = strlen(N);
             cmp_ok(f.len, "==", len, "slice_find_slice([%s], [%s]) => has %d bytes", W, N, len);
@@ -194,7 +189,6 @@ int main (int argc, char* argv[]) {
     (void) argv;
 
     test_sizes();
-    test_slice_is_null();
     test_slice_is_empty();
     test_slice_compare();
     test_slice_find_byte();

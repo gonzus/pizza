@@ -1,5 +1,9 @@
 NAME = pizza
 
+# CFLAGS += -std=c89 -Wno-gcc-compat -Wno-comment
+# CFLAGS += -std=c99
+CFLAGS += -std=c11
+
 # see more log messages
 CFLAGS += -DLOG_LEVEL=1
 
@@ -14,10 +18,6 @@ CFLAGS += -g
 CFLAGS += -Wall -Wextra -Wshadow
 CFLAGS += -Wpedantic
 CFLAGS += -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE -D_GNU_SOURCE
-
-# CFLAGS += -std=c89 -Wno-gcc-compat -Wno-comment
-# CFLAGS += -std=c99
-CFLAGS += -std=c11
 
 LIBRARY = lib$(NAME).a
 

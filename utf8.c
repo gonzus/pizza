@@ -3,6 +3,9 @@
 // Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
 // See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
 
+#define UTF8_ACCEPT 0
+#define UTF8_REJECT 1
+
 static const uint8_t utf8d[] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 00..1f
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 20..3f
@@ -20,10 +23,10 @@ static const uint8_t utf8d[] = {
     1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // s7..s8
 };
 
-static uint32_t decode(uint32_t* state, uint32_t* rune, uint8_t byte) {
+static inline uint8_t decode(uint8_t* state, uint32_t* rune, uint8_t byte) {
     uint8_t type = utf8d[byte];
 
-    *rune = *state
+    *rune = (*state != UTF8_ACCEPT)
           ? (byte & 0x3fu) | (*rune << 6)
           : (0xff >> type) & (byte);
     *state = utf8d[256 + *state * 16 + type];
@@ -31,18 +34,16 @@ static uint32_t decode(uint32_t* state, uint32_t* rune, uint8_t byte) {
 }
 
 uint32_t utf8_decode(Slice* s) {
-    uint32_t state = 0;
-    uint32_t len = 0;
+    uint8_t state = 0;
     uint32_t rune = 0;
-    for (len = 0; len < s->len; ++len) {
-        if (!decode(&state, &rune, s->ptr[len])) {
+    uint8_t len = 0;
+    while (len < s->len) {
+        if (decode(&state, &rune, s->ptr[len++]) == UTF8_ACCEPT) {
             break;
         }
     }
-    if (state) {
+    if (state != UTF8_ACCEPT) {
         rune = UTF8_INVALID_RUNE;
-    } else {
-        ++len;
     }
     s->ptr += len;
     s->len -= len;

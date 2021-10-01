@@ -59,7 +59,7 @@ test: tests
 	@for t in $(C_EXE_TEST); do ./$$t; done
 
 valgrind: tests
-	@for t in $(C_EXE_TEST); do valgrind -q ./$$t; done
+	@for t in $(C_EXE_TEST); do valgrind ./$$t 2>&1 | egrep -v '^==[0-9]+== (Memcheck,|Copyright |Using Valgrind|Command: |For lists of detected |[ \t]*($$|All heap blocks were freed|(HEAP|LEAK|ERROR) SUMMARY|total heap usage|in use at exit: 0 bytes|Process terminating with default action |(at|by) 0x))'; done
 
 clean:
 	rm -f *.o

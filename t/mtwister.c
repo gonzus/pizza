@@ -3,6 +3,12 @@
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 
+enum {
+    limit_to_random_numbers = 10,
+    total_random_numbers_to_generate = 100000000,
+};
+const double max_error = 0.1;
+
 static void test_original(void) {
     static uint32_t expected_int[] = {
         1067595299, 955945823, 477289528, 4107218783, 4228976476,
@@ -420,10 +426,79 @@ static void test_original(void) {
     }
 
     for (int j = 0; j < ALEN(expected_real); ++j) {
-        double got = mtwister_generate_double_CO(&mt);
+        double got = mtwister_generate_double_01_CO(&mt);
         cmp_ok(got , "==", expected_real[j],
                "random real #%d looks good: %.8f", j, got);
     }
+}
+
+static void test_limit(void) {
+    MTwister mt;
+    mtwister_build_from_random_seed(&mt);
+    const int bucket_size = total_random_numbers_to_generate / limit_to_random_numbers;
+    int count[limit_to_random_numbers] = {0};
+    for (int j = 0; j < total_random_numbers_to_generate; ++j) {
+        uint32_t r = mtwister_generate_u32_limit(&mt, limit_to_random_numbers);
+        ++count[r];
+    }
+    for (int j = 0; j < limit_to_random_numbers; ++j) {
+        int delta = count[j] - bucket_size;
+        if (delta < 0) delta = -delta;
+        double error = 100.0 * delta / bucket_size;
+        ok(error < 0.1, "got %10d random numbers in bucket %2d, error is %.2f%%", count[j], j, error);
+    }
+}
+
+static void test_range(void) {
+    MTwister mt;
+    mtwister_build_from_random_seed(&mt);
+    const int lo = 5;
+    const int hi = 24;
+    const int range_size = hi - lo + 1;
+    const int bucket_size = total_random_numbers_to_generate / range_size;
+    int count_below_range = 0;
+    int count_start_of_range = 0;
+    int count_in_range = 0;
+    int count_end_of_range = 0;
+    int count_above_range = 0;
+    for (int j = 0; j < total_random_numbers_to_generate; ++j) {
+        uint32_t r = mtwister_generate_u32_range_CC(&mt, lo, hi);
+        if (r < lo) {
+            ++count_below_range;
+            continue;
+        }
+        if (r == lo) {
+            ++count_start_of_range;
+            continue;
+        }
+        if (r == hi) {
+            ++count_end_of_range;
+            continue;
+        }
+        if (r > hi) {
+            ++count_above_range;
+            continue;
+        }
+        ++count_in_range;
+    }
+    ok(count_below_range == 0, "got %10d random numbers below range", count_below_range);
+    ok(count_above_range == 0, "got %10d random numbers above range", count_above_range);
+    {
+        ok(count_start_of_range > 0, "got %10d random numbers at beggining of range", count_start_of_range);
+        int delta = count_start_of_range - bucket_size;
+        if (delta < 0) delta = -delta;
+        double error = 100.0 * delta / bucket_size;
+        ok(error < max_error, "error is %.2f%% < %.2f%% at beggining of range", error, max_error);
+    }
+    {
+        ok(count_end_of_range > 0, "got %10d random numbers at end of range", count_end_of_range);
+        int delta = count_end_of_range - bucket_size;
+        if (delta < 0) delta = -delta;
+        double error = 100.0 * delta / bucket_size;
+        ok(error < max_error, "error is %.2f%% < %.2f%% at end of range", error, max_error);
+    }
+    int remaining_range = total_random_numbers_to_generate - count_start_of_range - count_end_of_range;
+    ok(count_in_range == remaining_range, "got %10d random numbers in range", count_in_range);
 }
 
 int main (int argc, char* argv[]) {
@@ -431,6 +506,8 @@ int main (int argc, char* argv[]) {
     (void) argv;
 
     test_original();
+    test_limit();
+    test_range();
 
     done_testing();
 }

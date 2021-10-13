@@ -1,6 +1,11 @@
 #include <time.h>
 #include "mtwister.h"
 
+#define MAX_UINT32_I    (4294967295)                // 2^32 - 1 -- as an integer
+#define MAX_UINT32_P1_I (4294967296)                // 2^32     -- as an integer
+#define MAX_UINT32_D    ((double) MAX_UINT32_I)     // 2^32 - 1 -- as a double
+#define MAX_UINT32_P1_D ((double) MAX_UINT32_P1_I)  // 2^32 - 1 -- as a double
+
 /*
  * This is the step in the twist() loop.
  */
@@ -131,20 +136,48 @@ uint32_t mtwister_generate_u31(MTwister* mt) {
     return y >> 1;
 }
 
+// Generates a uint32_t random number on interval [0, limit - 1]
+uint32_t mtwister_generate_u32_limit(MTwister* mt, uint32_t limit) {
+    /*
+     * http://c-faq.com/lib/randrange.html
+     *
+     * The typical
+     *
+     *   r = random() % TOP
+     *
+     * is not fair and gives preference to the lower bits of the RNG, which
+     * might be biased; OTOH, it could be enough for simple purposes.  If this
+     * is the case for you, just call mtwister_generate_u32() and do the
+     * modulus yourself.
+     */
+    uint64_t x = MAX_UINT32_P1_I / limit;
+    uint64_t y = x * limit;
+    uint64_t r = 0;
+    do {
+        r = mtwister_generate_u32(mt);
+    } while(r >= y);
+    return (uint32_t) (r / x);
+}
+
+// Generates a uint32_t random number on interval [lo, hi]
+uint32_t mtwister_generate_u32_range_CC(MTwister* mt, uint32_t lo, uint32_t hi) {
+    return lo + mtwister_generate_u32_limit(mt, hi - lo + 1);
+}
+
 // Generates a double random number on closed-closed interval [0, 1]
-double mtwister_generate_double_CC(MTwister* mt) {
+double mtwister_generate_double_01_CC(MTwister* mt) {
     uint32_t y = mtwister_generate_u32(mt);
-    return (double) y * (1.0 / 4294967295.0); // divided by 2^32 - 1
+    return (double) y * (1.0 / MAX_UINT32_D);
 }
 
 // Generates a double random number on closed-open interval [0, 1)
-double mtwister_generate_double_CO(MTwister* mt) {
+double mtwister_generate_double_01_CO(MTwister* mt) {
     uint32_t y = mtwister_generate_u32(mt);
-    return (double) y * (1.0 / 4294967296.0); // divided by 2^32
+    return (double) y * (1.0 / MAX_UINT32_P1_D);
 }
 
 // Generates a double random number on open-open interval (0, 1)
-double mtwister_generate_double_OO(MTwister* mt) {
+double mtwister_generate_double_01_OO(MTwister* mt) {
     uint32_t y = mtwister_generate_u32(mt);
-    return ((double)y + 0.5) * (1.0 / 4294967296.0); // divided by 2^32
+    return ((double)y + 0.5) * (1.0 / MAX_UINT32_P1_D);
 }

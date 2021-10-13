@@ -32,13 +32,19 @@ uint32_t mtwister_generate_u32(MTwister* mt);
 // Generates a uint32_t random number on interval [0, 2^31 - 1]
 uint32_t mtwister_generate_u31(MTwister* mt);
 
+// Generates a uint32_t random number on interval [0, limit - 1]
+uint32_t mtwister_generate_u32_limit(MTwister* mt, uint32_t limit);
+
+// Generates a uint32_t random number on interval [lo, hi]
+uint32_t mtwister_generate_u32_range_CC(MTwister* mt, uint32_t lo, uint32_t hi);
+
 // Generates a double random number on closed-closed interval [0, 1]
-double mtwister_generate_double_CC(MTwister* mt);
+double mtwister_generate_double_01_CC(MTwister* mt);
 
 // Generates a double random number on closed-open interval [0, 1)
-double mtwister_generate_double_CO(MTwister* mt);
+double mtwister_generate_double_01_CO(MTwister* mt);
 
 // Generates a double random number on open-open interval (0, 1)
-double mtwister_generate_double_OO(MTwister* mt);
+double mtwister_generate_double_01_OO(MTwister* mt);
 
 #endif

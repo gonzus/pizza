@@ -452,8 +452,8 @@ static void test_limit(void) {
 static void test_range(void) {
     MTwister mt;
     mtwister_build_from_random_seed(&mt);
-    const int lo = 5;
-    const int hi = 24;
+    const uint32_t lo = 5;
+    const uint32_t hi = 24;
     const int range_size = hi - lo + 1;
     const int bucket_size = total_random_numbers_to_generate / range_size;
     int count_below_range = 0;

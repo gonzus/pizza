@@ -14,10 +14,12 @@ CFLAGS += -DLOG_LEVEL=1
 # CFLAGS += -Wno-unused-function
 
 CFLAGS += -I.
-CFLAGS += -g
 CFLAGS += -Wall -Wextra -Wshadow
 CFLAGS += -Wpedantic
 CFLAGS += -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE -D_GNU_SOURCE
+
+CFLAGS += -g
+# CFLAGS += -O3
 
 LIBRARY = lib$(NAME).a
 
@@ -35,6 +37,7 @@ C_SRC_LIB = \
 	timer.c \
 	thrpool.c \
 	mtwister.c \
+	base64.c \
 	hash.c \
 	util.c \
 

@@ -40,6 +40,7 @@ C_SRC_LIB = \
 	base64.c \
 	md5.c \
 	blowfish.c \
+	crypto.c \
 	hash.c \
 	util.c \
 

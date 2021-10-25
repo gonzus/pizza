@@ -1,0 +1,45 @@
+#include <string.h>
+#include <tap.h>
+#include "deflator.h"
+
+#define TEXT_LEN 1024
+
+static void test_deflator(void) {
+    char text[TEXT_LEN + 1];
+    for (uint32_t j = 0; j < TEXT_LEN; ++j) {
+        text[j] = 'a' + j % 26;
+    }
+    text[TEXT_LEN] = '\0';
+
+    Deflator deflator;
+    Buffer c; buffer_build(&c);
+    Buffer u; buffer_build(&u);
+    Slice s = slice_build_from_ptr_len(text, TEXT_LEN);
+    for (int size = 1024; size <= 16384; size += 1024) {
+        for (int level = 1; level <= 9; ++level) {
+            buffer_clear(&c);
+            buffer_clear(&u);
+
+            deflator_build(&deflator, size);
+            deflator_compress(&deflator, s, &c, level);
+            Slice t = buffer_slice(&c);
+            deflator_uncompress(&deflator, t, &u);
+            deflator_destroy(&deflator);
+
+            Slice f = buffer_slice(&u);
+            ok(s.len == f.len, "Got same length %u == %u with chunk %d and level %d", s.len, f.len, size, level);
+            ok(slice_compare(s, f) == 0, "Could rountrip %u bytes with chunk %d and level %d", s.len, size, level);
+        }
+    }
+    buffer_destroy(&u);
+    buffer_destroy(&c);
+}
+
+int main (int argc, char* argv[]) {
+    (void) argc;
+    (void) argv;
+
+    test_deflator();
+
+    done_testing();
+}

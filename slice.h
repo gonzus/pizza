@@ -51,6 +51,9 @@ Slice slice_build_from_ptr_len(const char* ptr, uint32_t len);
  * These are all fully reentrant.
  */
 
+// Trim white space from beginning and end of slice.
+Slice slice_trim(Slice s);
+
 // Compare two Slices, returning: l < r: -1; l > r: 1; l == r: 0
 int slice_compare(Slice l, Slice r);
 

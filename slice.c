@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <string.h>
 #include "slice.h"
 
@@ -12,6 +13,18 @@ Slice slice_build_from_ptr_len(const char* ptr, uint32_t len) {
 
 Slice slice_build_from_string(const char* str) {
     return slice_build_from_ptr_len(str, str == 0 ? 0 : strlen(str));
+}
+
+Slice slice_trim(Slice s) {
+    uint32_t b = 0;
+    uint32_t e = s.len;
+    while (b < s.len && isspace(s.ptr[b])) {
+        ++b;
+    }
+    while (e > b && isspace(s.ptr[e-1])) {
+        --e;
+    }
+    return slice_build_from_ptr_len(s.ptr + b, e - b);
 }
 
 int slice_compare(Slice l, Slice r) {

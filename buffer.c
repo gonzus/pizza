@@ -134,6 +134,27 @@ void buffer_append_buffer(Buffer* b, const Buffer* buf) {
     buffer_append_ptr_len(b, buf->ptr, buf->len);
 }
 
+void buffer_append_file(Buffer* b, const char* name) {
+    FILE* fp = 0;
+    do {
+        fp = fopen(name, "r");
+        if (!fp) {
+            break;
+        }
+
+        char tmp[1024];
+        size_t len = fread(tmp, 1, 1024, fp);
+        if (!len) {
+            break;
+        }
+
+        buffer_append_string(b, tmp, len);
+    } while (0);
+    if (fp) {
+        fclose(fp);
+    }
+}
+
 void buffer_format_signed(Buffer* b, long long l) {
     char cstr[99];
     uint32_t clen = sprintf(cstr, "%lld", l);

@@ -15,12 +15,13 @@ void crypto_init(Crypto* crypto, Slice passphrase, Slice iv) {
     blowfish_init(&crypto->bf, crypto->key, CRYPTO_KEY_SIZE);
 }
 
-void crypto_decrypt_cbc(Crypto* crypto, uint8_t* ptr, uint32_t len) {
+uint32_t crypto_decrypt_cbc(Crypto* crypto, uint8_t* ptr, uint32_t len) {
     // orig contains the block before encryption;
     // for the first iteration, it contains the IV
     uint8_t orig[CRYPTO_BLOCK_SIZE];
     memcpy(orig, crypto->iv, CRYPTO_BLOCK_SIZE);
 
+    uint8_t last = 0;
     uint8_t iv[CRYPTO_BLOCK_SIZE];
     for (uint32_t j = 0; j < len; j += CRYPTO_BLOCK_SIZE) {
         // use current orig as the IV for this iteration
@@ -30,19 +31,23 @@ void crypto_decrypt_cbc(Crypto* crypto, uint8_t* ptr, uint32_t len) {
         uint8_t block[CRYPTO_BLOCK_SIZE];
         for (uint32_t k = 0; k < CRYPTO_BLOCK_SIZE; ++k) {
             uint32_t p = j + k;
-            orig[k] = block[k] = p < len ? ptr[p] : 0; // TODO: padding?
+            orig[k] = block[k] = p < len ? ptr[p] : 0;
+
         }
 
-        // encrypt block
+        // decrypt block
         blowfish_decrypt_BE(&crypto->bf, block, CRYPTO_BLOCK_SIZE);
 
         // copy IV XOR block back
         for (uint32_t k = 0; k < CRYPTO_BLOCK_SIZE; ++k) {
             uint32_t p = j + k;
             if (p >= len) continue;
-            ptr[p] = iv[k] ^ block[k];
+            last = ptr[p] = iv[k] ^ block[k];
         }
     }
+
+    // Return real length when discounting padding
+    return len - last;
 }
 
 static uint32_t generate_key(Slice passphrase, char* key) {

@@ -18,6 +18,6 @@ typedef struct Crypto {
 } Crypto;
 
 void crypto_init(Crypto* crypto, Slice passphrase, Slice iv);
-void crypto_decrypt_cbc(Crypto* crypto, uint8_t* ptr, uint32_t len);
+uint32_t crypto_decrypt_cbc(Crypto* crypto, uint8_t* ptr, uint32_t len);
 
 #endif

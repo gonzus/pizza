@@ -12,6 +12,7 @@ Generic C library written by gonzo, containing:
 * Commonly used hashing functions.
 * MD5 hashing (uses Slice and Buffer).
 * Base64 encoding and decoding (uses Slice and Buffer).
+* URI (percent) encoding and decoding (uses Slice and Buffer).
 * Blowfish encryption and decryption.
 * CBC descryption using Blowfish (uses Slice and Buffer).
 * Deflate compression and uncompression (uses zlib + Slice and Buffer).

@@ -38,6 +38,7 @@ C_SRC_LIB = \
 	thrpool.c \
 	mtwister.c \
 	base64.c \
+	uri.c \
 	md5.c \
 	blowfish.c \
 	crypto.c \

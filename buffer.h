@@ -64,6 +64,15 @@ static_assert(sizeof(Buffer) == BUFFER_DESIRED_SIZE, "Buffer has wrong size");
         buffer_append_byte(b, '\0'); \
     } while (0)
 
+// Ensure buffer has space for extra bytes.
+#define buffer_ensure_extra(b, extra) \
+    do { \
+        uint32_t total = (extra) + (b)->len; \
+        if (total > (b)->cap) { \
+            buffer_ensure_total(b, total); \
+        } \
+    } while (0)
+
 // Buffer default constructor.
 void buffer_build(Buffer* b);
 

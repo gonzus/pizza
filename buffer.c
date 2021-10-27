@@ -11,14 +11,6 @@
 #define BUFFER_DEFAULT_CAPACITY BUFFER_DESIRED_SIZE  // default size for Buffer
 #define BUFFER_GROWTH_FACTOR                      2  // how Buffer grows when needed
 
-#define buffer_ensure_extra(b, extra) \
-    do { \
-        uint32_t total = (extra) + (b)->len; \
-        if (total > (b)->cap) { \
-            buffer_ensure_total(b, total); \
-        } \
-    } while (0)
-
 static void buffer_adjust(Buffer* b, uint32_t cap);
 static void buffer_append_ptr_len(Buffer* b, const char* ptr, int len);
 

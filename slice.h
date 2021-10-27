@@ -72,7 +72,7 @@ Slice slice_find_slice(Slice s, Slice t);
 //
 //   Slice sep = slice_build_from_string(":");
 //   SliceLookup lookup = {0};
-//   while (slice_tokenize(src, sep, &lookup)) {
+//   while (slice_tokenize_by_slice(src, sep, &lookup)) {
 //     // do something with lookup.result
 //   }
 bool slice_tokenize_by_slice(Slice src, Slice sep, SliceLookup* lookup);
@@ -83,7 +83,7 @@ bool slice_tokenize_by_slice(Slice src, Slice sep, SliceLookup* lookup);
 // Intended to be used like this:
 //
 //   SliceLookup lookup = {0};
-//   while (slice_tokenize(src, ':', &lookup)) {
+//   while (slice_tokenize_by_byte(src, ':', &lookup)) {
 //     // do something with lookup.result
 //   }
 bool slice_tokenize_by_byte(Slice src, char t, SliceLookup* lookup);

@@ -27,6 +27,19 @@ Slice slice_trim(Slice s) {
     return slice_build_from_ptr_len(s.ptr + b, e - b);
 }
 
+int slice_int(Slice s, int* val) {
+    int ret = 1;
+    *val = 0;
+    for (uint32_t j = 0; j < s.len; ++j) {
+        if (!isdigit(s.ptr[j])) {
+            ret = 0;
+            break;
+        }
+        *val = *val * 10 + s.ptr[j] - '0';
+    }
+    return ret;
+}
+
 int slice_compare(Slice l, Slice r) {
     for (uint32_t j = 0; 1; ++j) {
         if (j >= l.len && j >= r.len) {

@@ -54,6 +54,10 @@ Slice slice_build_from_ptr_len(const char* ptr, uint32_t len);
 // Trim white space from beginning and end of slice.
 Slice slice_trim(Slice s);
 
+// Convert a slice to an integer.
+// Return 0 if conversion is not possible, 1 otherwise.
+int slice_int(Slice s, int* val);
+
 // Compare two Slices, returning: l < r: -1; l > r: 1; l == r: 0
 int slice_compare(Slice l, Slice r);
 

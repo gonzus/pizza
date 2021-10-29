@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <zlib.h>
+#include "memory.h"
 #include "deflator.h"
 
 #define ZLIB_CHUNK 16384
@@ -9,7 +10,7 @@
 void deflator_build(Deflator* deflator, int chunk_size) {
     memset(deflator, 0, sizeof(Deflator));
     deflator->chunk_size = chunk_size <= 0 ?  ZLIB_CHUNK : chunk_size;
-    deflator->chunk = malloc(deflator->chunk_size);
+    MEMORY_ALLOC_ARRAY(deflator->chunk, unsigned char, deflator->chunk_size);
 }
 
 void deflator_destroy(Deflator* deflator) {

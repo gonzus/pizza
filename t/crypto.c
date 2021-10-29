@@ -37,9 +37,9 @@ static void test_crypto(void) {
         },
     };
 
-    Slice p = slice_build_from_string("my beautiful passphrase");
+    Slice p = slice_from_string("my beautiful passphrase", 0);
     uint8_t iv[] = { 0xde, 0xad, 0xbe, 0xef, 0xab, 0xad, 0xca, 0xfe };
-    Slice i = slice_build_from_ptr_len((const char*) iv, 8);
+    Slice i = slice_from_memory((const char*) iv, 8);
 
     Crypto crypto;
     crypto_init(&crypto, p, i);
@@ -53,7 +53,7 @@ static void test_crypto(void) {
         len = crypto_encrypt_cbc(&crypto, buf, len);
         dump_bytes(stdout, buf, len);
 #else
-        Slice e = slice_build_from_ptr_len((const char*) data[j].eptr, data[j].elen);
+        Slice e = slice_from_memory((const char*) data[j].eptr, data[j].elen);
         buffer_clear(&b);
         buffer_append_slice(&b, e);
         uint32_t len = e.len;

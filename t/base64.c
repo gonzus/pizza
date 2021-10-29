@@ -26,8 +26,8 @@ static void test_base64(void) {
         uint32_t len = 0;
         uint32_t use = data[j].use > 0 ? data[j].use : strlen(data[j].plain);
 
-        Slice plain = slice_build_from_ptr_len(data[j].plain, use);
-        Slice encoded = slice_build_from_string(data[j].encoded);
+        Slice plain = slice_from_memory(data[j].plain, use);
+        Slice encoded = slice_from_string(data[j].encoded, 0);
 
         buffer_clear(&b);
         len = base64_encode(plain, &b);

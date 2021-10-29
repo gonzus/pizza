@@ -18,8 +18,8 @@ static void test_encode(void) {
 
     Buffer b; buffer_build(&b);
     for (unsigned int j = 0; j < ALEN(data); ++j) {
-        Slice plain = slice_build_from_string(data[j].plain);
-        Slice ex_encoded = slice_build_from_string(data[j].encoded);
+        Slice plain = slice_from_string(data[j].plain, 0);
+        Slice ex_encoded = slice_from_string(data[j].encoded, 0);
 
         buffer_clear(&b);
         uint32_t len = uri_encode(plain, &b);
@@ -44,8 +44,8 @@ static void test_decode(void) {
 
     Buffer b; buffer_build(&b);
     for (unsigned int j = 0; j < ALEN(data); ++j) {
-        Slice encoded = slice_build_from_string(data[j].encoded);
-        Slice ex_plain = slice_build_from_string(data[j].plain);
+        Slice encoded = slice_from_string(data[j].encoded, 0);
+        Slice ex_plain = slice_from_string(data[j].plain, 0);
 
         buffer_clear(&b);
         uint32_t len = uri_decode(encoded, &b);

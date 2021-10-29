@@ -41,8 +41,8 @@ static void test_md5(void) {
     MD5 md5;
     Buffer b; buffer_build(&b);
     for (unsigned int j = 0; j < ALEN(data); ++j) {
-        Slice str = slice_build_from_string(data[j].str);
-        Slice hash = slice_build_from_string(data[j].hash);
+        Slice str = slice_from_string(data[j].str, 0);
+        Slice hash = slice_from_string(data[j].hash, 0);
 
         buffer_clear(&b);
         md5_compute(&md5, str, &b);

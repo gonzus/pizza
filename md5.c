@@ -71,7 +71,7 @@ void md5_finalize(MD5* md5) {
 
     // pad out to 56 mod 64
     uint32_t padLen = (mdi < 56) ? (56 - mdi) : (120 - mdi);
-    Slice pad = slice_build_from_ptr_len((const char*) padding, padLen);
+    Slice pad = slice_from_memory((const char*) padding, padLen);
     md5_update(md5, pad);
 
     // append length in bits and transform

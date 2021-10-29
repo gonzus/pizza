@@ -75,7 +75,7 @@ Buffer* buffer_clone(const Buffer* b) {
 }
 
 Slice buffer_slice(const Buffer* b) {
-    Slice s = slice_build_from_ptr_len(b->ptr, b->len);
+    Slice s = slice_from_memory(b->ptr, b->len);
     return s;
 }
 

@@ -38,12 +38,12 @@ typedef struct SliceLookup {
 #define slice_is_empty(s) ((s).ptr == 0 || (s).len == 0)
 
 // Slice constructor from a string (const char*).
-// Computes the length using strlen(), so string MUST be null-terminated.
-Slice slice_build_from_string(const char* str);
+// If len < 0, use null terminator, otherwise copy len bytes.
+Slice slice_from_string(const char* str, int len);
 
 // Slice constructor from a pointer and a length.
 // Pointed data doesn't have to be null-terminated.
-Slice slice_build_from_ptr_len(const char* ptr, uint32_t len);
+Slice slice_from_memory(const char* ptr, uint32_t len);
 
 
 /*
@@ -74,7 +74,7 @@ Slice slice_find_slice(Slice s, Slice t);
 // Return each token in lookup.result; only valid when true was returned.
 // Intended to be used like this:
 //
-//   Slice sep = slice_build_from_string(":");
+//   Slice sep = slice_from_string(":", 0);
 //   SliceLookup lookup = {0};
 //   while (slice_tokenize_by_slice(src, sep, &lookup)) {
 //     // do something with lookup.result

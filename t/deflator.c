@@ -14,7 +14,7 @@ static void test_deflator(void) {
     Deflator deflator;
     Buffer c; buffer_build(&c);
     Buffer u; buffer_build(&u);
-    Slice s = slice_build_from_ptr_len(text, TEXT_LEN);
+    Slice s = slice_from_memory(text, TEXT_LEN);
     for (int size = 1024; size <= 16384; size += 1024) {
         for (int level = 1; level <= 9; ++level) {
             buffer_clear(&c);

@@ -59,7 +59,7 @@ static void test_sizes(void) {
 
 static void test_decode_valid(void) {
     int len = ALEN(utf8);
-    Slice encoded = slice_build_from_ptr_len((const char*) utf8, len);
+    Slice encoded = slice_from_memory((const char*) utf8, len);
 
     for (int pos = 0; !slice_is_empty(encoded); ++pos) {
         uint8_t b = encoded.ptr[0];
@@ -92,7 +92,7 @@ static void test_decode_invalid(void) {
     };
 
     for (int j = 0; j < ALEN(data); ++j) {
-        Slice encoded = slice_build_from_string(data[j].encoded);
+        Slice encoded = slice_from_string(data[j].encoded, 0);
         uint32_t r = utf8_decode(&encoded);
         int good = data[j].valid ? (r != UTF8_INVALID_RUNE) : (r == UTF8_INVALID_RUNE);
         ok(good, "utf8_decode() returns %s for '%s'", data[j].valid ? "valid" : "invalid", data[j].label);

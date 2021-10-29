@@ -93,7 +93,7 @@ static uint32_t generate_key(Slice passphrase, char* key) {
         md5_finalize(&md5);
         memcpy(key + len, md5.digest, MD5_DIGEST_LEN);
         len += MD5_DIGEST_LEN;
-        source = slice_build_from_ptr_len(key, len);
+        source = slice_from_memory(key, len);
     }
     return len;
 }

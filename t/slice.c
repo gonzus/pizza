@@ -15,7 +15,7 @@ static void test_sizes(void) {
 }
 
 static void test_slice_is_empty(void) {
-    Slice s = slice_build_from_string(empty_string);
+    Slice s = slice_from_string(empty_string, 0);
     cmp_ok(!!slice_is_empty(s), "==", !!1, "slice_is_empty(\"\")");
 }
 
@@ -40,8 +40,8 @@ static void test_slice_compare(void) {
     for (int j = 0; j < ALEN(string_info); ++j) {
         const char* L = string_info[j].l;
         const char* R = string_info[j].r;
-        Slice l = slice_build_from_string(L);
-        Slice r = slice_build_from_string(R);
+        Slice l = slice_from_string(L, 0);
+        Slice r = slice_from_string(R, 0);
         int e = string_info[j].cmp;
         int c = slice_compare(l, r);
         int ok = e == 0 ? c == 0
@@ -70,7 +70,7 @@ static void test_slice_find_byte(void) {
         const char* W = string_info[j].w;
         char B = string_info[j].b;
         int e = string_info[j].pos;
-        Slice w = slice_build_from_string(W);
+        Slice w = slice_from_string(W, 0);
 #if 0
         dump_bytes(stderr, w.ptr, w.len);
 #endif
@@ -103,8 +103,8 @@ static void test_slice_find_slice(void) {
         const char* W = string_info[j].w;
         const char* N = string_info[j].n;
         int e = string_info[j].pos;
-        Slice w = slice_build_from_string(W);
-        Slice n = slice_build_from_string(N);
+        Slice w = slice_from_string(W, 0);
+        Slice n = slice_from_string(N, 0);
         Slice f = slice_find_slice(w, n);
         if (e < 0) {
             cmp_ok(!!slice_is_empty(f), "==", !!1, "slice_find_slice([%s], [%s]) => ABSENT", W, N);
@@ -141,8 +141,8 @@ static void test_slice_tokenize(void) {
         const char* STR = string_info[j].str;
         const char* SEP = string_info[j].sep;
 
-        Slice str = slice_build_from_string(STR);
-        Slice sep = slice_build_from_string(SEP);
+        Slice str = slice_from_string(STR, 0);
+        Slice sep = slice_from_string(SEP, 0);
         SliceLookup lookup = {0};
 
         char buf[1024];

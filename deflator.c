@@ -63,7 +63,7 @@ int deflator_uncompress(Deflator* deflator, Slice compressed, Buffer* uncompress
                 }
                 if (!bad) {
                     unsigned have = deflator->chunk_size - strm.avail_out;
-                    buffer_append_slice(uncompressed, slice_build_from_ptr_len((const char*) deflator->chunk, have));
+                    buffer_append_slice(uncompressed, slice_from_memory((const char*) deflator->chunk, have));
                 }
             } while (!bad && strm.avail_out == 0);
         } while (!bad && ret != Z_STREAM_END); // done when inflate() says it's done
@@ -120,7 +120,7 @@ int deflator_compress(Deflator* deflator, Slice uncompressed, Buffer* compressed
                 ret = deflate(&strm, flush);    // no bad return value
                 assert(ret != Z_STREAM_ERROR);  // state not clobbered
                 unsigned have = deflator->chunk_size - strm.avail_out;
-                buffer_append_slice(compressed, slice_build_from_ptr_len((const char*) deflator->chunk, have));
+                buffer_append_slice(compressed, slice_from_memory((const char*) deflator->chunk, have));
             } while (strm.avail_out == 0);
             assert(strm.avail_in == 0); // all input will be used
 

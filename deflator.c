@@ -4,7 +4,7 @@
 #include "deflator.h"
 
 #define ZLIB_CHUNK 16384
-#define ZLIB_LEVEL 6
+#define ZLIB_LEVEL Z_BEST_SPEED
 
 void deflator_build(Deflator* deflator, int chunk_size) {
     memset(deflator, 0, sizeof(Deflator));
@@ -17,10 +17,10 @@ void deflator_destroy(Deflator* deflator) {
 }
 
 int deflator_uncompress(Deflator* deflator, Slice compressed, Buffer* uncompressed) {
-    int bad = 0;
     int ret = Z_OK;
     int zinited = 0;
     z_stream strm;
+    int bad = 0;
 
     do {
         // allocate inflate state

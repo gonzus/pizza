@@ -6,6 +6,10 @@
  * https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
  * https://en.wikipedia.org/wiki/Blowfish_(cipher)
  * https://en.wikipedia.org/wiki/Padding_%28cryptography%29
+ *
+ * These work IN-PLACE, so the original contents of ptr are overwritten.
+ * NOTE: encryption might use up MORE than len bytes; up to CRYPTO_BLOCK_SIZE
+ * more bytes, in fact, due to padding.
  */
 
 #include "blowfish.h"

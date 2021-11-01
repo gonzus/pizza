@@ -3,6 +3,8 @@
 
 /*
  * blowfish encryption and decryption.
+ *
+ * These work IN-PLACE, so the original contents of ptr are overwritten.
  */
 
 #include <stdint.h>

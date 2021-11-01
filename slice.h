@@ -37,6 +37,10 @@ typedef struct SliceLookup {
 // Return true if Slice is empty (invalid ptr OR zero len).
 #define slice_is_empty(s) ((s).ptr == 0 || (s).len == 0)
 
+// Compare two Slices; they are equal if they have the same length and
+// slice_compare() returns 0 for them.
+#define slice_equal(l, r) (((l).len == (r).len) && (slice_compare(l, r) == 0))
+
 // Slice constructor from a string (const char*).
 // If len < 0, use null terminator, otherwise copy len bytes.
 Slice slice_from_string(const char* str, int len);
@@ -60,6 +64,11 @@ int slice_int(Slice s, int* val);
 
 // Compare two Slices, returning: l < r: -1; l > r: 1; l == r: 0
 int slice_compare(Slice l, Slice r);
+
+// Write the contents of a Slice into a file given by its name.
+// File will be created / overwritten.
+// Return 0 for success, non-zero for error conditions.
+int slice_write_file(Slice s, const char* name);
 
 // Find byte in Slice.
 // Return an empty slice if not found.

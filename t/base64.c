@@ -32,13 +32,13 @@ static void test_base64(void) {
         buffer_clear(&b);
         len = base64_encode(plain, &b);
         Slice got_encoded = buffer_slice(&b);
-        ok(slice_compare(encoded, got_encoded) == 0, "Could encode %s [%d:%.*s%s]", data[j].label, plain.len, plain.len > 50 ? 50 : plain.len, plain.ptr, plain.len > 50 ? "..." : "");
+        ok(slice_equal(encoded, got_encoded), "Could encode %s [%d:%.*s%s]", data[j].label, plain.len, plain.len > 50 ? 50 : plain.len, plain.ptr, plain.len > 50 ? "..." : "");
         ok(len == encoded.len, "For %s got %d == %d bytes while encoding", data[j].label, len, encoded.len);
 
         buffer_clear(&b);
         len = base64_decode(got_encoded, &b);
         Slice got_plain = buffer_slice(&b);
-        ok(slice_compare(plain, got_plain) == 0, "Could decode %s [%d:%.*s%s]", data[j].label, plain.len, plain.len > 50 ? 50 : plain.len, plain.ptr, plain.len > 50 ? "..." : "");
+        ok(slice_equal(plain, got_plain), "Could decode %s [%d:%.*s%s]", data[j].label, plain.len, plain.len > 50 ? 50 : plain.len, plain.ptr, plain.len > 50 ? "..." : "");
         ok(len == plain.len, "For %s got %d == %d bytes while decoding", data[j].label, len, plain.len);
     }
     buffer_destroy(&b);

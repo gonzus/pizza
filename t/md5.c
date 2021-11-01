@@ -48,7 +48,7 @@ static void test_md5(void) {
         md5_compute(&md5, str, &b);
 
         ok(b.len == hash.len, "Got correct MD5 length [%d] == [%d] for [%d:%.*s%s]", b.len, hash.len, str.len, str.len > 50 ? 50 : str.len, str.ptr, str.len > 50 ? "..." : "");
-        ok(slice_compare(buffer_slice(&b), hash) == 0, "Got correct MD5 hash [%.*s] for [%d:%.*s%s]", b.len, b.ptr, str.len, str.len > 50 ? 50 : str.len, str.ptr, str.len > 50 ? "..." : "");
+        ok(slice_equal(buffer_slice(&b), hash), "Got correct MD5 hash [%.*s] for [%d:%.*s%s]", b.len, b.ptr, str.len, str.len > 50 ? 50 : str.len, str.ptr, str.len > 50 ? "..." : "");
     }
     buffer_destroy(&b);
 }

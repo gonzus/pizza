@@ -1,4 +1,6 @@
 #include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include "slice.h"
 
@@ -62,6 +64,31 @@ int slice_compare(Slice l, Slice r) {
         }
     }
     return 0;
+}
+
+int slice_write_file(Slice s, const char* name) {
+    int ret = 0;
+    FILE* fp = 0;
+    do {
+        fp = fopen(name, "w");
+        if (!fp) {
+            ret = errno;
+            break;
+        }
+        size_t pos = 0;
+        do {
+            size_t nwritten = fwrite(s.ptr + pos, 1, s.len - pos, fp);
+            if (!nwritten) {
+                break;
+            }
+            pos += nwritten;
+        } while (pos < s.len);
+    } while (0);
+    if (fp) {
+        fclose(fp);
+        fp = 0;
+    }
+    return ret;
 }
 
 Slice slice_find_byte(Slice s, char t) {

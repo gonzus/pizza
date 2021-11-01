@@ -25,7 +25,7 @@ static void test_encode(void) {
         uint32_t len = uri_encode(plain, &b);
         Slice encoded = buffer_slice(&b);
         ok(len == ex_encoded.len, "For %s got %d == %d bytes while URI encoding", data[j].label, len, ex_encoded.len);
-        ok(slice_compare(encoded, ex_encoded) == 0, "Could URI encode %s [%d:%.*s%s]", data[j].label, encoded.len, encoded.len > 50 ? 50 : encoded.len, encoded.ptr, encoded.len > 50 ? "..." : "");
+        ok(slice_equal(encoded, ex_encoded), "Could URI encode %s [%d:%.*s%s]", data[j].label, encoded.len, encoded.len > 50 ? 50 : encoded.len, encoded.ptr, encoded.len > 50 ? "..." : "");
     }
     buffer_destroy(&b);
 }
@@ -51,7 +51,7 @@ static void test_decode(void) {
         uint32_t len = uri_decode(encoded, &b);
         Slice plain = buffer_slice(&b);
         ok(len == ex_plain.len, "For %s got %d == %d bytes while URI decoding", data[j].label, len, ex_plain.len);
-        ok(slice_compare(ex_plain, plain) == 0, "Could URI decode %s [%d:%.*s%s]", data[j].label, plain.len, plain.len > 50 ? 50 : plain.len, plain.ptr, plain.len > 50 ? "..." : "");
+        ok(slice_equal(ex_plain, plain), "Could URI decode %s [%d:%.*s%s]", data[j].label, plain.len, plain.len > 50 ? 50 : plain.len, plain.ptr, plain.len > 50 ? "..." : "");
     }
     buffer_destroy(&b);
 }

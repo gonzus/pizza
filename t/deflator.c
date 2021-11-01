@@ -28,7 +28,7 @@ static void test_deflator(void) {
 
             Slice f = buffer_slice(&u);
             ok(s.len == f.len, "Got same length %u == %u with chunk %d and level %d", s.len, f.len, size, level);
-            ok(slice_compare(s, f) == 0, "Could rountrip %u bytes with chunk %d and level %d", s.len, size, level);
+            ok(slice_equal(s, f), "Could rountrip %u bytes with chunk %d and level %d", s.len, size, level);
         }
     }
     buffer_destroy(&u);

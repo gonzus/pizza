@@ -1,9 +1,11 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <unistd.h>
+#include <utime.h>
 #include "path.h"
 
 #define BUFFER_SIZE 4096
@@ -28,11 +30,17 @@ int path_exists(Path* p, int* exists) {
     *exists = 0;
     int ret = 0;
     do {
-       if (access(p->name.ptr, F_OK)) {
-            ret = errno;
-            break;
-        }
-       *exists = 1;
+       int a = access(p->name.ptr, F_OK);
+       int e = errno;
+       if (a < 0) {
+           if (e != ENOENT) {
+               // doesn't exist, flag error
+               ret = e;
+               break;
+           }
+       } else {
+           *exists = 1;
+       }
     } while (0);
     return ret;
 }
@@ -42,7 +50,7 @@ int path_is_file(Path* p, int* is_file) {
     int ret = 0;
     do {
         struct stat sb;
-        if (lstat(p->name.ptr, &sb)) {
+        if (lstat(p->name.ptr, &sb) < 0) {
             ret = errno;
             break;
         }
@@ -56,7 +64,7 @@ int path_is_dir(Path* p, int* is_dir) {
     int ret = 0;
     do {
         struct stat sb;
-        if (lstat(p->name.ptr, &sb)) {
+        if (lstat(p->name.ptr, &sb) < 0) {
             ret = errno;
             break;
         }
@@ -70,7 +78,7 @@ int path_is_symlink(Path* p, int* is_symlink) {
     int ret = 0;
     do {
         struct stat sb;
-        if (lstat(p->name.ptr, &sb)) {
+        if (lstat(p->name.ptr, &sb) < 0) {
             ret = errno;
             break;
         }
@@ -90,6 +98,35 @@ int path_readlink(Path* p, Buffer* b) {
         }
         buffer_append_string(b, buf, len);
     } while (0);
+    return ret;
+}
+
+int path_touch(Path* p) {
+    int ret = 0;
+    FILE* fp = 0;
+    do {
+        int exists = 0;
+        ret = path_exists(p, &exists);
+        if (ret) {
+            // could not check existence, bail out
+            break;
+        }
+        if (!exists) {
+            // it does not exist, create it
+            // TODO: cheaper way to do this?
+            fp = fopen(p->name.ptr, "w");
+            break;
+        }
+        // it exists, update access and modification times to current
+        if (utimes(p->name.ptr, 0) < 0) {
+            ret = errno;
+            break;
+        }
+    } while (0);
+    if (fp) {
+        fclose(fp);
+        fp = 0;
+    }
     return ret;
 }
 
@@ -129,11 +166,11 @@ int path_slurp(Path* p, Buffer* b) {
     return ret;
 }
 
-int path_spew(Path* p, Slice s) {
+static int write_to_file(Path* p, Slice s, const char* mode) {
     int ret = 0;
     FILE* fp = 0;
     do {
-        fp = fopen(p->name.ptr, "w");
+        fp = fopen(p->name.ptr, mode);
         if (!fp) {
             ret = errno;
             break;
@@ -152,4 +189,12 @@ int path_spew(Path* p, Slice s) {
         fp = 0;
     }
     return ret;
+}
+
+int path_spew(Path* p, Slice s) {
+    return write_to_file(p, s, "w");
+}
+
+int path_append(Path* p, Slice s) {
+    return write_to_file(p, s, "a");
 }

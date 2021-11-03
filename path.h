@@ -28,6 +28,11 @@ int path_is_dir(Path* p, int* is_dir);
 int path_is_symlink(Path* p, int* is_symlink);
 int path_readlink(Path* p, Buffer* b);
 
+// If path does not exist, create it (empty).
+// If it exists, update modification and access times.
+// Return 0 for success, non-zero for error conditions.
+int path_touch(Path* p);
+
 // Make sure path does not exist in fs anymore.
 // Return 0 for success, non-zero for error conditions.
 int path_remove(Path* p);
@@ -40,6 +45,11 @@ int path_slurp(Path* p, Buffer* b);
 // Return 0 for success, non-zero for error conditions.
 // File will be created / overwritten.
 int path_spew(Path* p, Slice s);
+
+// Append the contents of a Slice to file given by p.
+// Return 0 for success, non-zero for error conditions.
+// File will be created / appended to.
+int path_append(Path* p, Slice s);
 
 #if 0
 int path_child(Path* p, Path* c);

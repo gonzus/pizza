@@ -45,6 +45,18 @@ static void test_path_readlink(void) {
     path_destroy(&p);
 }
 
+static void test_path_touch(void) {
+    Slice s = slice_from_string("/tmp/path_touch.txt", 0);
+    Path p; path_from_slice(&p, s);
+
+    path_touch(&p);
+    int e = 0; path_exists(&p, &e);
+    ok(e, "path [%.*s] exists after being touched", s.len, s.ptr);
+
+    path_remove(&p);
+    path_destroy(&p);
+}
+
 static void test_path_slurp(void) {
     Slice s = slice_from_string("/etc/timezone", 0);
     Path p; path_from_slice(&p, s);
@@ -77,14 +89,48 @@ static void test_path_spew(void) {
     path_destroy(&p);
 }
 
+static void test_path_append(void) {
+    const int times = 5;
+
+    Slice s = slice_from_string("/tmp/path_append.txt", 0);
+    Path p; path_from_slice(&p, s);
+
+    Slice c = slice_from_string("Europe/Amsterdam\n", 0);
+    for (int j = 0; j < times; ++j) {
+        if (j == 0)
+            path_spew(&p, c);
+        else
+            path_append(&p, c);
+    }
+
+    Buffer b; buffer_build(&b);
+    path_slurp(&p, &b);
+    Slice t = buffer_slice(&b);
+    path_remove(&p);
+
+    Buffer d; buffer_build(&d);
+    for (int j = 0; j < times; ++j) {
+        buffer_append_slice(&d, c);
+    }
+
+    Slice f = buffer_slice(&d);
+    ok(slice_equal(t, f), "path [%.*s] ended up with correct %u bytes", s.len, s.ptr, f.len);
+
+    buffer_destroy(&d);
+    buffer_destroy(&b);
+    path_destroy(&p);
+}
+
 int main (int argc, char* argv[]) {
     (void) argc;
     (void) argv;
 
     test_path_types();
     test_path_readlink();
+    test_path_touch();
     test_path_slurp();
     test_path_spew();
+    test_path_append();
 
     done_testing();
 }

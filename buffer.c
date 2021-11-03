@@ -12,8 +12,6 @@
 #define BUFFER_DEFAULT_CAPACITY BUFFER_DESIRED_SIZE  // default size for Buffer
 #define BUFFER_GROWTH_FACTOR                      2  // how Buffer grows when needed
 
-#define BUFFER_SIZE 4096
-
 static void buffer_adjust(Buffer* b, uint32_t cap);
 static void buffer_append_ptr_len(Buffer* b, const char* ptr, int len);
 
@@ -127,31 +125,6 @@ void buffer_append_slice(Buffer* b, Slice s) {
 
 void buffer_append_buffer(Buffer* b, const Buffer* buf) {
     buffer_append_ptr_len(b, buf->ptr, buf->len);
-}
-
-int buffer_append_file(Buffer* b, const char* name) {
-    int ret = 0;
-    FILE* fp = 0;
-    do {
-        fp = fopen(name, "r");
-        if (!fp) {
-            ret = errno;
-            break;
-        }
-
-        char tmp[BUFFER_SIZE];
-        size_t nread = fread(tmp, 1, BUFFER_SIZE, fp);
-        if (!nread) {
-            break;
-        }
-
-        buffer_append_string(b, tmp, nread);
-    } while (0);
-    if (fp) {
-        fclose(fp);
-        fp = 0;
-    }
-    return ret;
 }
 
 void buffer_format_signed(Buffer* b, long long l) {

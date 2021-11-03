@@ -65,11 +65,6 @@ int slice_int(Slice s, int* val);
 // Compare two Slices, returning: l < r: -1; l > r: 1; l == r: 0
 int slice_compare(Slice l, Slice r);
 
-// Write the contents of a Slice into a file given by its name.
-// File will be created / overwritten.
-// Return 0 for success, non-zero for error conditions.
-int slice_write_file(Slice s, const char* name);
-
 // Find byte in Slice.
 // Return an empty slice if not found.
 Slice slice_find_byte(Slice s, char t);

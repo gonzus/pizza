@@ -35,6 +35,7 @@ C_SRC_LIB = \
 	ymd.c \
 	hms.c \
 	timer.c \
+	path.c \
 	thrpool.c \
 	mtwister.c \
 	base64.c \

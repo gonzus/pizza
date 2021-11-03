@@ -24,7 +24,7 @@ static void test_slice_compare(void) {
         const char* l;
         const char* r;
         int cmp;
-    } string_info[] = {
+    } data[] = {
         { "foo"  , "bar"  ,  1 },
         { ""     , ""     ,  0 },
         { "bilbo", "frodo", -1 },
@@ -37,12 +37,12 @@ static void test_slice_compare(void) {
         { "abcd" , "abcd" ,  0 },
     };
 
-    for (int j = 0; j < ALEN(string_info); ++j) {
-        const char* L = string_info[j].l;
-        const char* R = string_info[j].r;
+    for (int j = 0; j < ALEN(data); ++j) {
+        const char* L = data[j].l;
+        const char* R = data[j].r;
         Slice l = slice_from_string(L, 0);
         Slice r = slice_from_string(R, 0);
-        int e = string_info[j].cmp;
+        int e = data[j].cmp;
         int c = slice_compare(l, r);
         int ok = e == 0 ? c == 0
                : e >  0 ? c >  0
@@ -51,12 +51,65 @@ static void test_slice_compare(void) {
     }
 }
 
+static void test_slice_trim(void) {
+    static struct {
+        const char* label;
+        const char* s;
+        const char* t;
+    } data[] = {
+        { "empty"                    , ""                                   , ""      },
+        { "one space"                , " "                                  , ""      },
+        { "one tab"                  , "\t"                                 , ""      },
+        { "one newline"              , "\n"                                 , ""      },
+        { "only before"              , " bilbo"                             , "bilbo" },
+        { "only after"               , "bilbo "                             , "bilbo" },
+        { "both before and after"    , " bilbo "                            , "bilbo" },
+        { "spaces, tabs and newlines", " \t \t\t\n  \n bilbo \t\n\n\t\t  \t", "bilbo" },
+    };
+
+    for (int j = 0; j < ALEN(data); ++j) {
+        const char* L = data[j].label;
+        const char* S = data[j].s;
+        const char* T = data[j].t;
+        Slice s = slice_from_string(S, 0);
+        Slice g = slice_trim(s);
+        Slice e = slice_from_string(T, 0);
+        ok(slice_equal(g, e), "slice_trim() for %s => [%s] OK", L, T);
+    }
+}
+
+static void test_slice_int(void) {
+    static struct {
+        const char* label;
+        const char* s;
+        int r;
+        int v;
+    } data[] = {
+        { "empty"    , ""   , 1,  0 }, // an empty slice is a valid int == 0
+        { "invalid 1", "x"  , 0,  0 },
+        { "invalid 3", "xyz", 0,  0 },
+        { "zero"     , "0"  , 1,  0 },
+        { "nine"     , "9"  , 1,  9 },
+        { "sixty six", "66" , 1, 66 },
+    };
+
+    for (int j = 0; j < ALEN(data); ++j) {
+        const char* L = data[j].label;
+        const char* S = data[j].s;
+        Slice s = slice_from_string(S, 0);
+        int val = 0;
+        int ret = slice_int(s, &val);
+        ok(ret == data[j].r, "slice_int() returns %d = %d for %s OK", ret, data[j].r, L);
+        ok(val == data[j].v, "slice_int() produces %d = %d for %s OK", val, data[j].v, L);
+    }
+}
+
 static void test_slice_find_byte(void) {
     static struct {
         const char* w;
         char b;
         int pos;
-    } string_info[] = {
+    } data[] = {
         { "foo"                 , 'o'  ,  1 },
         { "foo"                 , 'k'  , -1 },
         { ""                    , 'k'  , -1 },
@@ -66,10 +119,10 @@ static void test_slice_find_byte(void) {
         { ""                    , 'x'  , -1 },
     };
 
-    for (int j = 0; j < ALEN(string_info); ++j) {
-        const char* W = string_info[j].w;
-        char B = string_info[j].b;
-        int e = string_info[j].pos;
+    for (int j = 0; j < ALEN(data); ++j) {
+        const char* W = data[j].w;
+        char B = data[j].b;
+        int e = data[j].pos;
         Slice w = slice_from_string(W, 0);
 #if 0
         dump_bytes(stderr, w.ptr, w.len);
@@ -88,7 +141,7 @@ static void test_slice_find_slice(void) {
         const char* w;
         const char* n;
         int pos;
-    } string_info[] = {
+    } data[] = {
         { "foo"                 , "oo"    ,  1 },
         { "foo"                 , "ok"    , -1 },
         { ""                    , "k"     , -1 },
@@ -99,10 +152,10 @@ static void test_slice_find_slice(void) {
         { "hello"               , ""      ,  0 },
     };
 
-    for (int j = 0; j < ALEN(string_info); ++j) {
-        const char* W = string_info[j].w;
-        const char* N = string_info[j].n;
-        int e = string_info[j].pos;
+    for (int j = 0; j < ALEN(data); ++j) {
+        const char* W = data[j].w;
+        const char* N = data[j].n;
+        int e = data[j].pos;
         Slice w = slice_from_string(W, 0);
         Slice n = slice_from_string(N, 0);
         Slice f = slice_find_slice(w, n);
@@ -120,7 +173,7 @@ static void test_slice_tokenize(void) {
     static struct {
         const char* str;
         const char* sep;
-    } string_info[] = {
+    } data[] = {
         { "", " " },
         { "X", " " },
         { "X", "X" },
@@ -137,9 +190,9 @@ static void test_slice_tokenize(void) {
         { "empty separators", "" },
     };
 
-    for (int j = 0; j < ALEN(string_info); ++j) {
-        const char* STR = string_info[j].str;
-        const char* SEP = string_info[j].sep;
+    for (int j = 0; j < ALEN(data); ++j) {
+        const char* STR = data[j].str;
+        const char* SEP = data[j].sep;
 
         Slice str = slice_from_string(STR, 0);
         Slice sep = slice_from_string(SEP, 0);
@@ -165,20 +218,20 @@ static void test_slice_tokenize(void) {
             // if (pos > 0) cdone = 1;
 
             if (cdone && sdone) {
-                ok(1, "slice_tokenize([%s]) => FOUND %d tokens", STR, pos);
+                ok(1, "slice_tokenize_by_slice([%s]) => FOUND %d tokens", STR, pos);
                 break;
             }
             if (cdone) {
-                ok(0, "slice_tokenize([%s]) token #%d found by slice, NOT by strtok", STR, pos);
+                ok(0, "slice_tokenize_by_slice([%s]) token #%d found by slice, NOT by strtok", STR, pos);
                 break;
             }
             if (sdone) {
-                ok(0, "slice_tokenize([%s]) token #%d found by strtok, NOT by slice", STR, pos);
+                ok(0, "slice_tokenize_by_slice([%s]) token #%d found by strtok, NOT by slice", STR, pos);
                 break;
             }
             int len = strlen(ctok);
-            cmp_ok(lookup.result.len, "==", len, "slice_tokenize([%s]) => token %d with %d bytes", STR, pos, len);
-            cmp_mem(lookup.result.ptr, ctok, lookup.result.len, "slice_tokenize([%s]) => token %d = [%s] OK", STR, pos, ctok);
+            cmp_ok(lookup.result.len, "==", len, "slice_tokenize_by_slice([%s]) => token %d with %d bytes", STR, pos, len);
+            cmp_mem(lookup.result.ptr, ctok, lookup.result.len, "slice_tokenize_by_slice([%s]) => token %d = [%s] OK", STR, pos, ctok);
             ++pos;
         }
     }
@@ -191,6 +244,8 @@ int main (int argc, char* argv[]) {
     test_sizes();
     test_slice_is_empty();
     test_slice_compare();
+    test_slice_trim();
+    test_slice_int();
     test_slice_find_byte();
     test_slice_find_slice();
     test_slice_tokenize();

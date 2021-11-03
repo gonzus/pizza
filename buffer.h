@@ -113,11 +113,6 @@ void buffer_append_slice(Buffer* b, Slice s);
 // Append a buffer to current contents of Buffer.
 void buffer_append_buffer(Buffer* b, const Buffer* buf);
 
-// Append the contents of a file to current contents of Buffer.
-// File must exist.
-// Return 0 for success, non-zero for error conditions.
-int buffer_append_file(Buffer* b, const char* name);
-
 // Append a formatted signed / unsigned integer to current contents of Buffer.
 void buffer_format_signed(Buffer* b, long long l);
 void buffer_format_unsigned(Buffer* b, unsigned long long l);

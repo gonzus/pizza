@@ -1,25 +1,25 @@
 #include <string.h>
 #include <tap.h>
+#include "memory.h"
 #include "deflator.h"
 
 #define TEXT_LEN 1024
 
 static void test_deflator(void) {
-    char text[TEXT_LEN + 1];
+    char text[TEXT_LEN];
     for (uint32_t j = 0; j < TEXT_LEN; ++j) {
         text[j] = 'a' + j % 26;
     }
-    text[TEXT_LEN] = '\0';
+    Slice s = slice_from_memory(text, TEXT_LEN);
 
-    Deflator deflator;
     Buffer c; buffer_build(&c);
     Buffer u; buffer_build(&u);
-    Slice s = slice_from_memory(text, TEXT_LEN);
     for (int size = 1024; size <= 16384; size += 1024) {
         for (int level = 1; level <= 9; ++level) {
             buffer_clear(&c);
             buffer_clear(&u);
 
+            Deflator deflator;
             deflator_build(&deflator, size);
             deflator_compress(&deflator, s, &c, level);
             Slice t = buffer_slice(&c);

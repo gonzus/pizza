@@ -13,13 +13,12 @@
 #define BUFFER_GROWTH_FACTOR                      2  // how Buffer grows when needed
 
 static void buffer_adjust(Buffer* b, uint32_t cap);
-static void buffer_append_ptr_len(Buffer* b, const char* ptr, int len);
+static void buffer_append_ptr_len(Buffer* b, const char* ptr, uint32_t len);
 
 void buffer_build(Buffer* b) {
+    memset(b, 0, sizeof(Buffer));
     b->ptr = b->buf;
     b->cap = BUFFER_DATA_SIZE;
-    b->len = 0;
-    b->flg = 0;
 }
 
 void buffer_destroy(Buffer* b) {
@@ -178,7 +177,7 @@ static void buffer_adjust(Buffer* b, uint32_t cap) {
     b->cap = cap;
 }
 
-static void buffer_append_ptr_len(Buffer* b, const char* ptr, int len) {
+static void buffer_append_ptr_len(Buffer* b, const char* ptr, uint32_t len) {
     if (len <= 0) {
         return;
     }

@@ -16,8 +16,9 @@ void dump_bytes(FILE* fp, const void* ptr, size_t len) {
     int dpos = 0;
     int row = 0;
     int col = 0;
+    unsigned char* ucp = (unsigned char*) ptr;
     for (size_t j = 0; j < len; ++j) {
-        unsigned char uc = ((unsigned char*) ptr)[j];
+        unsigned char uc = ucp[j];
         unsigned int ui = (unsigned int) uc;
         bpos += sprintf(byte + bpos, "%s%02x", col ? " " : "", ui);
         dpos += sprintf(text + dpos, "%c", uc <= 0x7f && isprint(uc) ? uc : '.');

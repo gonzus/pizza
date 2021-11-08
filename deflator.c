@@ -14,7 +14,7 @@ void deflator_build(Deflator* deflator, int chunk_size) {
 }
 
 void deflator_destroy(Deflator* deflator) {
-    free((void*) deflator->chunk);
+    MEMORY_FREE_ARRAY(deflator->chunk, unsigned char, deflator->chunk_size);
 }
 
 int deflator_uncompress(Deflator* deflator, Slice compressed, Buffer* uncompressed) {

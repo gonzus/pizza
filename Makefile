@@ -1,5 +1,8 @@
 NAME = pizza
 
+CC = cc
+# CC = clang
+
 # CFLAGS += -std=c89 -Wno-gcc-compat -Wno-comment
 # CFLAGS += -std=c99
 CFLAGS += -std=c11
@@ -20,6 +23,20 @@ CFLAGS += -D_DEFAULT_SOURCE -D_GNU_SOURCE
 
 CFLAGS += -g
 # CFLAGS += -O3
+
+# CFLAGS += -fsanitize=address
+# LDFLAGS += -fsanitize=address
+
+# CFLAGS += -fsanitize=undefined -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+# LDFLAGS += -fsanitize=undefined -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
+
+# CFLAGS += -fsanitize=thread
+# LDFLAGS += -fsanitize=thread
+
+# NOTE: this may produce false positives unless all code (including libraries)
+# is compiled with these flags.
+# CFLAGS += -fsanitize=memory
+# LDFLAGS += -fsanitize=memory
 
 LIBRARY = lib$(NAME).a
 
@@ -57,10 +74,10 @@ C_OBJ_TEST = $(patsubst %.c, %.o, $(C_SRC_TEST))
 C_EXE_TEST = $(patsubst %.c, %, $(C_SRC_TEST))
 
 %.o: %.c
-	cc $(CFLAGS) -c -o $@ $^
+	$(CC) $(CFLAGS) -c -o $@ $^
 
 $(C_EXE_TEST): %: %.o $(LIBRARY)
-	cc $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltap -lz -lpthread
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltap -lz -lpthread
 
 tests: $(C_EXE_TEST)
 

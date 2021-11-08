@@ -28,6 +28,18 @@ uint32_t hash_murmur3(const char* str, uint32_t len, uint32_t seed) {
     for (int j = -l; j != 0; ++j) {
         // next 4 byte chunk of `str'
         k = chunks[j];
+        // TODO: previous line has an allignment problem:
+        //
+        // gcc:
+        // hash.c:30:11: runtime error: load of misaligned address 0x55afce1c1052
+        // for type 'const uint32_t',
+        // which requires 4 byte alignment
+        //
+        // clang:
+        // hash.c:30:13: runtime error: load of misaligned address 0x000000430c79
+        // for type 'const uint32_t' (aka 'const unsigned int'),
+        // which requires 4 byte alignment
+
         // encode next 4 byte chunk of `str'
         k *= c1;
         k = (k << r1) | (k >> (32 - r1));

@@ -10,16 +10,22 @@
 
 #define BUFFER_SIZE 4096
 
-void path_from_string(Path* p, const char* str, int len) {
+void path_build(Path* p) {
     buffer_build(&p->name);
+}
+
+void path_from_string(Path* p, const char* str, int len) {
+    path_build(p);
     buffer_append_string(&p->name, str, len);
     buffer_null_terminate(&p->name);
+    --p->name.len; // HACK ALARM
 }
 
 void path_from_slice(Path* p, Slice s) {
-    buffer_build(&p->name);
+    path_build(p);
     buffer_append_slice(&p->name, s);
     buffer_null_terminate(&p->name);
+    --p->name.len; // HACK ALARM
 }
 
 void path_destroy(Path* p) {
@@ -45,46 +51,29 @@ int path_exists(Path* p, int* exists) {
     return ret;
 }
 
+#define CHECK_MODE(path, answer, check) \
+    *answer = 0; \
+    int ret = 0; \
+    do { \
+        struct stat sb; \
+        if (lstat((path)->name.ptr, &sb) < 0) { \
+            ret = errno; \
+            break; \
+        } \
+        *answer = check(sb.st_mode); \
+    } while (0); \
+    return ret
+
 int path_is_file(Path* p, int* is_file) {
-    *is_file = 0;
-    int ret = 0;
-    do {
-        struct stat sb;
-        if (lstat(p->name.ptr, &sb) < 0) {
-            ret = errno;
-            break;
-        }
-        *is_file = S_ISREG(sb.st_mode);
-    } while (0);
-    return ret;
+    CHECK_MODE(p, is_file, S_ISREG);
 }
 
 int path_is_dir(Path* p, int* is_dir) {
-    *is_dir = 0;
-    int ret = 0;
-    do {
-        struct stat sb;
-        if (lstat(p->name.ptr, &sb) < 0) {
-            ret = errno;
-            break;
-        }
-        *is_dir = S_ISDIR(sb.st_mode);
-    } while (0);
-    return ret;
+    CHECK_MODE(p, is_dir, S_ISDIR);
 }
 
 int path_is_symlink(Path* p, int* is_symlink) {
-    *is_symlink = 0;
-    int ret = 0;
-    do {
-        struct stat sb;
-        if (lstat(p->name.ptr, &sb) < 0) {
-            ret = errno;
-            break;
-        }
-        *is_symlink = S_ISLNK(sb.st_mode);
-    } while (0);
-    return ret;
+    CHECK_MODE(p, is_symlink, S_ISLNK);
 }
 
 int path_readlink(Path* p, Buffer* b) {
@@ -197,4 +186,100 @@ int path_spew(Path* p, Slice s) {
 
 int path_append(Path* p, Slice s) {
     return write_to_file(p, s, "a");
+}
+
+static int last_slash(Path* p) {
+    int pos = p->name.len - 1;
+    if (pos <= 1) {
+        return -1;
+    }
+    while (pos >= 0 && p->name.ptr[pos] != '/') {
+        --pos;
+    }
+    if (pos < 0) {
+        return -1;
+    }
+    return pos;
+}
+
+int path_parent(Path* p, Path* parent) {
+    int pos = last_slash(p);
+    if (pos < 0) {
+        // TODO
+        return -1;
+    }
+    buffer_append_string(&parent->name, p->name.ptr, pos);
+    buffer_null_terminate(&parent->name);
+    --parent->name.len; // HACK ALARM
+    return 0;
+}
+
+int path_sibling(Path* p, Path* sibling, Slice name) {
+    int pos = last_slash(p);
+    if (pos < 0) {
+        // TODO
+        return -1;
+    }
+    buffer_append_string(&sibling->name, p->name.ptr, pos);
+    buffer_append_byte(&sibling->name, '/');
+    buffer_append_slice(&sibling->name, name);
+    buffer_null_terminate(&sibling->name);
+    --sibling->name.len; // HACK ALARM
+    return 0;
+}
+
+int path_child(Path* p, Path* child, Slice name) {
+    buffer_clear(&child->name);
+    buffer_append_buffer(&child->name, &p->name);
+    buffer_append_byte(&child->name, '/');
+    buffer_append_slice(&child->name, name);
+    buffer_null_terminate(&child->name);
+    --child->name.len; // HACK ALARM
+    return 0;
+}
+
+int path_visit(Path* p, PathVisitor visit, void* arg) {
+    int ret = 0;
+    DIR* dir = 0;
+    do {
+       dir = opendir(p->name.ptr);
+       if (!dir) {
+           ret = errno;
+           break;
+       }
+       while (1) {
+           errno = 0;
+           struct dirent* entry = readdir(dir);
+           if (!entry) {
+               ret = errno;
+               break;
+           }
+           visit(p, entry, arg);
+       }
+    } while (0);
+    if (dir) {
+        closedir(dir);
+        dir = 0;
+    }
+    return ret;
+}
+
+const char* path_entry_type(uint8_t type) {
+    switch (type) {
+        case DT_BLK:
+            return "block device";
+        case DT_CHR:
+            return "character device";
+        case DT_DIR:
+            return "directory";
+        case DT_FIFO:
+            return "named pipe (FIFO)";
+        case DT_LNK:
+            return "symbolic link";
+        case DT_REG:
+            return "regular file";
+        case DT_SOCK:
+            return "UNIX domain socket";
+    }
+    return "unknown";
 }

@@ -6,11 +6,17 @@
  * Inspired on Perl's https://metacpan.org/pod/Path::Tiny
  */
 
+#include <dirent.h>
 #include "buffer.h"
 
 typedef struct Path {
     Buffer name;
 } Path;
+
+typedef int (PathVisitor)(Path* p, struct dirent* entry, void* arg);
+
+// Build an empty path.
+void path_build(Path* p);
 
 // Path constructor from a file name given as a string (const char*).
 // If len < 0, use null terminator, otherwise copy len bytes.
@@ -51,8 +57,19 @@ int path_spew(Path* p, Slice s);
 // File will be created / appended to.
 int path_append(Path* p, Slice s);
 
-#if 0
-int path_child(Path* p, Path* c);
-#endif
+// If p = /a/b/c, parent => /a/b
+int path_parent(Path* p, Path* parent);
+
+// If p = /a/b/c and name = y, sibling => /a/b/y
+int path_sibling(Path* p, Path* sibling, Slice name);
+
+// If p = /a/b/c and name = x, child => /a/b/c/x
+int path_child(Path* p, Path* child, Slice name);
+
+int path_visit(Path* p, PathVisitor visit, void* arg);
+
+// Get a string describing the entry type.
+// Type is field d_type from struct dirent.
+const char* path_entry_type(uint8_t type);
 
 #endif

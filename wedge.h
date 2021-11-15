@@ -11,7 +11,7 @@
 
 typedef struct Wedge {
     Slice s;
-    Buffer* b; // if needed, it will live in the heap
+    Buffer b;
 } Wedge;
 
 void wedge_build_from_string(Wedge* w, const char* str);

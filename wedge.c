@@ -40,22 +40,19 @@ void wedge_build_from_buffer(Wedge* w, Buffer* b) {
 }
 
 void wedge_destroy(Wedge* w) {
-    if (w->b) {
-        buffer_release(w->b);
-    }
+    buffer_destroy(&w->b);
 }
 
 void build_from_slice(Wedge* w, Slice s, int null_terminated) {
+    buffer_build(&w->b);
     if (null_terminated) {
         // Slice is null terminated -- keep just a slice copy
-        w->b = 0;
         w->s = s;
     } else {
         // Slice is not null terminated -- build our own copy with the null
-        w->b = buffer_allocate();
-        buffer_append_slice(w->b, s);
-        buffer_null_terminate(w->b);
+        buffer_append_slice(&w->b, s);
+        buffer_null_terminate(&w->b);
         // Must fake slice's length to not include null
-        w->s = slice_from_memory(w->b->ptr, s.len);
+        w->s = slice_from_memory(w->b.ptr, s.len);
     }
 }

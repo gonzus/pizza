@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include "memory.h"
@@ -25,24 +24,7 @@ void buffer_destroy(Buffer* b) {
     if (BUFFER_FLAG_CHK(b, BUFFER_FLAG_PTR_IN_HEAP)) {
         BUFFER_FLAG_CLR(b, BUFFER_FLAG_PTR_IN_HEAP);
         MEMORY_FREE_ARRAY(b->ptr, char, b->cap);
-        assert(!b->ptr);
     }
-}
-
-Buffer* buffer_allocate(void) {
-    Buffer* b = 0; MEMORY_ALLOC(b, Buffer);
-    buffer_build(b);
-    BUFFER_FLAG_SET(b, BUFFER_FLAG_BUF_IN_HEAP);
-    assert(b);
-    return b;
-}
-
-void buffer_release(Buffer* b) {
-    assert(BUFFER_FLAG_CHK(b, BUFFER_FLAG_BUF_IN_HEAP));
-    BUFFER_FLAG_CLR(b, BUFFER_FLAG_BUF_IN_HEAP);
-    buffer_destroy(b);
-    MEMORY_FREE(b, Buffer);
-    assert(!b);
 }
 
 void buffer_ensure_total(Buffer* b, uint32_t total) {
@@ -66,12 +48,6 @@ void buffer_ensure_total(Buffer* b, uint32_t total) {
             BUFFER_FLAG_SET(b, BUFFER_FLAG_PTR_IN_HEAP);
         }
     }
-}
-
-Buffer* buffer_clone(const Buffer* b) {
-    Buffer* n = buffer_allocate();
-    buffer_append_buffer(n, b);
-    return n;
 }
 
 Slice buffer_slice(const Buffer* b) {

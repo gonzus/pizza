@@ -79,17 +79,8 @@ void buffer_build(Buffer* b);
 // Buffer destructor.
 void buffer_destroy(Buffer* b);
 
-// Allocate and build a Buffer in the heap.
-Buffer* buffer_allocate(void);
-
-// Destroy and release a Buffer in the heap.
-void buffer_release(Buffer* b);
-
 // Ensure buffer has space for total bytes.
 void buffer_ensure_total(Buffer* b, uint32_t total);
-
-// Clone an existing Buffer -- clone lives in the heap.
-Buffer* buffer_clone(const Buffer* b);
 
 // Create a slice that wraps the contents of the buffer.
 Slice buffer_slice(const Buffer* b);

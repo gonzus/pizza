@@ -117,38 +117,6 @@ static void test_stack_heap(void) {
     buffer_destroy(&b);
 }
 
-static void test_pure_heap(void) {
-    char str[1024];
-    Buffer* b = buffer_allocate();
-
-    const char* heap = "humongously useful heap";
-    print_and_compare(b, str, "Also large enough to need the %s %s %s", heap, heap, heap);
-
-    buffer_release(b);
-}
-
-static void test_clone(void) {
-    static struct {
-        const char* s;
-    } data[] = {
-        { "you know it is there" },
-        { "" },
-        { "  this looks \t\t good " },
-    };
-    for (int j = 0; j < ALEN(data); ++j) {
-        const char* ptr = data[j].s;
-        uint32_t len = strlen(data[j].s);
-        Buffer b; buffer_build(&b);
-        buffer_append_string(&b, ptr, len);
-        Buffer* n = buffer_clone(&b);
-        ok(b.ptr != n->ptr, "buffer_clone: pointers %p and %p are different OK", b.ptr, n->ptr);
-        cmp_ok(b.len, "==", n->len, "buffer_clone: lengths %d and %d are equal OK", b.len, n->len);
-        cmp_mem(b.ptr, n->ptr, b.len, "buffer_clone: %d bytes OK", b.len);
-        buffer_release(n);
-        buffer_destroy(&b);
-    }
-}
-
 static void test_pack(void) {
     static struct {
         const char* s;
@@ -193,8 +161,6 @@ int main (int argc, char* argv[]) {
     test_format_print();
     test_stack();
     test_stack_heap();
-    test_pure_heap();
-    test_clone();
     test_pack();
 
     done_testing();

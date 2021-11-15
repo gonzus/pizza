@@ -76,6 +76,22 @@ int path_is_symlink(Path* p, int* is_symlink) {
     CHECK_MODE(p, is_symlink, S_ISLNK);
 }
 
+int path_is_fifo(Path* p, int* is_fifo) {
+    CHECK_MODE(p, is_fifo, S_ISFIFO);
+}
+
+int path_is_socket(Path* p, int* is_socket) {
+    CHECK_MODE(p, is_socket, S_ISSOCK);
+}
+
+int path_is_chardev(Path* p, int* is_chardev) {
+    CHECK_MODE(p, is_chardev, S_ISCHR);
+}
+
+int path_is_blockdev(Path* p, int* is_blockdev) {
+    CHECK_MODE(p, is_blockdev, S_ISBLK);
+}
+
 int path_readlink(Path* p, Buffer* b) {
     int ret = 0;
     do {
@@ -90,9 +106,8 @@ int path_readlink(Path* p, Buffer* b) {
     return ret;
 }
 
-int path_touch(Path* p) {
+int path_mkdir(Path* p) {
     int ret = 0;
-    FILE* fp = 0;
     do {
         int exists = 0;
         ret = path_exists(p, &exists);
@@ -100,29 +115,116 @@ int path_touch(Path* p) {
             // could not check existence, bail out
             break;
         }
-        if (!exists) {
-            // it does not exist, create it
-            // TODO: cheaper way to do this?
-            fp = fopen(p->name.ptr, "w");
-            break;
-        }
-        // it exists, update access and modification times to current
-        if (utimes(p->name.ptr, 0) < 0) {
-            ret = errno;
-            break;
+        if (exists) {
+            // path exists
+            int is_dir = 0;
+            ret = path_is_dir(p, &is_dir);
+            if (ret) {
+                // could not check if it is a directory, bail out
+                break;
+            }
+            if (is_dir) {
+                // path exists and is a directory
+                if (utimes(p->name.ptr, 0) < 0) {
+                    ret = errno;
+                    break;
+                }
+            } else {
+                // path exists and is not a directory
+                ret = EEXIST;
+                break;
+            }
+        } else {
+            // path does not exist
+            mode_t mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
+            if (mkdir(p->name.ptr, mode) < 0) {
+                ret = errno;
+                break;
+            }
         }
     } while (0);
-    if (fp) {
-        fclose(fp);
-        fp = 0;
-    }
     return ret;
 }
 
-int path_remove(Path* p) {
+int path_rmdir(Path* p) {
     int ret = 0;
     do {
-        if (remove(p->name.ptr) < 0) {
+        int exists = 0;
+        ret = path_exists(p, &exists);
+        if (ret) {
+            // could not check existence, bail out
+            break;
+        }
+        if (exists) {
+            // path exists
+            int is_dir = 0;
+            ret = path_is_dir(p, &is_dir);
+            if (ret) {
+                // could not check if it is a directory, bail out
+                break;
+            }
+            if (is_dir) {
+                // path exists and is a directory
+                if (rmdir(p->name.ptr) < 0) {
+                    ret = errno;
+                    break;
+                }
+            } else {
+                // path exists and is not a directory
+                ret = EEXIST;
+                break;
+            }
+        } else {
+        }
+    } while (0);
+    return ret;
+}
+
+int path_touch(Path* p) {
+    int ret = 0;
+    do {
+        int exists = 0;
+        ret = path_exists(p, &exists);
+        if (ret) {
+            // could not check existence, bail out
+            break;
+        }
+        if (exists) {
+            // path exists
+            int is_file = 0;
+            ret = path_is_file(p, &is_file);
+            if (ret) {
+                // could not check if it is a file, bail out
+                break;
+            }
+            if (is_file) {
+                // path exists and is a file
+                if (utimes(p->name.ptr, 0) < 0) {
+                    ret = errno;
+                    break;
+                }
+            } else {
+                // path exists and is not a file
+                ret = EEXIST;
+                break;
+            }
+        } else {
+            // path does not exist
+            mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
+            dev_t dev = {0};
+            if (mknod(p->name.ptr, S_IFREG | mode, dev) < 0) {
+                ret = errno;
+                break;
+            }
+        }
+    } while (0);
+    return ret;
+}
+
+int path_unlink(Path* p) {
+    int ret = 0;
+    do {
+        if (unlink(p->name.ptr) < 0) {
             ret = errno;
             break;
         }
@@ -190,9 +292,6 @@ int path_append(Path* p, Slice s) {
 
 static int last_slash(Path* p) {
     int pos = p->name.len - 1;
-    if (pos <= 1) {
-        return -1;
-    }
     while (pos >= 0 && p->name.ptr[pos] != '/') {
         --pos;
     }
@@ -203,25 +302,34 @@ static int last_slash(Path* p) {
 }
 
 int path_parent(Path* p, Path* parent) {
+    buffer_clear(&parent->name);
     int pos = last_slash(p);
     if (pos < 0) {
-        // TODO
         return -1;
     }
-    buffer_append_string(&parent->name, p->name.ptr, pos);
+    if (pos == 0) {
+        // special cases:
+        //   parent of "/foo" is "/"
+        //   parent of "/" is "/"
+        buffer_append_byte(&parent->name, '/');
+    } else {
+        buffer_append_string(&parent->name, p->name.ptr, pos);
+    }
     buffer_null_terminate(&parent->name);
     --parent->name.len; // HACK ALARM
     return 0;
 }
 
 int path_sibling(Path* p, Path* sibling, Slice name) {
+    buffer_clear(&sibling->name);
     int pos = last_slash(p);
     if (pos < 0) {
-        // TODO
         return -1;
     }
-    buffer_append_string(&sibling->name, p->name.ptr, pos);
-    buffer_append_byte(&sibling->name, '/');
+    if (p->name.len <= 1) {
+        return -1;
+    }
+    buffer_append_string(&sibling->name, p->name.ptr, pos + 1);
     buffer_append_slice(&sibling->name, name);
     buffer_null_terminate(&sibling->name);
     --sibling->name.len; // HACK ALARM
@@ -230,8 +338,14 @@ int path_sibling(Path* p, Path* sibling, Slice name) {
 
 int path_child(Path* p, Path* child, Slice name) {
     buffer_clear(&child->name);
+    int pos = last_slash(p);
+    if (pos < 0) {
+        return -1;
+    }
     buffer_append_buffer(&child->name, &p->name);
-    buffer_append_byte(&child->name, '/');
+    if (p->name.len > 1) {
+        buffer_append_byte(&child->name, '/');
+    }
     buffer_append_slice(&child->name, name);
     buffer_null_terminate(&child->name);
     --child->name.len; // HACK ALARM
@@ -264,22 +378,28 @@ int path_visit(Path* p, PathVisitor visit, void* arg) {
     return ret;
 }
 
+int path_skip_visit(const char* name) {
+    if (name[0] == '.' && name[1] == '\0') return 1;
+    if (name[0] == '.' && name[1] == '.' && name[2] == '\0') return 1;
+    return 0;
+}
+
 const char* path_entry_type(uint8_t type) {
     switch (type) {
-        case DT_BLK:
-            return "block device";
-        case DT_CHR:
-            return "character device";
-        case DT_DIR:
-            return "directory";
-        case DT_FIFO:
-            return "named pipe (FIFO)";
-        case DT_LNK:
-            return "symbolic link";
         case DT_REG:
             return "regular file";
+        case DT_DIR:
+            return "directory";
+        case DT_LNK:
+            return "symbolic link";
+        case DT_FIFO:
+            return "named pipe (FIFO)";
         case DT_SOCK:
             return "UNIX domain socket";
+        case DT_CHR:
+            return "character device";
+        case DT_BLK:
+            return "block device";
     }
     return "unknown";
 }

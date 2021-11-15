@@ -32,7 +32,9 @@ void buffer_ensure_total(Buffer* b, uint32_t total) {
     uint32_t current = b->cap;
     while (total > current) {
         ++changes;
-        uint32_t next = current == 0 ? BUFFER_DEFAULT_CAPACITY : current * BUFFER_GROWTH_FACTOR;
+        uint32_t next = current == 0
+                      ? BUFFER_DEFAULT_CAPACITY
+                      : current * BUFFER_GROWTH_FACTOR;
         current = next;
     }
     if (changes) {

@@ -5,7 +5,7 @@
  * Path -- routines to deal with paths / files.
  * Inspired on Perl's https://metacpan.org/pod/Path::Tiny
  *
- * TODO:
+ * TODO: implement missing functions
  * function like "rm -fr /tmp/a/b/c"
  * function like "mkdir -p /tmp/a/b/c"
  */

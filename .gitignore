@@ -1,6 +1,7 @@
 *
 !/**/
 !*.*
-*.o
-*.a
-*.sw*
+**/*.swp
+*.sublime-workspace
+**/*.o
+**/*.a

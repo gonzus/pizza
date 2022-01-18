@@ -1,5 +1,5 @@
 #include <time.h>
-#include "ymd.h"
+#include "pizza/ymd.h"
 
 #define YMD_ENCODE(y, m, d) (((y) * 100 + (m)) * 100 + (d))
 

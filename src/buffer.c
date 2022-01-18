@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include "memory.h"
-#include "buffer.h"
+#include "pizza/memory.h"
+#include "pizza/buffer.h"
 
 #if !defined(va_copy)
 // need this if we want to compile for C89

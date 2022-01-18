@@ -1,7 +1,7 @@
 #include <ctype.h>
 // #include <stdio.h>
 // #include <string.h>
-#include "uri.h"
+#include "pizza/uri.h"
 
 #define NIBBLE_BITS 4
 #define MAKE_BYTE(nh, nl) (((nh) << NIBBLE_BITS) | (nl))

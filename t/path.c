@@ -2,7 +2,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <tap.h>
-#include "path.h"
+#include "pizza/path.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

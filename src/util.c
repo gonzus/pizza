@@ -1,6 +1,6 @@
-#include "buffer.h"
-#include "timer.h"
-#include "util.h"
+#include "pizza/buffer.h"
+#include "pizza/timer.h"
+#include "pizza/util.h"
 
 static struct {
     unsigned long min;

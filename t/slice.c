@@ -1,7 +1,7 @@
 #include <string.h>
 #include <tap.h>
-#include "util.h"
-#include "slice.h"
+#include "pizza/util.h"
+#include "pizza/slice.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

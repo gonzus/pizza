@@ -1,8 +1,8 @@
 #include <string.h>
 #include <time.h>
 #include <tap.h>
-#include "buffer.h"
-#include "util.h"
+#include "pizza/buffer.h"
+#include "pizza/util.h"
 
 #define ALEN(a) (int) (sizeof(a) / sizeof(a[0]))
 

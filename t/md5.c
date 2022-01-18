@@ -1,5 +1,5 @@
 #include <tap.h>
-#include "md5.h"
+#include "pizza/md5.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

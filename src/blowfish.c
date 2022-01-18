@@ -2,7 +2,7 @@
 #include <endian.h>
 #include <stdlib.h>
 #include <string.h>
-#include "blowfish.h"
+#include "pizza/blowfish.h"
 
 /*
  * Make preprocessor dance a bit to determine if we are running under a Big or

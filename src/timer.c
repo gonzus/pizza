@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "util.h"
-#include "timer.h"
+#include "pizza/util.h"
+#include "pizza/timer.h"
 
 void timer_start(Timer* t) {
     clock_gettime(CLOCK_MONOTONIC, &t->ts0);

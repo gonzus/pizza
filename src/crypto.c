@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <string.h>
-#include "blowfish.h"
-#include "md5.h"
-#include "crypto.h"
+#include "pizza/blowfish.h"
+#include "pizza/md5.h"
+#include "pizza/crypto.h"
 
 #define DECRYPT(pos, iv, orig, last) \
     do { \

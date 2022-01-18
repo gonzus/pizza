@@ -1,5 +1,5 @@
 #include <time.h>
-#include "mtwister.h"
+#include "pizza/mtwister.h"
 
 #define MAX_UINT32_I    (4294967295)                // 2^32 - 1 -- as an integer
 #define MAX_UINT32_P1_I (4294967296)                // 2^32     -- as an integer

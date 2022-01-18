@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include "memory.h"
+#include "pizza/memory.h"
 
 static void dump_line(FILE* fp, int row, const char* byte, int white, const char* text) {
     fprintf(fp, "%06x | %s%*s | %-16s |\n", row, byte, white, "", text);

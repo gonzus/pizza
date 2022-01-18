@@ -1,6 +1,6 @@
 #include <ctype.h>
 #include <string.h>
-#include "slice.h"
+#include "pizza/slice.h"
 
 static Slice slice_null = { .ptr = 0, .len = 0 };
 

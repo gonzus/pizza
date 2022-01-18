@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <utime.h>
-#include "path.h"
+#include "pizza/path.h"
 
 #define BUFFER_SIZE 4096
 

@@ -1,5 +1,5 @@
 #include <string.h>
-#include "md5.h"
+#include "pizza/md5.h"
 
 // compute number of bytes mod 64
 #define BITS_M64(b) ((int) (((b) >> 3) & 0x3f))

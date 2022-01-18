@@ -1,8 +1,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <zlib.h>
-#include "memory.h"
-#include "deflator.h"
+#include "pizza/memory.h"
+#include "pizza/deflator.h"
 
 #define ZLIB_CHUNK 16384
 #define ZLIB_LEVEL Z_BEST_SPEED

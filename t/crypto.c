@@ -1,8 +1,8 @@
 #include <string.h>
 #include <tap.h>
-#include "memory.h"
-#include "buffer.h"
-#include "crypto.h"
+#include "pizza/memory.h"
+#include "pizza/buffer.h"
+#include "pizza/crypto.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

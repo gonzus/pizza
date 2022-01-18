@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <tap.h>
-#include "log.h"
+#include "pizza/log.h"
 
 static void test_log_error_dies(void) {
     log_reset(0, 0);

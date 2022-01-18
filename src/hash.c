@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "hash.h"
+#include "pizza/hash.h"
 
 uint32_t hash_djb2(const char* str, uint32_t len) {
     uint32_t h = 5381;

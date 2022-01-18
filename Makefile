@@ -16,7 +16,7 @@ CFLAGS += -DLOG_LEVEL=1
 # uncomment to stop complaints about unused functions
 # CFLAGS += -Wno-unused-function
 
-CFLAGS += -I.
+CFLAGS += -I./inc
 CFLAGS += -Wall -Wextra -Wshadow
 CFLAGS += -Wpedantic
 CFLAGS += -D_DEFAULT_SOURCE -D_GNU_SOURCE
@@ -64,7 +64,7 @@ C_SRC_LIB = \
 	deflator.c \
 	util.c \
 
-C_OBJ_LIB = $(C_SRC_LIB:.c=.o)
+C_OBJ_LIB = $(patsubst %.c, %.o, $(C_SRC_LIB))
 
 $(LIBRARY): $(C_OBJ_LIB)
 	ar -crs $@ $^
@@ -73,7 +73,7 @@ C_SRC_TEST = $(wildcard t/*.c)
 C_OBJ_TEST = $(patsubst %.c, %.o, $(C_SRC_TEST))
 C_EXE_TEST = $(patsubst %.c, %, $(C_SRC_TEST))
 
-%.o: %.c
+%.o: src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 $(C_EXE_TEST): %: %.o $(LIBRARY)

@@ -1,6 +1,6 @@
 #include <string.h>
 #include <tap.h>
-#include "base64.h"
+#include "pizza/base64.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

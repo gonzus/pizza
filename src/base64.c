@@ -1,4 +1,4 @@
-#include "base64.h"
+#include "pizza/base64.h"
 
 static const unsigned char enc_64[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,

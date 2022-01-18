@@ -1,7 +1,7 @@
 #include <string.h>
 #include <tap.h>
-#include "util.h"
-#include "buffer.h"
+#include "pizza/util.h"
+#include "pizza/buffer.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

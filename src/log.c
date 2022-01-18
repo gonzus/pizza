@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include "log.h"
+#include "pizza/log.h"
 
 static LogInfo log_info = {
     .level_compile_time = LOG_LEVEL_COMPILE_TIME,

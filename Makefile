@@ -40,6 +40,8 @@ CFLAGS += -g
 
 LIBRARY = lib$(NAME).a
 
+TEST_LIBS = -ltap -lz -lpthread
+
 all: $(LIBRARY)
 
 C_SRC_LIB = \
@@ -77,7 +79,7 @@ C_EXE_TEST = $(patsubst %.c, %, $(C_SRC_TEST))
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 $(C_EXE_TEST): %: %.o $(LIBRARY)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ -ltap -lz -lpthread
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(TEST_LIBS)
 
 tests: $(C_EXE_TEST)
 

@@ -44,8 +44,6 @@ LIBRARY = lib$(NAME).a
 
 TEST_LIBS = -ltap -lz -lpthread
 
-all: $(LIBRARY)  ## (re)build everything
-
 C_SRC_LIB = \
 	log.c \
 	memory.c \
@@ -92,6 +90,8 @@ test: tests ## run all tests
 
 valgrind: tests  ## run all tests under valgrind
 	@for t in $(C_EXE_TEST); do valgrind ./$$t 2>&1 | egrep -v '^==[0-9]+== (Memcheck,|Copyright |Using Valgrind|Command: |For lists of detected |[ \t]*($$|All heap blocks were freed|(HEAP|LEAK|ERROR) SUMMARY|total heap usage|in use at exit: 0 bytes|Process terminating with default action |(at|by) 0x))'; done
+
+all: $(LIBRARY)  ## (re)build everything
 
 clean:  ## clean everything
 	rm -f *.o

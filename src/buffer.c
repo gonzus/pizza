@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <string.h>
+#include "pizza/stb_sprintf.h"
 #include "pizza/memory.h"
 #include "pizza/buffer.h"
 
@@ -106,39 +106,32 @@ void buffer_append_buffer(Buffer* b, const Buffer* buf) {
 
 void buffer_format_signed(Buffer* b, long long l) {
     char cstr[99];
-    uint32_t clen = sprintf(cstr, "%lld", l);
+    uint32_t clen = stbsp_sprintf(cstr, "%lld", l);
     buffer_append_ptr_len(b, cstr, clen);
 }
 
 void buffer_format_unsigned(Buffer* b, unsigned long long l) {
     char cstr[99];
-    uint32_t clen = sprintf(cstr, "%llu", l);
+    uint32_t clen = stbsp_sprintf(cstr, "%llu", l);
     buffer_append_ptr_len(b, cstr, clen);
 }
 
 void buffer_format_double(Buffer* b, double d) {
     char cstr[99];
-    uint32_t clen = sprintf(cstr, "%f", d);
+    uint32_t clen = stbsp_sprintf(cstr, "%f", d);
     buffer_append_ptr_len(b, cstr, clen);
 }
 
-/*
- * potentially expensive because it calls sprintf TWICE:
- * 1. to determine space required to format all args and ensure there is enough space
- * 2. to actually generate the results
- */
+static char* vprint_cb(const char* buf, void* user, int len) {
+    // fprintf(stderr, "CB 0x%p %d [%.*s]\n", user, len, len, buf);
+    Buffer* b = (Buffer*) user;
+    buffer_append_ptr_len(b, buf, len);
+    return (char*) buf;
+}
+
 void buffer_format_vprint(Buffer* b, const char* fmt, va_list ap) {
-    va_list aq;
-    va_copy(aq, ap);
-
-    uint32_t size = vsnprintf(0, 0, fmt, ap);
-    va_end(ap);
-
-    buffer_ensure_extra(b, size + 1);  // vsnprintf below will also include a '\0'
-
-    vsnprintf((char*) b->ptr + b->len, size + 1, fmt, aq);
-    b->len += size;
-    va_end(aq);
+    char buf[STB_SPRINTF_MIN];
+    stbsp_vsprintfcb(vprint_cb, b, buf, fmt, ap);
 }
 
 void buffer_format_print(Buffer* b, const char* fmt, ...) {

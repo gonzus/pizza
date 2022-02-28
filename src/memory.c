@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pizza/stb_sprintf.h"
 #include "pizza/memory.h"
 
 static void dump_line(FILE* fp, int row, const char* byte, int white, const char* text) {
@@ -20,8 +21,8 @@ void dump_bytes(FILE* fp, const void* ptr, size_t len) {
     for (size_t j = 0; j < len; ++j) {
         unsigned char uc = ucp[j];
         unsigned int ui = (unsigned int) uc;
-        bpos += sprintf(byte + bpos, "%s%02x", col ? " " : "", ui);
-        dpos += sprintf(text + dpos, "%c", uc <= 0x7f && isprint(uc) ? uc : '.');
+        bpos += stbsp_sprintf(byte + bpos, "%s%02x", col ? " " : "", ui);
+        dpos += stbsp_sprintf(text + dpos, "%c", uc <= 0x7f && isprint(uc) ? uc : '.');
         col++;
         if (col == 16) {
             dump_line(fp, row, byte, 0, text);

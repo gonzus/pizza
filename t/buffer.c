@@ -7,6 +7,8 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+#define MAX_STR 60
+
 #define ALEN(a) (int) (sizeof(a) / sizeof(a[0]))
 
 static void test_sizes(void) {
@@ -84,7 +86,12 @@ static void print_and_compare(Buffer* b, char* str, const char* fmt, ...) {
     buffer_format_vprint(b, fmt, aq);
     va_end(aq);
 
-    cmp_mem(b->ptr, str, b->len, "buffer_format_print {%s} => OK", str);
+    int len = strlen(str);
+    if (len > MAX_STR) {
+        cmp_mem(b->ptr, str, b->len, "buffer_format_print {%.*s...} => OK", MAX_STR, str);
+    } else {
+        cmp_mem(b->ptr, str, b->len, "buffer_format_print {%s} => OK", str);
+    }
 }
 
 static void test_format_print(void) {
@@ -111,8 +118,8 @@ static void test_stack_heap(void) {
     char str[1024];
     Buffer b; buffer_build(&b);
 
-    const char* heap = "extremely useful heap";
-    print_and_compare(&b, str, "This is large enough to need the %s %s %s", heap, heap, heap);
+    const char* s = "01234567890123456789012345678901234567890123456789";
+    print_and_compare(&b, str, "%s%s%s%s%s%s%s%s%s%s%s%s", s, s, s, s, s, s, s, s, s, s, s, s);
 
     buffer_destroy(&b);
 }

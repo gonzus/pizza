@@ -1,4 +1,4 @@
-first: help
+first: all
 
 NAME = pizza
 
@@ -45,6 +45,7 @@ LIBRARY = lib$(NAME).a
 TEST_LIBS = -ltap -lz -lpthread
 
 C_SRC_LIB = \
+	stb.c \
 	log.c \
 	memory.c \
 	slice.c \

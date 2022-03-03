@@ -4,7 +4,6 @@
 /*
  * Timer -- easier measuring of elapsed time
  */
-#include <stdio.h>
 #include <time.h>
 
 #define NSECS_IN_A_USEC  1000UL

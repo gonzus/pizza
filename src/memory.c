@@ -3,14 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include "pizza/stb_sprintf.h"
+#include "pizza/console.h"
 #include "pizza/memory.h"
 
-static void dump_line(FILE* fp, int row, const char* byte, int white, const char* text) {
-    fprintf(fp, "%06x | %s%*s | %-16s |\n", row, byte, white, "", text);
+static void dump_line(int row, const char* byte, int white, const char* text) {
+    console_printf("%06x | %s%*s | %-16s |\n", row, byte, white, "", text);
 }
 
-void dump_bytes(FILE* fp, const void* ptr, size_t len) {
-    fprintf(fp, "bytes at %p, len %lu\n", ptr, len);
+void dump_bytes(const void* ptr, size_t len) {
+    console_printf("bytes at %p, len %lu\n", ptr, len);
     char byte[16*3+1];
     int bpos = 0;
     char text[16+1];
@@ -25,13 +26,13 @@ void dump_bytes(FILE* fp, const void* ptr, size_t len) {
         dpos += stbsp_sprintf(text + dpos, "%c", uc <= 0x7f && isprint(uc) ? uc : '.');
         col++;
         if (col == 16) {
-            dump_line(fp, row, byte, 0, text);
+            dump_line(row, byte, 0, text);
             col = bpos = dpos = 0;
             row += 16;
         }
     }
     if (dpos > 0) {
-        dump_line(fp, row, byte, (16-col)*3, text);
+        dump_line(row, byte, (16-col)*3, text);
     }
 }
 
@@ -52,10 +53,10 @@ void* memory_realloc(void* ptr, size_t len) {
 
     // bad things happened
     if (errno) {
-        fprintf(stderr, "Error %d (%s) calling realloc(%p, %lu)",
+        console_printf("Error %d (%s) calling realloc(%p, %lu)",
                 errno, strerror(errno), ptr, len);
     } else {
-        fprintf(stderr, "Could not allocate memory calling realloc(%p, %lu)\n",
+        console_printf("Could not allocate memory calling realloc(%p, %lu)\n",
                 ptr, len);
     }
     abort();

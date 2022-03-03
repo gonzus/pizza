@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "pizza/util.h"
 #include "pizza/timer.h"
 

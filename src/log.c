@@ -1,11 +1,11 @@
 #include <errno.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include "pizza/console.h"
 #include "pizza/log.h"
 
 static LogInfo log_info = {
@@ -71,7 +71,7 @@ static void log_print(int level, const char* file, int line, const char* fmt, va
     pid_t pid = getpid();
     pid_t tid = gettid();
 
-    fprintf(stderr, "%%%.3s %04d%02d%02d %02d%02d%02d %6ld %6ld | %s:%d | ",
+    console_printf("%%%.3s %04d%02d%02d %02d%02d%02d %6ld %6ld | %s:%d | ",
             log_level_label[level],
             local->tm_year + 1900, local->tm_mon + 1, local->tm_mday,
             local->tm_hour, local->tm_min, local->tm_sec,
@@ -79,13 +79,13 @@ static void log_print(int level, const char* file, int line, const char* fmt, va
             file, line);
     if (level >= LOG_LEVEL_WARNING) {
         if (saved_errno) {
-            fprintf(stderr, "(%d) %s | ", saved_errno, strerror(saved_errno));
+            console_printf("(%d) %s | ", saved_errno, strerror(saved_errno));
         } else {
-            fprintf(stderr, "%s | ", strerror(saved_errno));
+            console_printf("%s | ", strerror(saved_errno));
         }
     }
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
+    console_vprintf(fmt, ap);
+    console_printf("\n");
 }
 
 void log_reset(int skip_abort_on_error, int skip_print_output) {

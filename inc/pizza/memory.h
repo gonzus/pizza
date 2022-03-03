@@ -6,7 +6,6 @@
  */
 
 #include <stddef.h>
-#include <stdio.h>
 #include <string.h>
 
 #define MEMORY_ZERO_OUT 1
@@ -44,8 +43,8 @@
         } \
     } while (0)
 
-// Dump a block of bytes into a FILE stream with nice formatting.
-void dump_bytes(FILE* fp, const void* ptr, size_t len);
+// Dump a block of bytes into stderr with nice formatting.
+void dump_bytes(const void* ptr, size_t len);
 
 // Realloc a chunk of memory to a given size.  Useful to:
 // len == 0            free memory pointed to by ptr

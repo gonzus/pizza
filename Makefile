@@ -46,6 +46,7 @@ TEST_LIBS = -ltap -lz -lpthread
 
 C_SRC_LIB = \
 	stb.c \
+	console.c \
 	log.c \
 	memory.c \
 	slice.c \

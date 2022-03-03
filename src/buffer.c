@@ -1,5 +1,6 @@
 #include <string.h>
 #include "pizza/stb_sprintf.h"
+#include "pizza/console.h"
 #include "pizza/memory.h"
 #include "pizza/buffer.h"
 
@@ -123,7 +124,7 @@ void buffer_format_double(Buffer* b, double d) {
 }
 
 static char* vprint_cb(const char* buf, void* user, int len) {
-    // fprintf(stderr, "CB 0x%p %d [%.*s]\n", user, len, len, buf);
+    // console_printf("CB 0x%p %d [%.*s]\n", user, len, len, buf);
     Buffer* b = (Buffer*) user;
     buffer_append_ptr_len(b, buf, len);
     return (char*) buf;

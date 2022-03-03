@@ -1,6 +1,4 @@
 #include <ctype.h>
-// #include <stdio.h>
-// #include <string.h>
 #include "pizza/uri.h"
 
 #define NIBBLE_BITS 4

@@ -5,8 +5,6 @@
  * Utility functions.
  */
 
-#include <stdio.h>
-
 #define UNUSED_ARG(x) (void) x
 
 // We just use a pointer

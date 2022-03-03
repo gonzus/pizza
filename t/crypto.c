@@ -51,7 +51,7 @@ static void test_crypto(void) {
         uint32_t len = data[j].dlen;
         memcpy(buf, data[j].dptr, len);
         len = crypto_encrypt_cbc(&crypto, buf, len);
-        dump_bytes(stdout, buf, len);
+        dump_bytes(stderr, buf, len);
 #else
         Slice e = slice_from_memory((const char*) data[j].eptr, data[j].elen);
         buffer_clear(&b);

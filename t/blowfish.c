@@ -2,9 +2,6 @@
 #include <tap.h>
 #include "pizza/blowfish.h"
 
-// #include <stdlib.h>
-// #include <string.h>
-
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 
 #define LEN 8

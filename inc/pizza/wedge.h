@@ -6,7 +6,6 @@
  * Needed for the sad case of C libraries that expect a null-terminated string.
  */
 
-#include "slice.h"
 #include "buffer.h"
 
 typedef struct Wedge {

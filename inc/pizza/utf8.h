@@ -5,7 +5,6 @@
  * UTF8 encoding and decoding, using Slice and Buffer.
  */
 
-#include "slice.h"
 #include "buffer.h"
 
 // Value that indicates an invalid Unicode rune -- replacement character

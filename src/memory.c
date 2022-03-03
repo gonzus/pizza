@@ -1,7 +1,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <string.h>
 #include "pizza/stb_sprintf.h"
 #include "pizza/console.h"
 #include "pizza/memory.h"

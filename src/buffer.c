@@ -1,4 +1,3 @@
-#include <string.h>
 #include "pizza/stb_sprintf.h"
 #include "pizza/console.h"
 #include "pizza/memory.h"

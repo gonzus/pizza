@@ -1,7 +1,5 @@
 #include <assert.h>
 #include <endian.h>
-#include <stdlib.h>
-#include <string.h>
 #include "pizza/blowfish.h"
 
 /*

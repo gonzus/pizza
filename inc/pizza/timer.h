@@ -12,8 +12,7 @@
 #define USECS_IN_A_SEC   (USECS_IN_A_MSEC * MSECS_IN_A_SEC)
 #define NSECS_IN_A_SEC   (NSECS_IN_A_USEC * USECS_IN_A_SEC)
 
-// We just use a pointer
-struct Buffer;
+#include "buffer.h"
 
 typedef struct Timer {
     struct timespec ts0;
@@ -36,6 +35,6 @@ unsigned long timer_elapsed_ms(Timer* t);
 unsigned long timer_elapsed_s(Timer* t);
 
 // Format elapsed time into a buffer using readable units
-void timer_format_elapsed(Timer* t, struct Buffer* b);
+void timer_format_elapsed(Timer* t, Buffer* b);
 
 #endif

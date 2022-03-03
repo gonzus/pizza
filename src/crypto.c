@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <string.h>
 #include "pizza/blowfish.h"
 #include "pizza/md5.h"

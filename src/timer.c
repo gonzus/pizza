@@ -27,7 +27,7 @@ unsigned long timer_elapsed_s(Timer* t) {
     return timer_elapsed_ms(t) / MSECS_IN_A_SEC;
 }
 
-void timer_format_elapsed(Timer* t, struct Buffer* b) {
+void timer_format_elapsed(Timer* t, Buffer* b) {
     unsigned long us = timer_elapsed_us(t);
     format_abbreviated_us(us, b);
 }

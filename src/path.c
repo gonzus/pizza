@@ -1,11 +1,8 @@
 #include <errno.h>
-#include <limits.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <unistd.h>
-#include <utime.h>
 #include "pizza/path.h"
 
 #define BUFFER_SIZE 4096

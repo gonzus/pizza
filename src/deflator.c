@@ -1,5 +1,3 @@
-#include <string.h>
-#include <stdlib.h>
 #include <zlib.h>
 #include "pizza/memory.h"
 #include "pizza/deflator.h"

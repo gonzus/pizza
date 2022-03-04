@@ -140,42 +140,53 @@ static void test_path_touch(Path* tmp) {
 static void test_path_spew_slurp_append(Path* tmp) {
     Path p; path_build(&p);
     path_child(tmp, &p, slice_from_string("path_slurp_spew_append.txt", 0));
-    Buffer b; buffer_build(&b);
-    Buffer a; buffer_build(&a);
-    Slice t;
+    Buffer bs; buffer_build(&bs);
+    Buffer ba; buffer_build(&ba);
+    Buffer br; buffer_build(&br);
+    Slice ts, ta, tr;
     int e = 0;
 
     path_exists(&p, &e);
-    ok(!e, "path [%s] does not exist before being spewed", p.name.ptr);
+    ok(!e, "path [%s] does not exist before being spewed to", p.name.ptr);
 
-    Slice c1 = slice_from_string("In a hole in the ground there lived a Hobbit.\n", 0);
-    path_spew(&p, c1);
-    buffer_append_slice(&a, c1);
-
-    path_exists(&p, &e);
-    ok(e, "path [%s] exists after being spewed", p.name.ptr);
-
-    buffer_clear(&b);
-    path_slurp(&p, &b);
-    t = buffer_slice(&b);
-    ok(slice_equal(t, buffer_slice(&a)), "path [%s] has correct contents after being spewed", p.name.ptr);
-
-    Slice c2 = slice_from_string("This was a Hobbit hole, and that means comfort.\n", 0);
-    path_append(&p, c2);
-    buffer_append_slice(&a, c2);
+    Slice ss = slice_from_string("In a hole in the ground there lived a Hobbit.\n", 0);
+    for (int j = 0; j < 100; ++j) {
+        buffer_append_slice(&bs, ss);
+    }
+    ts = buffer_slice(&bs);
+    path_spew(&p, ts);
 
     path_exists(&p, &e);
-    ok(e, "path [%s] still exists after being appended", p.name.ptr);
+    ok(e, "path [%s] exists after being spewed to", p.name.ptr);
 
-    buffer_clear(&b);
-    path_slurp(&p, &b);
-    t = buffer_slice(&b);
-    ok(slice_equal(t, buffer_slice(&a)), "path [%s] has correct contents after being appended", p.name.ptr);
+    buffer_clear(&br);
+    path_slurp(&p, &br);
+    tr = buffer_slice(&br);
+    ok(slice_equal(ts, tr), "path [%s] has correct contents after being spewed to", p.name.ptr);
+
+    Slice sa = slice_from_string("This was a Hobbit hole, and that means comfort.\n", 0);
+    for (int j = 0; j < 100; ++j) {
+        buffer_append_slice(&ba, sa);
+    }
+    ta = buffer_slice(&ba);
+    path_append(&p, ta);
+
+    path_exists(&p, &e);
+    ok(e, "path [%s] still exists after being appended to", p.name.ptr);
+
+    buffer_append_slice(&bs, ta);
+    ts = buffer_slice(&bs);
+
+    buffer_clear(&br);
+    path_slurp(&p, &br);
+    tr = buffer_slice(&br);
+    ok(slice_equal(ts, tr), "path [%s] has correct contents after being appended to", p.name.ptr);
 
     path_unlink(&p);
 
-    buffer_destroy(&a);
-    buffer_destroy(&b);
+    buffer_destroy(&br);
+    buffer_destroy(&ba);
+    buffer_destroy(&bs);
     path_destroy(&p);
 }
 

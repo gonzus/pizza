@@ -239,13 +239,20 @@ int path_slurp(Path* p, Buffer* b) {
             break;
         }
 
-        char tmp[BUFFER_SIZE];
-        size_t nread = fread(tmp, 1, BUFFER_SIZE, fp);
-        if (!nread) {
-            break;
+        while (1) {
+            char tmp[BUFFER_SIZE];
+            size_t nread = fread(tmp, 1, BUFFER_SIZE, fp);
+            if (nread > 0) {
+                buffer_append_string(b, tmp, nread);
+            }
+            if (feof(fp)) {
+                break;
+            }
+            if (ferror(fp)) {
+                // TODO: set error in ret
+                break;
+            }
         }
-
-        buffer_append_string(b, tmp, nread);
     } while (0);
     if (fp) {
         fclose(fp);
@@ -263,14 +270,20 @@ static int write_to_file(Path* p, Slice s, const char* mode) {
             ret = errno;
             break;
         }
-        size_t pos = 0;
-        do {
-            size_t nwritten = fwrite(s.ptr + pos, 1, s.len - pos, fp);
-            if (!nwritten) {
+
+        size_t twritten = 0;
+        while (1) {
+            if (twritten >= s.len) {
                 break;
             }
-            pos += nwritten;
-        } while (pos < s.len);
+            size_t nwritten = fwrite(s.ptr + twritten, 1, s.len - twritten, fp);
+            if (nwritten) {
+                twritten += nwritten;
+                continue;
+            }
+            // TODO: set error in ret
+            break;
+        }
     } while (0);
     if (fp) {
         fclose(fp);

@@ -1,11 +1,11 @@
-#include <stdio.h>
+#include <unistd.h>
 #include "pizza/util.h"
 #include "pizza/stb_sprintf.h"
 #include "pizza/console.h"
 
 static char* vprint_cb(const char* buf, void* user, int len) {
     UNUSED_ARG(user);
-    int nwritten = fwrite(buf, 1, len, stderr);
+    int nwritten = write(STDERR_FILENO, buf, len);
     if (nwritten != len) return 0;
     return (char*) buf;
 }

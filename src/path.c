@@ -1,8 +1,9 @@
 #include <errno.h>
-#include <stdio.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+// #include "pizza/console.h"
 #include "pizza/path.h"
 
 #define BUFFER_SIZE 4096
@@ -231,43 +232,54 @@ int path_unlink(Path* p) {
 
 int path_slurp(Path* p, Buffer* b) {
     int ret = 0;
-    FILE* fp = 0;
+    int fd = -1;
     do {
-        fp = fopen(p->name.ptr, "r");
-        if (!fp) {
-            ret = errno;
+        int flags = O_RDONLY;
+        fd = open(p->name.ptr, flags);
+        int err = fd < 0 ? errno : 0;
+        // console_printf("OPEN R [%s] %b => %d (%d)\n", p->name.ptr, flags, fd, err);
+        if (err) {
+            ret = err;
             break;
         }
 
         while (1) {
             char tmp[BUFFER_SIZE];
-            size_t nread = fread(tmp, 1, BUFFER_SIZE, fp);
+            ssize_t nread = read(fd, tmp, BUFFER_SIZE);
+            if (nread == 0) {
+                break;
+            }
             if (nread > 0) {
+                // console_printf("READ %u\n", nread);
                 buffer_append_string(b, tmp, nread);
+                continue;
             }
-            if (feof(fp)) {
-                break;
-            }
-            if (ferror(fp)) {
-                // TODO: set error in ret
-                break;
-            }
+            ret = errno;
+            break;
         }
     } while (0);
-    if (fp) {
-        fclose(fp);
-        fp = 0;
+    if (fd >= 0) {
+        int r = close(fd);
+        int err = r < 0 ? errno : 0;
+        // console_printf("CLOSE [%s] %d => %d (%d)\n", p->name.ptr, fd, r, err);
+        if (!ret && err) {
+            ret = err;
+        }
     }
     return ret;
 }
 
-static int write_to_file(Path* p, Slice s, const char* mode) {
+static int write_to_file(Path* p, Slice s, int action) {
     int ret = 0;
-    FILE* fp = 0;
+    int fd = -1;
     do {
-        fp = fopen(p->name.ptr, mode);
-        if (!fp) {
-            ret = errno;
+        int flags = O_CREAT | O_WRONLY | action;
+        mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH; // 0644
+        fd = open(p->name.ptr, flags, mode);
+        int err = fd < 0 ? errno : 0;
+        // console_printf("OPEN %s [%s] %b => %d (%d)\n", append ? "A" : "C", p->name.ptr, flags, fd, err);
+        if (err) {
+            ret = err;
             break;
         }
 
@@ -276,28 +288,33 @@ static int write_to_file(Path* p, Slice s, const char* mode) {
             if (twritten >= s.len) {
                 break;
             }
-            size_t nwritten = fwrite(s.ptr + twritten, 1, s.len - twritten, fp);
+            ssize_t nwritten = write(fd, s.ptr + twritten, s.len - twritten);
             if (nwritten) {
+                // console_printf("WRITE %u\n", nwritten);
                 twritten += nwritten;
                 continue;
             }
-            // TODO: set error in ret
+            ret = errno;
             break;
         }
     } while (0);
-    if (fp) {
-        fclose(fp);
-        fp = 0;
+    if (fd >= 0) {
+        int r = close(fd);
+        int err = r < 0 ? errno : 0;
+        // console_printf("CLOSE [%s] %d => %d (%d)\n", p->name.ptr, fd, r, err);
+        if (!ret && err) {
+            ret = err;
+        }
     }
     return ret;
 }
 
 int path_spew(Path* p, Slice s) {
-    return write_to_file(p, s, "w");
+    return write_to_file(p, s, O_TRUNC);
 }
 
 int path_append(Path* p, Slice s) {
-    return write_to_file(p, s, "a");
+    return write_to_file(p, s, O_APPEND);
 }
 
 static int last_slash(Path* p) {

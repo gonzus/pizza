@@ -182,6 +182,22 @@ static void test_path_spew_slurp_append(Path* tmp) {
     tr = buffer_slice(&br);
     ok(slice_equal(ts, tr), "path [%s] has correct contents after being appended to", p.name.ptr);
 
+    buffer_clear(&bs);
+    Slice sf = slice_from_string("This particular hobbit was called Bilbo Baggins.\n", 0);
+    for (int j = 0; j < 100; ++j) {
+        buffer_append_slice(&bs, sf);
+    }
+    ts = buffer_slice(&bs);
+    path_spew(&p, ts);
+
+    path_exists(&p, &e);
+    ok(e, "path [%s] exists after being spewed to", p.name.ptr);
+
+    buffer_clear(&br);
+    path_slurp(&p, &br);
+    tr = buffer_slice(&br);
+    ok(slice_equal(ts, tr), "path [%s] has correct contents after being spewed to when it already existed", p.name.ptr);
+
     path_unlink(&p);
 
     buffer_destroy(&br);

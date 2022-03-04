@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "pizza/stb_sprintf.h"
 #include "pizza/console.h"
+#include "pizza/log.h"
 #include "pizza/memory.h"
 
 static void dump_line(int row, const char* byte, int white, const char* text) {
@@ -52,11 +53,9 @@ void* memory_realloc(void* ptr, size_t len) {
 
     // bad things happened
     if (errno) {
-        console_printf("Error %d (%s) calling realloc(%p, %lu)",
-                errno, strerror(errno), ptr, len);
+        LOG_WARNING("Could not realloc %p to %lu bytes", ptr, len);
     } else {
-        console_printf("Could not allocate memory calling realloc(%p, %lu)\n",
-                ptr, len);
+        LOG_WARNING("Could not allocate memory to realloc %p to %lu bytes", ptr, len);
     }
     abort();
     return 0;

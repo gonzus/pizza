@@ -3,7 +3,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
-// #include "pizza/console.h"
+#include "pizza/log.h"
 #include "pizza/path.h"
 
 #define BUFFER_SIZE 4096
@@ -237,7 +237,7 @@ int path_slurp(Path* p, Buffer* b) {
         int flags = O_RDONLY;
         fd = open(p->name.ptr, flags);
         int err = fd < 0 ? errno : 0;
-        // console_printf("OPEN R [%s] %b => %d (%d)\n", p->name.ptr, flags, fd, err);
+        LOG_DEBUG("OPEN R [%s] %b => %d (%d)", p->name.ptr, flags, fd, err);
         if (err) {
             ret = err;
             break;
@@ -250,7 +250,7 @@ int path_slurp(Path* p, Buffer* b) {
                 break;
             }
             if (nread > 0) {
-                // console_printf("READ %u\n", nread);
+                LOG_DEBUG("READ %u", nread);
                 buffer_append_string(b, tmp, nread);
                 continue;
             }
@@ -261,7 +261,7 @@ int path_slurp(Path* p, Buffer* b) {
     if (fd >= 0) {
         int r = close(fd);
         int err = r < 0 ? errno : 0;
-        // console_printf("CLOSE [%s] %d => %d (%d)\n", p->name.ptr, fd, r, err);
+        LOG_DEBUG("CLOSE [%s] %d => %d (%d)", p->name.ptr, fd, r, err);
         if (!ret && err) {
             ret = err;
         }
@@ -277,7 +277,7 @@ static int write_to_file(Path* p, Slice s, int action) {
         mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH; // 0644
         fd = open(p->name.ptr, flags, mode);
         int err = fd < 0 ? errno : 0;
-        // console_printf("OPEN %s [%s] %b => %d (%d)\n", append ? "A" : "C", p->name.ptr, flags, fd, err);
+        LOG_DEBUG("OPEN %s [%s] %b => %d (%d)", action == O_TRUNC ? "C" : "A", p->name.ptr, flags, fd, err);
         if (err) {
             ret = err;
             break;
@@ -290,7 +290,7 @@ static int write_to_file(Path* p, Slice s, int action) {
             }
             ssize_t nwritten = write(fd, s.ptr + twritten, s.len - twritten);
             if (nwritten) {
-                // console_printf("WRITE %u\n", nwritten);
+                LOG_DEBUG("WRITE %u", nwritten);
                 twritten += nwritten;
                 continue;
             }
@@ -301,7 +301,7 @@ static int write_to_file(Path* p, Slice s, int action) {
     if (fd >= 0) {
         int r = close(fd);
         int err = r < 0 ? errno : 0;
-        // console_printf("CLOSE [%s] %d => %d (%d)\n", p->name.ptr, fd, r, err);
+        LOG_DEBUG("CLOSE [%s] %d => %d (%d)", p->name.ptr, fd, r, err);
         if (!ret && err) {
             ret = err;
         }

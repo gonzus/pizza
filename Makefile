@@ -1,4 +1,4 @@
-first: all
+.DEFAULT_GOAL := all
 
 NAME = pizza
 
@@ -66,6 +66,7 @@ C_SRC_LIB = \
 	crypto.c \
 	hash.c \
 	deflator.c \
+	regex.c \
 	util.c \
 
 C_OBJ_LIB = $(patsubst %.c, %.o, $(C_SRC_LIB))

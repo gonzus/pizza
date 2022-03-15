@@ -67,7 +67,7 @@ static void log_print(int level, const char* file, int line, const char* fmt, va
     struct tm* local = localtime(&seconds);
 
     pid_t pid = getpid();
-    pid_t tid = gettid();
+    pid_t tid = 0; // gettid();
 
     console_printf("%%%.3s %04d%02d%02d %02d%02d%02d %6ld %6ld | %s:%d | ",
             log_level_label[level],

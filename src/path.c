@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/time.h>

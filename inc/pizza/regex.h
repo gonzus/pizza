@@ -1,8 +1,9 @@
 #ifndef REGEX_H_
 #define REGEX_H_
 
-/* An input string read one character at a time.
-*/
+/*
+ * An input string read one character at a time.
+ */
 typedef struct ReInput ReInput;
 struct ReInput {
     const unsigned char *z;  /* All text */
@@ -10,8 +11,9 @@ struct ReInput {
     int mx;                  /* EOF when i >= mx */
 };
 
-/* A compiled NFA (or an NFA that is in the process of being compiled) is
- ** an instance of the following object.
+/*
+ * A compiled NFA (or an NFA that is in the process of being compiled) is an
+ * instance of the following object.
  */
 typedef struct ReCompiled ReCompiled;
 struct ReCompiled {
@@ -26,6 +28,8 @@ struct ReCompiled {
     unsigned nAlloc;            /* Slots allocated for aOp[] and aArg[] */
 };
 
+// TODO: decide on the definite API for this
+// Hopefully use Slice and Buffer, and stop allocating memory manually?
 const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase);
 int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn);
 void re_free(ReCompiled *pRe);

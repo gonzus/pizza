@@ -54,15 +54,15 @@ static void test_format_numbers(void) {
         switch (data[j].t) {
             case 0:
                 buffer_format_unsigned(&b, data[j].u);
-                sprintf(tmp, "%llu", data[j].u);
+                snprintf(tmp, 1024, "%llu", data[j].u);
                 break;
             case 1:
                 buffer_format_signed(&b, data[j].s);
-                sprintf(tmp, "%lld", data[j].s);
+                snprintf(tmp, 1024, "%lld", data[j].s);
                 break;
             case 2:
                 buffer_format_double(&b, data[j].d);
-                sprintf(tmp, "%f", data[j].d);
+                snprintf(tmp, 1024, "%f", data[j].d);
                 break;
             default:
                 continue;
@@ -73,21 +73,21 @@ static void test_format_numbers(void) {
     }
 }
 
-static void print_and_compare(Buffer* b, char* str, const char* fmt, ...) {
+static void print_and_compare(Buffer* b, char* str, int len, const char* fmt, ...) {
     va_list ap;
     va_list aq;
     va_start(ap, fmt);
     va_copy(aq, ap);
 
-    vsprintf(str, fmt, ap);
+    vsnprintf(str, len, fmt, ap);
     va_end(ap);
 
     buffer_clear(b);
     buffer_format_vprint(b, fmt, aq);
     va_end(aq);
 
-    int len = strlen(str);
-    if (len > MAX_STR) {
+    int l = strlen(str);
+    if (l > MAX_STR) {
         cmp_mem(b->ptr, str, b->len, "buffer_format_print {%.*s...} => OK", MAX_STR, str);
     } else {
         cmp_mem(b->ptr, str, b->len, "buffer_format_print {%s} => OK", str);
@@ -98,8 +98,8 @@ static void test_format_print(void) {
     char str[1024];
     Buffer b; buffer_build(&b);
 
-    print_and_compare(&b, str, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
-    print_and_compare(&b, str, "A more %-5.5s thing with pi=%7.4f", "complicated", M_PI);
+    print_and_compare(&b, str, 1024, " Movie year %d, rating %.1f, name [%5.5s]", 1968, 8.3, "2001");
+    print_and_compare(&b, str, 1024, "A more %-5.5s thing with pi=%7.4f", "complicated", M_PI);
 
     buffer_destroy(&b);
 }
@@ -108,8 +108,8 @@ static void test_stack(void) {
     char str[1024];
     Buffer b; buffer_build(&b);
 
-    print_and_compare(&b, str, "This fits on the %s", "stack");
-    print_and_compare(&b, str, "This ALSO fits there");
+    print_and_compare(&b, str, 1024, "This fits on the %s", "stack");
+    print_and_compare(&b, str, 1024, "This ALSO fits there");
 
     buffer_destroy(&b);
 }
@@ -119,7 +119,7 @@ static void test_stack_heap(void) {
     Buffer b; buffer_build(&b);
 
     const char* s = "01234567890123456789012345678901234567890123456789";
-    print_and_compare(&b, str, "%s%s%s%s%s%s%s%s%s%s%s%s", s, s, s, s, s, s, s, s, s, s, s, s);
+    print_and_compare(&b, str, 1024, "%s%s%s%s%s%s%s%s%s%s%s%s", s, s, s, s, s, s, s, s, s, s, s, s);
 
     buffer_destroy(&b);
 }

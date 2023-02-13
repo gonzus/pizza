@@ -12,7 +12,7 @@ static void test_levels(void) {
     cmp_ok(level, "<", LOG_LEVEL_LAST, "--- Checking runtime level %d ---", level);
 
     char level_str[50];
-    sprintf(level_str, "%d", level);
+    snprintf(level_str, 50, "%d", level);
     setenv(LOG_LEVEL_ENV, level_str, 1);
     log_reset(1, 1);
 

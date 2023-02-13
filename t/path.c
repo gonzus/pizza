@@ -9,8 +9,8 @@
 static void test_path_mkdir(Path* tmp) {
     time_t seconds = time(0);
     struct tm* local = localtime(&seconds);
-    char dir[512];
-    sprintf(dir, "/tmp/pizza_test_path_%04d%02d%02d_%02d%02d%02d_%d",
+    char dir[1024];
+    snprintf(dir, 512, "/tmp/pizza_test_path_%04d%02d%02d_%02d%02d%02d_%d",
             local->tm_year + 1900, local->tm_mon  + 1, local->tm_mday,
             local->tm_hour, local->tm_min, local->tm_sec,
             getpid());
@@ -54,7 +54,7 @@ static void test_path_node(Path* tmp) {
     for (uint32_t j = 0; j < ALEN(data); ++j) {
         int e = 0;
         char name[1024];
-        sprintf(name, "%s/%s", tmp->name.ptr, data[j].name);
+        snprintf(name, 1024, "%s/%s", tmp->name.ptr, data[j].name);
         Path p; path_from_string(&p, name, 0);
 
         path_exists(&p, &e);

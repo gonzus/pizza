@@ -4,41 +4,31 @@ NAME = pizza
 
 CC = cc
 # CC = clang
+LD = cc
 
-# CFLAGS += -std=c89 -Wno-gcc-compat -Wno-comment
-# CFLAGS += -std=c99
-CFLAGS += -std=c11
+AFLAGS += -std=c11
+AFLAGS += -g
+AFLAGS += -fsanitize=undefined
+AFLAGS += -fsanitize=address   # cannot be used with thread
+# AFLAGS += -fsanitize=thread  # cannot be used with address
+# AFLAGS += -fsanitize=memory  # not supported on M1
+
+CFLAGS += $(AFLAGS)
+CFLAGS += -c
+CFLAGS += -Wall -Wextra -Wshadow -Wpedantic
+# CFLAGS += -D_GNU_SOURCE -D_XOPEN_SOURCE -D_POSIX_C_SOURCE=200809L
+CFLAGS += -I./inc/pizza -I/usr/local/include
 
 # see more log messages
 CFLAGS += -DLOG_LEVEL=1
 
-# uncomment to make warnings into errors
-# CFLAGS += -Werror
-
-# uncomment to stop complaints about unused functions
-# CFLAGS += -Wno-unused-function
-
-CFLAGS += -I./inc/pizza
-CFLAGS += -Wall -Wextra -Wshadow
-CFLAGS += -Wpedantic
-CFLAGS += -D_DEFAULT_SOURCE -D_GNU_SOURCE
+# CFLAGS += -D_DEFAULT_SOURCE -D_GNU_SOURCE
 
 CFLAGS += -g
 # CFLAGS += -O3
 
-# CFLAGS += -fsanitize=address
-# LDFLAGS += -fsanitize=address
-
-# CFLAGS += -fsanitize=undefined -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
-# LDFLAGS += -fsanitize=undefined -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow
-
-# CFLAGS += -fsanitize=thread
-# LDFLAGS += -fsanitize=thread
-
-# NOTE: this may produce false positives unless all code (including libraries)
-# is compiled with these flags.
-# CFLAGS += -fsanitize=memory
-# LDFLAGS += -fsanitize=memory
+LDFLAGS += $(AFLAGS)
+LDFLAGS += -L. -L/usr/local/lib
 
 LIBRARY = lib$(NAME).a
 
@@ -84,7 +74,7 @@ C_EXE_TEST = $(patsubst %.c, %, $(C_SRC_TEST))
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 $(C_EXE_TEST): %: %.o $(LIBRARY)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(TEST_LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(TEST_LIBS)
 
 tests: $(C_EXE_TEST)  ## (re)build all tests
 

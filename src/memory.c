@@ -53,9 +53,9 @@ void* memory_realloc(void* ptr, size_t len) {
 
     // bad things happened
     if (errno) {
-        LOG_WARNING("Could not realloc %p to %lu bytes", ptr, len);
+        LOG_WARN("Could not realloc %p to %lu bytes", ptr, len);
     } else {
-        LOG_WARNING("Could not allocate memory to realloc %p to %lu bytes", ptr, len);
+        LOG_WARN("Could not allocate memory to realloc %p to %lu bytes", ptr, len);
     }
     abort();
     return 0;

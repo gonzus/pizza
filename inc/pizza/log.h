@@ -19,9 +19,10 @@
 
 #define LOG_LEVEL_DEBUG      0
 #define LOG_LEVEL_INFO       1
-#define LOG_LEVEL_WARNING    2
+#define LOG_LEVEL_WARN       2
 #define LOG_LEVEL_ERROR      3
-#define LOG_LEVEL_LAST       4
+#define LOG_LEVEL_FATAL      4
+#define LOG_LEVEL_LAST       5
 
 // Compile-time default log level
 #define LOG_LEVEL_DEFAULT LOG_LEVEL_INFO
@@ -50,18 +51,25 @@
 #define LOG_INFO(...)    do {} while (0)
 #endif
 
-// LOG_WARNING -- print warning messages
-#if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_WARNING
-#define LOG_WARNING(...) do { log_print_warning(__FILE__, __LINE__, __VA_ARGS__); } while (0)
+// LOG_WARN -- print warning messages
+#if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_WARN
+#define LOG_WARN(...) do { log_print_warn(__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
-#define LOG_WARNING(...) do {} while (0)
+#define LOG_WARN(...) do {} while (0)
 #endif
 
-// LOG_ERROR -- print error messages and call abort()
+// LOG_ERROR -- print error messages including possible errno
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_ERROR
 #define LOG_ERROR(...)   do { log_print_error  (__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_ERROR(...)   do {} while (0)
+#endif
+
+// LOG_FATAL -- print error messages including possible errno and call abort()
+#if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_FATAL
+#define LOG_FATAL(...)   do { log_print_error  (__FILE__, __LINE__, __VA_ARGS__); } while (0)
+#else
+#define LOG_FATAL(...)   do {} while (0)
 #endif
 
 // A generic macro LOG that expands to LOG_INFO.
@@ -79,10 +87,11 @@ typedef struct LogInfo {
 void log_reset(int skip_abort_on_error, int skip_print_output);
 
 // Implementations of the real logging functions, per level.
-void log_print_debug  (const char* file, int line, const char* fmt, ...);
-void log_print_info   (const char* file, int line, const char* fmt, ...);
-void log_print_warning(const char* file, int line, const char* fmt, ...);
-void log_print_error  (const char* file, int line, const char* fmt, ...);
+void log_print_debug(const char* file, int line, const char* fmt, ...);
+void log_print_info (const char* file, int line, const char* fmt, ...);
+void log_print_warn (const char* file, int line, const char* fmt, ...);
+void log_print_error(const char* file, int line, const char* fmt, ...);
+void log_print_fatal(const char* file, int line, const char* fmt, ...);
 
 // get log information
 const LogInfo* log_get_info(void);

@@ -25,8 +25,8 @@ static void test_levels(void) {
                 case LOG_LEVEL_INFO:
                     LOG_INFO("LOG_INFO %d", r);
                     break;
-                case LOG_LEVEL_WARNING:
-                    LOG_WARNING("LOG_WARNING %d", r);
+                case LOG_LEVEL_WARN:
+                    LOG_WARN("LOG_WARN%d", r);
                     break;
                 case LOG_LEVEL_ERROR:
                     LOG_ERROR("LOG_ERROR %d", r);

@@ -4,8 +4,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include "pizza/log.h"
-#include "pizza/path.h"
+#include "log.h"
+#include "path.h"
 
 #define BUFFER_SIZE 4096
 

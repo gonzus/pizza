@@ -1,6 +1,6 @@
 #include <string.h>
 #include <tap.h>
-#include "pizza/wedge.h"
+#include "wedge.h"
 
 static void test_char(void) {
     char c = 'Q';

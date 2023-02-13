@@ -18,7 +18,7 @@ CFLAGS += -DLOG_LEVEL=1
 # uncomment to stop complaints about unused functions
 # CFLAGS += -Wno-unused-function
 
-CFLAGS += -I./inc
+CFLAGS += -I./inc/pizza
 CFLAGS += -Wall -Wextra -Wshadow
 CFLAGS += -Wpedantic
 CFLAGS += -D_DEFAULT_SOURCE -D_GNU_SOURCE

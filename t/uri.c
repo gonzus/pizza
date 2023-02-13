@@ -1,6 +1,6 @@
 #include <string.h>
 #include <tap.h>
-#include "pizza/uri.h"
+#include "uri.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

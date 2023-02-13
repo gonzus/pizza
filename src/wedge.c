@@ -1,5 +1,5 @@
-#include "pizza/memory.h"
-#include "pizza/wedge.h"
+#include "memory.h"
+#include "wedge.h"
 
 void build_from_slice(Wedge* w, Slice s, int null_terminated);
 

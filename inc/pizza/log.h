@@ -67,7 +67,7 @@
 
 // LOG_FATAL -- print error messages including possible errno and call abort()
 #if LOG_LEVEL_COMPILE_TIME <= LOG_LEVEL_FATAL
-#define LOG_FATAL(...)   do { log_print_error  (__FILE__, __LINE__, __VA_ARGS__); } while (0)
+#define LOG_FATAL(...)   do { log_print_fatal  (__FILE__, __LINE__, __VA_ARGS__); } while (0)
 #else
 #define LOG_FATAL(...)   do {} while (0)
 #endif

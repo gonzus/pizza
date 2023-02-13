@@ -1,6 +1,6 @@
 #include <time.h>
 #include <tap.h>
-#include "pizza/hms.h"
+#include "hms.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

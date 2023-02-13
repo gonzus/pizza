@@ -1,10 +1,10 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#include "pizza/stb_sprintf.h"
-#include "pizza/console.h"
-#include "pizza/log.h"
-#include "pizza/memory.h"
+#include "stb_sprintf.h"
+#include "console.h"
+#include "log.h"
+#include "memory.h"
 
 static void dump_line(int row, const char* byte, int white, const char* text) {
     console_printf("%06x | %s%*s | %-16s |\n", row, byte, white, "", text);

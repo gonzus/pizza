@@ -56,7 +56,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
-#include "pizza/regex.h"
+#include "regex.h"
 
 #define sqlite3_malloc(s)         malloc(s)
 #define sqlite3_malloc64(s)       malloc(s)

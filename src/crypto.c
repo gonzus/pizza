@@ -1,7 +1,7 @@
 #include <string.h>
-#include "pizza/blowfish.h"
-#include "pizza/md5.h"
-#include "pizza/crypto.h"
+#include "blowfish.h"
+#include "md5.h"
+#include "crypto.h"
 
 #define DECRYPT(pos, iv, orig, last) \
     do { \

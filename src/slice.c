@@ -1,6 +1,7 @@
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
-#include "pizza/slice.h"
+#include "slice.h"
 
 static Slice slice_null = { .ptr = 0, .len = 0 };
 
@@ -30,17 +31,47 @@ Slice slice_trim(Slice s) {
     return slice_from_memory(s.ptr + b, e - b);
 }
 
-int slice_int(Slice s, int* val) {
-    int ret = 1;
+int slice_integer(Slice s, long int* val) {
     *val = 0;
-    for (uint32_t j = 0; j < s.len; ++j) {
-        if (!isdigit(s.ptr[j])) {
-            ret = 0;
-            break;
-        }
-        *val = *val * 10 + s.ptr[j] - '0';
-    }
-    return ret;
+    char fmt[100];
+    snprintf(fmt, 100, "%%%uld%%n", s.len);
+    int bytes = 0;
+    int items = sscanf(s.ptr, fmt, val, &bytes);
+    if (items != 1 || (uint32_t) bytes != s.len) return 0;
+    return 1;
+}
+
+int slice_real(Slice s, double* val) {
+    *val = 0;
+    char fmt[100];
+    snprintf(fmt, 100, "%%%ulf%%n", s.len);
+    int bytes = 0;
+    int items = sscanf(s.ptr, fmt, val, &bytes);
+    if (items != 1 || (uint32_t) bytes != s.len) return 0;
+    return 1;
+}
+
+bool slice_begins_with(Slice s, Slice w) {
+  if (s.len < w.len) return false;
+  for (uint32_t j = 0; j < w.len; ++j) {
+    if (s.ptr[j] != w.ptr[j]) return false;
+  }
+  return true;
+}
+
+Slice slice_advance(Slice s, uint32_t len) {
+  if (len > s.len) len = s.len;
+  Slice t = s;
+  t.ptr += len;
+  t.len -= len;
+  return t;
+}
+
+Slice slice_retract(Slice s, uint32_t len) {
+  if (len > s.len) len = s.len;
+  Slice t = s;
+  t.len -= len;
+  return t;
 }
 
 int slice_compare(Slice l, Slice r) {
@@ -72,7 +103,7 @@ Slice slice_find_byte(Slice s, char t) {
         }
     }
     if (j < s.len) {
-        return slice_from_memory(s.ptr + j, 1);
+        return slice_from_memory(s.ptr + j, s.len - j);
     }
     return slice_null;
 }
@@ -82,7 +113,7 @@ Slice slice_find_slice(Slice s, Slice t) {
         return slice_null;
     }
 
-#if defined(_GNU_SOURCE)
+#if 0 && defined(_GNU_SOURCE)
     const char* p = memmem(s.ptr, s.len, t.ptr, t.len);
     if (p) {
         return slice_from_memory(p, t.len);

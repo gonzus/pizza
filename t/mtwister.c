@@ -1,5 +1,5 @@
 #include <tap.h>
-#include "pizza/mtwister.h"
+#include "mtwister.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

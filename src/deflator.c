@@ -1,6 +1,6 @@
 #include <zlib.h>
-#include "pizza/memory.h"
-#include "pizza/deflator.h"
+#include "memory.h"
+#include "deflator.h"
 
 #define ZLIB_CHUNK 16384
 #define ZLIB_LEVEL Z_BEST_SPEED

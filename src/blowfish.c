@@ -1,6 +1,6 @@
 #include <assert.h>
 // #include <endian.h>
-#include "pizza/blowfish.h"
+#include "blowfish.h"
 
 /*
  * Make preprocessor dance a bit to determine if we are running under a Big or

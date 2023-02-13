@@ -1,5 +1,5 @@
 #include <ctype.h>
-#include "pizza/uri.h"
+#include "uri.h"
 
 #define NIBBLE_BITS 4
 #define MAKE_BYTE(nh, nl) (((nh) << NIBBLE_BITS) | (nl))

@@ -1,7 +1,7 @@
 #include <pthread.h>
 #include <stdlib.h>
-#include "pizza/memory.h"
-#include "pizza/thrpool.h"
+#include "memory.h"
+#include "thrpool.h"
 
 // Keep in mind that each pthread needs stack space
 #define MAX_THREAD_COUNT     64

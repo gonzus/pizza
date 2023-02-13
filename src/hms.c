@@ -1,5 +1,5 @@
 #include <time.h>
-#include "pizza/hms.h"
+#include "hms.h"
 
 int hms_decode(int hms, int* h, int* m, int* s) {
     int ss = hms % 100;

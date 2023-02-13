@@ -2,7 +2,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <tap.h>
-#include "pizza/path.h"
+#include "path.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 
@@ -273,28 +273,27 @@ static void test_path_family(void) {
 }
 
 enum {
-    VISIT_FILE,
+    VISIT_BLOCKDEV,
+    VISIT_CHARDEV,
     VISIT_DIR,
+    VISIT_FILE,
     VISIT_SYMLINK,
     VISIT_FIFO,
     VISIT_SOCKET,
-    VISIT_CHARDEV,
-    VISIT_BLOCKDEV,
     VISIT_LAST,
 };
 
-static struct {
-    const char* label;
-    uint8_t type;
-    int min;
-} VisitData[] = {
-    { "files"     , DT_REG  , 1 },
-    { "dirs"      , DT_DIR  , 1 },
-    { "symlinks"  , DT_LNK  , 1 },
-    { "fifos"     , DT_FIFO , 0 },
-    { "sockets"   , DT_SOCK , 0 },
-    { "chardevs"  , DT_CHR  , 1 },
-    { "blockdevs" , DT_BLK  , 1 },
+struct VisitMap {
+    uint8_t d_type;
+    int visit;
+} VisitMap[] = {
+  { DT_BLK , VISIT_BLOCKDEV },
+  { DT_CHR , VISIT_CHARDEV  },
+  { DT_DIR , VISIT_DIR      },
+  { DT_REG , VISIT_FILE     },
+  { DT_LNK , VISIT_SYMLINK  },
+  { DT_FIFO, VISIT_FIFO     },
+  { DT_SOCK, VISIT_SOCKET   },
 };
 
 typedef struct VisitStats {
@@ -306,17 +305,17 @@ static int visitor(Path* p, struct dirent* entry, void* arg) {
     do {
         if (!entry) break;
 #if 0
-        printf("[%.*s] [%s] => [%lu] [%u] - [%s]\n",
+        printf("[%.*s] [%s] => [%llu] [%u] - [%s]\n",
                p->name.len, p->name.ptr, entry->d_name, entry->d_ino,
                (uint32_t) entry->d_type, path_entry_type(entry->d_type));
 #endif
-        for (uint32_t what = 0; what < VISIT_LAST; ++what) {
-            if (VisitData[what].type != entry->d_type) continue;
+        for (uint32_t w = 0; w < VISIT_LAST; ++w) {
+            if (VisitMap[w].d_type != entry->d_type) continue;
 
-            ++stats->visits[what];
+            ++stats->visits[VisitMap[w].visit];
             break;
         }
-        if (entry->d_type != DT_DIR) break;
+        if (entry->d_type != DT_DIR) break; // stop recursion unless dir
         if (path_skip_visit(entry->d_name)) break;
 
         Path child; path_build(&child);
@@ -328,15 +327,75 @@ static int visitor(Path* p, struct dirent* entry, void* arg) {
     return 0;
 }
 
-static void test_path_visit() {
+struct VisitInfo {
+    int visit;
+    int min;
+};
+
+static struct VisitShow {
+    uint8_t type;
+    const char* label;
+} VisitShow[] = {
+    { VISIT_BLOCKDEV, "blockdevs" },
+    { VISIT_CHARDEV, "chardevs"  },
+    { VISIT_DIR , "dirs"      },
+    { VISIT_FILE, "files"     },
+    { VISIT_SYMLINK, "symlinks"  },
+    { VISIT_FIFO, "fifos"     },
+    { VISIT_SOCKET, "sockets"   },
+};
+
+static void test_path_visit_dir(const char* dir, struct VisitInfo* info) {
     VisitStats stats = {0};
-    Path p; path_from_string(&p, "/dev", 0);
+    Path p; path_from_string(&p, dir, 0);
     path_visit(&p, visitor, &stats);
     for (uint32_t what = 0; what < VISIT_LAST; ++what) {
-        ok(stats.visits[what] >= VisitData[what].min, "[%s]: found %4d >= %-2d %s",
-           p.name.ptr, stats.visits[what], VisitData[what].min, VisitData[what].label);
+        ok(stats.visits[what] >= info[what].min, "[%.*s]: found %4d >= %-2d %s",
+           p.name.len, p.name.ptr, stats.visits[what], info[what].min, VisitShow[what].label);
     }
     path_destroy(&p);
+}
+
+static void test_path_visit() {
+  struct VisitInfo vi_bin[] = {
+    { VISIT_BLOCKDEV, 0 },
+    { VISIT_CHARDEV , 0 },
+    { VISIT_DIR     , 1 },
+    { VISIT_FILE    , 1 },
+    { VISIT_SYMLINK , 0 },
+    { VISIT_FIFO    , 0 },
+    { VISIT_SOCKET  , 0 },
+  };
+  struct VisitInfo vi_etc[] = {
+    { VISIT_BLOCKDEV, 0 },
+    { VISIT_CHARDEV , 0 },
+    { VISIT_DIR     , 1 },
+    { VISIT_FILE    , 1 },
+    { VISIT_SYMLINK , 1 },
+    { VISIT_FIFO    , 0 },
+    { VISIT_SOCKET  , 0 },
+  };
+  struct VisitInfo vi_dev[] = {
+    { VISIT_BLOCKDEV, 1 },
+    { VISIT_CHARDEV , 1 },
+    { VISIT_DIR     , 1 },
+    { VISIT_FILE    , 0 },
+    { VISIT_SYMLINK , 1 },
+    { VISIT_FIFO    , 0 },
+    { VISIT_SOCKET  , 0 },
+  };
+  struct VisitConfig {
+    const char* path;
+    struct VisitInfo* info;
+  } config[] = {
+    { "/dev", vi_dev },
+    { "/bin", vi_bin },
+    { "/etc", vi_etc },
+
+  };
+  for (unsigned j = 0; j < ALEN(config); ++j) {
+    test_path_visit_dir(config[j].path, config[j].info);
+  }
 }
 
 int main (int argc, char* argv[]) {

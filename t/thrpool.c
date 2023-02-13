@@ -1,5 +1,5 @@
 #include <tap.h>
-#include "pizza/thrpool.h"
+#include "thrpool.h"
 
 #define NUM_THREADS 4
 

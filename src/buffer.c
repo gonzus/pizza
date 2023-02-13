@@ -1,6 +1,6 @@
-#include "pizza/stb_sprintf.h"
-#include "pizza/memory.h"
-#include "pizza/buffer.h"
+#include "stb_sprintf.h"
+#include "memory.h"
+#include "buffer.h"
 
 #if !defined(va_copy)
 // need this if we want to compile for C89

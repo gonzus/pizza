@@ -1,7 +1,7 @@
 #include <string.h>
 #include <tap.h>
-#include "pizza/memory.h"
-#include "pizza/deflator.h"
+#include "memory.h"
+#include "deflator.h"
 
 #define TEXT_LEN 1024
 

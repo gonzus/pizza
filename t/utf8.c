@@ -1,7 +1,7 @@
 #include <string.h>
 #include <wchar.h>
 #include <tap.h>
-#include "pizza/utf8.h"
+#include "utf8.h"
 
 #define ALEN(a) (int) (sizeof(a) / sizeof(a[0]))
 
@@ -61,7 +61,7 @@ static void test_decode_valid(void) {
     int len = ALEN(utf8);
     Slice encoded = slice_from_memory((const char*) utf8, len);
 
-    for (int pos = 0; !slice_is_empty(encoded); ++pos) {
+    for (int pos = 0; !slice_empty(encoded); ++pos) {
         uint8_t b = encoded.ptr[0];
         uint32_t r = utf8_decode(&encoded);
         cmp_ok(r, "!=", UTF8_INVALID_RUNE, "utf8_decode(0x%x) pos %d OK", (int) b, pos);

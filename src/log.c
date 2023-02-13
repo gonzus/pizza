@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include "pizza/log.h"
+#include "log.h"
 
 #if !defined(LOG_USE_COLOR)
 #define LOG_USE_COLOR 1
@@ -16,16 +16,12 @@
 #if __APPLE__
 
 int pthread_threadid_np(pthread_t thread, uint64_t *thread_id);
-#define gettid(T) pthread_threadid_np(NULL, &T)
+#define GETTID(T) pthread_threadid_np(NULL, &T)
 
 #else
 
-#include <sys/syscall.h>
-#if defined(SYS_gettid)
-#define gettid(T) T = ((pid_t)syscall(SYS_gettid))
-#else
-#define gettid(T) T = 0
-#endif
+#include <sys/types.h>
+#define GETTID(T) T = gettid()
 
 #endif
 
@@ -109,7 +105,7 @@ static void log_print(int level, const char* file, int line, int saved_errno, co
 
     uint64_t pid = getpid();
     uint64_t tid = 0;
-    gettid(tid);
+    GETTID(tid);
 
 #if defined(LOG_USE_COLOR) && LOG_USE_COLOR > 0
     fprintf(stderr, "%s%04d/%02d/%02d %02d:%02d:%02d%s %s%ld %ld%s %s%-5s%s %s%s:%d%s"

@@ -1,6 +1,6 @@
 #include <time.h>
 #include <tap.h>
-#include "pizza/ymd.h"
+#include "ymd.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

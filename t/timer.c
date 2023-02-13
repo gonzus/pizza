@@ -1,6 +1,6 @@
 #include <time.h>
 #include <tap.h>
-#include "pizza/timer.h"
+#include "timer.h"
 
 #define ALEN(a) (int) (sizeof(a) / sizeof(a[0]))
 

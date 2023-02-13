@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <tap.h>
-#include "pizza/hash.h"
+#include "hash.h"
 
 #define ALEN(a) (int) ((sizeof(a) / sizeof((a)[0])))
 

@@ -5,7 +5,8 @@
  * Utility functions.
  */
 
-#define UNUSED_ARG(x) (void) x
+// Mark an arg / variable as unused.
+#define UNUSED(x) (void) x
 
 // We just use a pointer
 struct Buffer;

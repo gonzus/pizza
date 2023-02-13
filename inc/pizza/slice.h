@@ -35,7 +35,7 @@ typedef struct SliceLookup {
 } SliceLookup;
 
 // Return true if Slice is empty (invalid ptr OR zero len).
-#define slice_is_empty(s) ((s).ptr == 0 || (s).len == 0)
+#define slice_empty(s) ((s).ptr == 0 || (s).len == 0)
 
 // Compare two Slices; they are equal if they have the same length and
 // slice_compare() returns 0 for them.
@@ -55,12 +55,21 @@ Slice slice_from_memory(const char* ptr, uint32_t len);
  * These are all fully reentrant.
  */
 
+bool slice_begins_with(Slice s, Slice w);
+
+Slice slice_advance(Slice s, uint32_t len);
+Slice slice_retract(Slice s, uint32_t len);
+
 // Trim white space from beginning and end of slice.
 Slice slice_trim(Slice s);
 
 // Convert a slice to an integer.
 // Return 0 if conversion is not possible, 1 otherwise.
-int slice_int(Slice s, int* val);
+int slice_integer(Slice s, long int* val);
+
+// Convert a slice to a real.
+// Return 0 if conversion is not possible, 1 otherwise.
+int slice_real(Slice s, double* val);
 
 // Compare two Slices, returning: l < r: -1; l > r: 1; l == r: 0
 int slice_compare(Slice l, Slice r);

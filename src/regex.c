@@ -4,58 +4,59 @@
  */
 
 /*
- ** 2012-11-13
- **
- ** The author disclaims copyright to this source code.  In place of
- ** a legal notice, here is a blessing:
- **
- **    May you do good and not evil.
- **    May you find forgiveness for yourself and forgive others.
- **    May you share freely, never taking more than you give.
- **
- ******************************************************************************
- **
- ** The code in this file implements a compact but reasonably
- ** efficient regular-expression matcher for posix extended regular
- ** expressions against UTF8 text.
- **
- **  The following regular expression syntax is supported:
- **
- **     X*      zero or more occurrences of X
- **     X+      one or more occurrences of X
- **     X?      zero or one occurrences of X
- **     X{p,q}  between p and q occurrences of X
- **     (X)     match X
- **     X|Y     X or Y
- **     ^X      X occurring at the beginning of the string
- **     X$      X occurring at the end of the string
- **     .       Match any single character
- **     \c      Character c where c is one of \{}()[]|*+?.
- **     \c      C-language escapes for c in afnrtv.  ex: \t or \n
- **     \uXXXX  Where XXXX is exactly 4 hex digits, unicode value XXXX
- **     \xXX    Where XX is exactly 2 hex digits, unicode value XX
- **     [abc]   Any single character from the set abc
- **     [^abc]  Any single character not in the set abc
- **     [a-z]   Any single character in the range a-z
- **     [^a-z]  Any single character not in the range a-z
- **     \b      Word boundary
- **     \w      Word character.  [A-Za-z0-9_]
- **     \W      Non-word character
- **     \d      Digit
- **     \D      Non-digit
- **     \s      Whitespace character
- **     \S      Non-whitespace character
- **
- ** A nondeterministic finite automaton (NFA) is used for matching, so the
- ** performance is bounded by O(N*M) where N is the size of the regular
- ** expression and M is the size of the input string.  The matcher never
- ** exhibits exponential behavior.  Note that the X{p,q} operator expands
- ** to p copies of X following by q-p copies of X? and that the size of the
- ** regular expression in the O(N*M) performance bound is computed after
- ** this expansion.
+ * 2012-11-13
+ *
+ * The author disclaims copyright to this source code.  In place of
+ * a legal notice, here is a blessing:
+ *
+ *    May you do good and not evil.
+ *    May you find forgiveness for yourself and forgive others.
+ *    May you share freely, never taking more than you give.
+ *
+ * -----------------------------------------------------------------
+ *
+ * The code in this file implements a compact but reasonably
+ * efficient regular-expression matcher for posix extended regular
+ * expressions against UTF8 text.
+ *
+ *  The following regular expression syntax is supported:
+ *
+ *     X*      zero or more occurrences of X
+ *     X+      one or more occurrences of X
+ *     X?      zero or one occurrences of X
+ *     X{p,q}  between p and q occurrences of X
+ *     (X)     match X
+ *     X|Y     X or Y
+ *     ^X      X occurring at the beginning of the string
+ *     X$      X occurring at the end of the string
+ *     .       Match any single character
+ *     \c      Character c where c is one of \{}()[]|*+?.
+ *     \c      C-language escapes for c in afnrtv.  ex: \t or \n
+ *     \uXXXX  Where XXXX is exactly 4 hex digits, unicode value XXXX
+ *     \xXX    Where XX is exactly 2 hex digits, unicode value XX
+ *     [abc]   Any single character from the set abc
+ *     [^abc]  Any single character not in the set abc
+ *     [a-z]   Any single character in the range a-z
+ *     [^a-z]  Any single character not in the range a-z
+ *     \b      Word boundary
+ *     \w      Word character.  [A-Za-z0-9_]
+ *     \W      Non-word character
+ *     \d      Digit
+ *     \D      Non-digit
+ *     \s      Whitespace character
+ *     \S      Non-whitespace character
+ *
+ * A nondeterministic finite automaton (NFA) is used for matching, so the
+ * performance is bounded by O(N*M) where N is the size of the regular
+ * expression and M is the size of the input string.  The matcher never
+ * exhibits exponential behavior.  Note that the X{p,q} operator expands
+ * to p copies of X following by q-p copies of X? and that the size of the
+ * regular expression in the O(N*M) performance bound is computed after
+ * this expansion.
  */
 #include <stdlib.h>
 #include <string.h>
+#include "log.h"
 #include "regex.h"
 
 #define SLICE_MOVE(s, l) \
@@ -84,7 +85,7 @@
 #define RE_EOF            0    /* End of input */
 
 /* The NFA is implemented as sequence of opcodes taken from the following
- ** set.  Each opcode has a single integer argument.
+ * set.  Each opcode has a single integer argument.
  */
 #define RE_OP_MATCH       1    /* Match the one character in the argument */
 #define RE_OP_ANY         2    /* Match any one character.  (Implements ".") */
@@ -108,14 +109,40 @@
 typedef unsigned short ReStateNumber;
 
 /* Because this is an NFA and not a DFA, multiple states can be active at
- ** once.  An instance of the following object records all active states in
- ** the NFA.  The implementation is optimized for the common case where the
- ** number of actives states is small.
+ * once.  An instance of the following object records all active states in
+ * the NFA.  The implementation is optimized for the common case where the
+ * number of actives states is small.
  */
 typedef struct ReStateSet {
   unsigned nState;            /* Number of current states */
   ReStateNumber *aState;      /* Current states */
 } ReStateSet;
+
+void regex_build(Regex* rx) {
+  memset(rx, 0, sizeof(Regex));
+}
+
+/* Free and reclaim all the memory used by a previously compiled
+ * regular expression.  Applications should invoke this routine once
+ * for every call to re_compile() to avoid memory leaks.
+ */
+static void regex_reset(Regex* rx) {
+  if (!rx) return;
+  if (rx->aOp) {
+    sqlite3_free(rx->aOp);
+    rx->aOp = 0;
+  }
+  if (rx->aArg) {
+    sqlite3_free(rx->aArg);
+    rx->aArg = 0;
+  }
+  memset(rx, 0, sizeof(Regex));
+}
+
+void regex_destroy(Regex* rx) {
+  regex_reset(rx);
+  memset(rx, 0, sizeof(Regex));
+}
 
 /* Add a state to the given state set if it is not already there */
 static void re_add_state(ReStateSet *pSet, int newState) {
@@ -126,9 +153,9 @@ static void re_add_state(ReStateSet *pSet, int newState) {
 }
 
 /* Extract the next unicode character from *pzIn and return it.  Advance
- ** *pzIn to the first byte past the end of the character returned.  To
- ** be clear:  this routine converts utf8 to unicode.  This routine is
- ** optimized for the common case where the next character is a single byte.
+ * *pzIn to the first byte past the end of the character returned.  To
+ * be clear:  this routine converts utf8 to unicode.  This routine is
+ * optimized for the common case where the next character is a single byte.
  */
 static unsigned re_next_char(Slice *p) {
   if (SLICE_FINISHED(*p)) return 0;
@@ -181,34 +208,36 @@ static int re_space_char(int c) {
 }
 
 /* Run a compiled regular expression on the zero-terminated input
- ** string zIn[].  Return true on a match and false if there is no match.
+ * string zIn[].  Return true on a match and false if there is no match.
  */
-int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn) {
-  Slice in = slice_from_string((const char*) zIn, nIn);
-
+int regex_match(Regex* rx, Slice text, int* matched) {
+  *matched = 0;
   /* Look for the initial prefix match, if there is one. */
-  if (pRe->nInit) {
+  if (rx->nInit) {
     unsigned j = 0;
-    unsigned char x = pRe->zInit[0];
-    while (SLICE_LEN_GE(in, j + pRe->nInit)
-      && (in.ptr[j] != x || strncmp(in.ptr + j, (const char*) pRe->zInit, pRe->nInit) != 0)
+    unsigned char x = rx->zInit[0];
+    while (SLICE_LEN_GE(text, j + rx->nInit)
+      && (text.ptr[j] != x || strncmp(text.ptr + j, (const char*) rx->zInit, rx->nInit) != 0)
     ) {
         ++j;
       }
-    if (SLICE_LEN_LT(in, j + pRe->nInit)) return 0;
+    if (SLICE_LEN_LT(text, j + rx->nInit)) return 0;
   }
 
   ReStateSet aStateSet[2];
   ReStateNumber aSpace[100];
   ReStateNumber *pToFree = 0;
-  if (pRe->nState <= (sizeof(aSpace) / (sizeof(aSpace[0]) * 2))) {
+  if (rx->nState <= (sizeof(aSpace) / (sizeof(aSpace[0]) * 2))) {
     aStateSet[0].aState = aSpace;
   } else {
-    pToFree = (ReStateNumber*) sqlite3_malloc64(sizeof(ReStateNumber) * 2 * pRe->nState);
-    if (pToFree == 0) return -1;
+    pToFree = (ReStateNumber*) sqlite3_malloc64(sizeof(ReStateNumber) * 2 * rx->nState);
+    if (pToFree == 0) {
+      rx->zErr = "out of memory 2";
+      return 201;
+    }
     aStateSet[0].aState = pToFree;
   }
-  aStateSet[1].aState = &aStateSet[0].aState[pRe->nState];
+  aStateSet[1].aState = &aStateSet[0].aState[rx->nState];
   ReStateSet *pNext = &aStateSet[1];
   pNext->nState = 0;
   re_add_state(pNext, 0);
@@ -217,16 +246,16 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn) {
   unsigned int iSwap = 0;
   for (int c = RE_EOF + 1; !rc && c != RE_EOF && pNext->nState > 0; ) {
     int cPrev = c;
-    c = pRe->xNextChar(&in);
+    c = rx->next(&text);
     ReStateSet *pThis = pNext;
     pNext = &aStateSet[iSwap];
     pNext->nState = 0;
     iSwap = 1 - iSwap;
     for (unsigned int i = 0; !rc && i < pThis->nState; ++i) {
       int x = pThis->aState[i];
-      switch (pRe->aOp[x]) {
+      switch (rx->aOp[x]) {
         case RE_OP_MATCH:
-          if (pRe->aArg[x] == c) re_add_state(pNext, x + 1);
+          if (rx->aArg[x] == c) re_add_state(pNext, x + 1);
           break;
 
         case RE_OP_ANY:
@@ -267,12 +296,12 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn) {
           break;
 
         case RE_OP_FORK:
-          re_add_state(pThis, x + pRe->aArg[x]);
+          re_add_state(pThis, x + rx->aArg[x]);
           re_add_state(pThis, x + 1);
           break;
 
         case RE_OP_GOTO:
-          re_add_state(pThis, x + pRe->aArg[x]);
+          re_add_state(pThis, x + rx->aArg[x]);
           break;
 
         case RE_OP_ACCEPT:
@@ -284,16 +313,16 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn) {
         /* FALL-THROUGH */
         case RE_OP_CC_INC:
           {
-            int n = pRe->aArg[x];
+            int n = rx->aArg[x];
             int hit = 0;
             for (int j = 1; j > 0 && j < n; ++j) {
-              if (pRe->aOp[x + j] == RE_OP_CC_VALUE) {
-                if (pRe->aArg[x + j] == c) {
+              if (rx->aOp[x + j] == RE_OP_CC_VALUE) {
+                if (rx->aArg[x + j] == c) {
                   hit = 1;
                   j = -1;
                 }
               } else {
-                if (pRe->aArg[x + j] <= c && pRe->aArg[x + j + 1] >= c) {
+                if (rx->aArg[x + j] <= c && rx->aArg[x + j + 1] >= c) {
                   hit = 1;
                   j = -1;
                 } else {
@@ -301,7 +330,7 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn) {
                 }
               }
             }
-            if (pRe->aOp[x] == RE_OP_CC_EXC) hit = !hit;
+            if (rx->aOp[x] == RE_OP_CC_EXC) hit = !hit;
             if (hit) re_add_state(pNext, x + n);
             break;
           }
@@ -309,34 +338,35 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn) {
     }
   }
   for (unsigned int i = 0; !rc && i < pNext->nState; ++i) {
-    if (pRe->aOp[pNext->aState[i]] == RE_OP_ACCEPT) {
+    if (rx->aOp[pNext->aState[i]] == RE_OP_ACCEPT) {
       rc = 1;
       break;
     }
   }
 
   sqlite3_free((void*) pToFree);
-  return rc;
+  *matched = rc;
+  return 0;
 }
 
 /* Resize the opcode and argument arrays for an RE under construction.
 */
-static int re_resize(ReCompiled *p, int N) {
-  char *aOp = (char*) sqlite3_realloc64(p->aOp, N * sizeof(p->aOp[0]));
+static int regex_resize(Regex* rx, int N) {
+  char *aOp = (char*) sqlite3_realloc64(rx->aOp, N * sizeof(rx->aOp[0]));
   if (aOp == 0) return 1;
-  p->aOp = aOp;
-  int *aArg = (int*) sqlite3_realloc64(p->aArg, N * sizeof(p->aArg[0]));
+  rx->aOp = aOp;
+  int *aArg = (int*) sqlite3_realloc64(rx->aArg, N * sizeof(rx->aArg[0]));
   if (aArg == 0) return 1;
-  p->aArg = aArg;
-  p->nAlloc = N;
+  rx->aArg = aArg;
+  rx->nAlloc = N;
   return 0;
 }
 
 /* Insert a new opcode and argument into an RE under construction.  The
- ** insertion point is just prior to existing opcode iBefore.
+ * insertion point is just prior to existing opcode iBefore.
  */
-static int re_insert(ReCompiled *p, int iBefore, int op, int arg) {
-  if (p->nAlloc <= p->nState && re_resize(p, p->nAlloc * 2)) return 0;
+static int re_insert(Regex *p, int iBefore, int op, int arg) {
+  if (p->nAlloc <= p->nState && regex_resize(p, p->nAlloc * 2)) return 0;
   for (int i = p->nState; i > iBefore; --i) {
     p->aOp[i] = p->aOp[i - 1];
     p->aArg[i] = p->aArg[i - 1];
@@ -349,23 +379,23 @@ static int re_insert(ReCompiled *p, int iBefore, int op, int arg) {
 
 /* Append a new opcode and argument to the end of the RE under construction.
 */
-static int re_append(ReCompiled *p, int op, int arg) {
+static int re_append(Regex *p, int op, int arg) {
   return re_insert(p, p->nState, op, arg);
 }
 
 /* Make a copy of N opcodes starting at iStart onto the end of the RE
- ** under construction.
+ * under construction.
  */
-static void re_copy(ReCompiled *p, int iStart, int N) {
-  if (p->nState + N >= p->nAlloc && re_resize(p, p->nAlloc * 2 + N)) return;
+static void re_copy(Regex *p, int iStart, int N) {
+  if (p->nState + N >= p->nAlloc && regex_resize(p, p->nAlloc * 2 + N)) return;
   memcpy(&p->aOp[p->nState], &p->aOp[iStart], N * sizeof(p->aOp[0]));
   memcpy(&p->aArg[p->nState], &p->aArg[iStart], N * sizeof(p->aArg[0]));
   p->nState += N;
 }
 
 /* Return true if c is a hexadecimal digit character:  [0-9a-fA-F]
- ** If c is a hex digit, also set *pV = (*pV)*16 + valueof(c).  If
- ** c is not a hex digit *pV is unchanged.
+ * If c is a hex digit, also set *pV = (*pV)*16 + valueof(c).  If
+ * c is not a hex digit *pV is unchanged.
  */
 static int re_hex(int c, int *pV) {
   if (CHAR_IN(c, '0', '9')) {
@@ -382,9 +412,9 @@ static int re_hex(int c, int *pV) {
 }
 
 /* A backslash character has been seen, read the next character and
- ** return its interpretation.
+ * return its interpretation.
  */
-static unsigned re_esc_char(ReCompiled *p) {
+static unsigned re_esc_char(Regex *p) {
   static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";
   static const char zTrans[] = "\a\f\n\r\t\v";
   if (SLICE_FINISHED(p->sIn)) return 0;
@@ -426,42 +456,43 @@ static unsigned re_esc_char(ReCompiled *p) {
 }
 
 /* Forward declaration */
-static const char *re_subcompile_string(ReCompiled*);
+static int re_subcompile_string(Regex*);
 
 /* Peek at the next byte of input */
-static unsigned char rePeek(ReCompiled *p) {
+static unsigned char rePeek(Regex *p) {
   return SLICE_FINISHED(p->sIn) ? 0 : p->sIn.ptr[0];
 }
 
 /* Compile RE text into a sequence of opcodes.  Continue up to the
- ** first unmatched ")" character, then return.  If an error is found,
- ** return a pointer to the error message string.
+ * first unmatched ")" character, then return.  If an error is found,
+ * return a pointer to the error message string.
  */
-static const char *re_subcompile_re(ReCompiled *p) {
+static int re_subcompile_re(Regex *p) {
+  int err = 0;
   int iStart = p->nState;
-  const char *zErr = re_subcompile_string(p);
-  if (zErr) return zErr;
+  err = re_subcompile_string(p);
+  if (err) return err;
 
   while (rePeek(p) == '|') {
     int iEnd = p->nState;
     re_insert(p, iStart, RE_OP_FORK, iEnd + 2 - iStart);
     int iGoto = re_append(p, RE_OP_GOTO, 0);
     SLICE_ADVANCE(p->sIn, 1);
-    zErr = re_subcompile_string(p);
-    if (zErr) return zErr;
+    err = re_subcompile_string(p);
+    if (err) return err;
     p->aArg[iGoto] = p->nState - iGoto;
   }
   return 0;
 }
 
 /* Compile an element of regular expression text (anything that can be
- ** an operand to the "|" operator).  Return NULL on success or a pointer
- ** to the error message if there is a problem.
+ * an operand to the "|" operator).  Return NULL on success or a pointer
+ * to the error message if there is a problem.
  */
-static const char *re_subcompile_string(ReCompiled *p) {
+static int re_subcompile_string(Regex *p) {
   int iPrev = -1;
   unsigned c = 0;
-  while ((c = p->xNextChar(&p->sIn)) != 0) {
+  while ((c = p->next(&p->sIn)) != 0) {
     int iStart = p->nState;
     switch (c) {
       case '|':
@@ -472,9 +503,12 @@ static const char *re_subcompile_string(ReCompiled *p) {
 
       case '(':
         {
-          const char *zErr = re_subcompile_re(p);
-          if (zErr) return zErr;
-          if (rePeek(p) != ')') return "unmatched '('";
+          int err = re_subcompile_re(p);
+          if (err) return err;
+          if (rePeek(p) != ')') {
+            p->zErr = "unmatched '('";
+            return 101;
+          }
           SLICE_ADVANCE(p->sIn, 1);
           break;
         }
@@ -489,24 +523,36 @@ static const char *re_subcompile_string(ReCompiled *p) {
         break;
 
       case '*':
-        if (iPrev < 0) return "'*' without operand";
+        if (iPrev < 0) {
+          p->zErr = "'*' without operand";
+          return 102;
+        }
         re_insert(p, iPrev, RE_OP_GOTO, p->nState - iPrev + 1);
         re_append(p, RE_OP_FORK, iPrev - p->nState + 1);
         break;
 
       case '+':
-        if (iPrev < 0) return "'+' without operand";
+        if (iPrev < 0) {
+          p->zErr = "'+' without operand";
+          return 103;
+        }
         re_append(p, RE_OP_FORK, iPrev - p->nState);
         break;
 
       case '?':
-        if (iPrev < 0) return "'?' without operand";
+        if (iPrev < 0) {
+          p->zErr = "'?' without operand";
+          return 104;
+        }
         re_insert(p, iPrev, RE_OP_FORK, p->nState - iPrev + 1);
         break;
 
       case '{':
         {
-          if (iPrev < 0) return "'{m,n}' without operand";
+          if (iPrev < 0) {
+            p->zErr = "'{m,n}' without operand";
+            return 105;
+          }
 
           int m = 0;
           while (1) {
@@ -524,13 +570,22 @@ static const char *re_subcompile_string(ReCompiled *p) {
               SLICE_ADVANCE(p->sIn, 1);
             }
           }
-          if (c != '}') return "unmatched '{'";
-          if (n > 0 && n < m) return "n less than m in '{m,n}'";
+          if (c != '}') {
+            p->zErr = "unmatched '{'";
+            return 106;
+          }
+          if (n > 0 && n < m) {
+            p->zErr = "n less than m in '{m,n}'";
+            return 107;
+          }
 
           SLICE_ADVANCE(p->sIn, 1);
           int sz = p->nState - iPrev;
           if (m == 0) {
-            if (n == 0) return "both m and n are zero in '{m,n}'";
+            if (n == 0) {
+              p->zErr = "both m and n are zero in '{m,n}'";
+              return 108;
+            }
             re_insert(p, iPrev, RE_OP_FORK, sz + 1);
             --n;
           } else {
@@ -555,15 +610,16 @@ static const char *re_subcompile_string(ReCompiled *p) {
           } else {
             re_append(p, RE_OP_CC_INC, 0);
           }
-          while ((c = p->xNextChar(&p->sIn)) != 0) {
+          while ((c = p->next(&p->sIn)) != 0) {
             if (c == '[' && rePeek(p) == ':') {
-              return "POSIX character classes not supported";
+              p->zErr = "POSIX character classes not supported";
+              return 109;
             }
             if (c == '\\') c = re_esc_char(p);
             if (rePeek(p) == '-') {
               re_append(p, RE_OP_CC_RANGE, c);
               SLICE_ADVANCE(p->sIn, 1);
-              c = p->xNextChar(&p->sIn);
+              c = p->next(&p->sIn);
               if (c == '\\') c = re_esc_char(p);
               re_append(p, RE_OP_CC_RANGE, c);
             } else {
@@ -574,7 +630,10 @@ static const char *re_subcompile_string(ReCompiled *p) {
               break;
             }
           }
-          if (c == 0) return "unclosed '['";
+          if (c == 0) {
+            p->zErr = "unclosed '['";
+            return 110;
+          }
           p->aArg[iFirst] = p->nState - iFirst;
           break;
         }
@@ -611,86 +670,76 @@ static const char *re_subcompile_string(ReCompiled *p) {
   return 0;
 }
 
-/* Free and reclaim all the memory used by a previously compiled
- ** regular expression.  Applications should invoke this routine once
- ** for every call to re_compile() to avoid memory leaks.
- */
-void re_free(ReCompiled *pRe) {
-  if (pRe) {
-    sqlite3_free(pRe->aOp);
-    sqlite3_free(pRe->aArg);
-    sqlite3_free(pRe);
-  }
-}
-
 /*
- ** Compile a textual regular expression in zIn[] into a compiled regular
- ** expression suitable for us by re_match() and return a pointer to the
- ** compiled regular expression in *ppRe.  Return NULL on success or an
- ** error message if something goes wrong.
+ * Compile a textual regular expression in zIn[] into a compiled regular
+ * expression suitable for use by regex_match() and return a pointer to the
+ * compiled regular expression in *ppRe.  Return NULL on success or an
+ * error message if something goes wrong.
  */
-const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase) {
-  *ppRe = 0;
-  ReCompiled *pRe = (ReCompiled*) sqlite3_malloc(sizeof(*pRe));
-  if (pRe == 0) {
-    return "out of memory";
+int regex_compile(Regex* rx, Slice source, int case_insensitive) {
+  regex_reset(rx);
+  rx->next = case_insensitive ? re_next_char_nocase : re_next_char;
+  if (regex_resize(rx, 30)) {
+    regex_reset(rx);
+    rx->zErr = "out of memory 1";
+    return 201;
   }
-  memset(pRe, 0, sizeof(*pRe));
-  pRe->xNextChar = noCase ? re_next_char_nocase : re_next_char;
-  if (re_resize(pRe, 30)) {
-    re_free(pRe);
-    return "out of memory";
-  }
-  if (zIn[0] == '^') {
-    ++zIn;
+  unsigned j = 0;
+  if (source.ptr[j] == '^') {
+    ++j;
   } else {
-    re_append(pRe, RE_OP_ANYSTAR, 0);
+    re_append(rx, RE_OP_ANYSTAR, 0);
   }
-  pRe->sIn = slice_from_string(zIn, 0);
-  const char *zErr = re_subcompile_re(pRe);
-  if (zErr) {
-    re_free(pRe);
-    return zErr;
+  rx->sIn = slice_from_memory(source.ptr + j, source.len - j);
+  int err = re_subcompile_re(rx);
+  if (err) {
+    regex_reset(rx);
+    return err;
   }
-  if (rePeek(pRe) == '$' && SLICE_LEN_LE(pRe->sIn, 1)) {
-    re_append(pRe, RE_OP_MATCH, RE_EOF);
-    re_append(pRe, RE_OP_ACCEPT, 0);
-    *ppRe = pRe;
-  } else if (SLICE_FINISHED(pRe->sIn)) {
-    re_append(pRe, RE_OP_ACCEPT, 0);
-    *ppRe = pRe;
+  if (rePeek(rx) == '$' && SLICE_LEN_LE(rx->sIn, 1)) {
+    re_append(rx, RE_OP_MATCH, RE_EOF);
+    re_append(rx, RE_OP_ACCEPT, 0);
+  } else if (SLICE_FINISHED(rx->sIn)) {
+    re_append(rx, RE_OP_ACCEPT, 0);
   } else {
-    re_free(pRe);
-    return "unrecognized character";
+    regex_reset(rx);
+    rx->zErr = "unrecognized character";
+    return 202;
   }
 
-  /* The following is a performance optimization.  If the regex begins with
-     ** ".*" (if the input regex lacks an initial "^") and afterwards there are
-     ** one or more matching characters, enter those matching characters into
-     ** zInit[].  The re_match() routine can then search ahead in the input
-     ** string looking for the initial match without having to run the whole
-     ** regex engine over the string.  Do not worry able trying to match
-     ** unicode characters beyond plane 0 - those are very rare and this is
-     ** just an optimization. */
-  if (pRe->aOp[0] == RE_OP_ANYSTAR && !noCase) {
-    int j = 0;
-    for (int i = 1; j < (int) sizeof(pRe->zInit) - 2 && pRe->aOp[i] == RE_OP_MATCH; ++i) {
-      unsigned x = pRe->aArg[i];
+  /*
+   * The following is a performance optimization.  If the regex begins with
+   * ".*" (if the input regex lacks an initial "^") and afterwards there are
+   * one or more matching characters, enter those matching characters into
+   * zInit[].  The regex_match() routine can then search ahead in the input
+   * string looking for the initial match without having to run the whole
+   * regex engine over the string.  Do not worry able trying to match
+   * unicode characters beyond plane 0 - those are very rare and this is
+   * just an optimization.
+   */
+  if (rx->aOp[0] == RE_OP_ANYSTAR && !case_insensitive) {
+    j = 0;
+    for (int i = 1; j < sizeof(rx->zInit) - 2 && rx->aOp[i] == RE_OP_MATCH; ++i) {
+      unsigned x = rx->aArg[i];
       if (x <= 127) {
-        pRe->zInit[j++] = (unsigned char) x;
+        rx->zInit[j++] = (unsigned char) x;
       } else if (x <= 0xfff) {
-        pRe->zInit[j++] = (unsigned char) (0xc0 | (x >> 6));
-        pRe->zInit[j++] = 0x80 | (x & 0x3f);
+        rx->zInit[j++] = (unsigned char) (0xc0 | (x >> 6));
+        rx->zInit[j++] = 0x80 | (x & 0x3f);
       } else if (x <= 0xffff) {
-        pRe->zInit[j++] = (unsigned char) (0xd0 | (x >> 12));
-        pRe->zInit[j++] = 0x80 | ((x >> 6) & 0x3f);
-        pRe->zInit[j++] = 0x80 | (x & 0x3f);
+        rx->zInit[j++] = (unsigned char) (0xd0 | (x >> 12));
+        rx->zInit[j++] = 0x80 | ((x >> 6) & 0x3f);
+        rx->zInit[j++] = 0x80 | (x & 0x3f);
       } else {
         break;
       }
     }
-    if (j > 0 && pRe->zInit[j - 1] == 0) --j;
-    pRe->nInit = j;
+    if (j > 0 && rx->zInit[j - 1] == 0) --j;
+    rx->nInit = j;
   }
-  return pRe->zErr;
+  if (rx->zErr) {
+    LOG_INFO("Found error [%s]", rx->zErr);
+    return 999;
+  }
+  return 0;
 }

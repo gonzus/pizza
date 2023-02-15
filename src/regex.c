@@ -58,10 +58,27 @@
 #include <string.h>
 #include "regex.h"
 
+#define SLICE_MOVE(s, l) \
+  do { \
+    (s).ptr += l; \
+    (s).len -= l; \
+  } while (0)
+
+#define SLICE_LEN_GT(s, l)        ((s).len >  (l))
+#define SLICE_LEN_GE(s, l)        ((s).len >= (l))
+#define SLICE_LEN_LT(s, l)        ((s).len <  (l))
+#define SLICE_LEN_LE(s, l)        ((s).len <= (l))
+
+#define SLICE_ADVANCE(s, l)       SLICE_MOVE(s, +l)
+#define SLICE_RETRACT(s, l)       SLICE_MOVE(s, -l)
+#define SLICE_FINISHED(s)         SLICE_LEN_LE(s, 0)
+
 #define sqlite3_malloc(s)         malloc(s)
 #define sqlite3_malloc64(s)       malloc(s)
 #define sqlite3_realloc64(p, s)   realloc(p, s)
 #define sqlite3_free(p)           free(p)
+
+#define CHAR_IN(c, l, r) ((c) >= (l) && (c) <= (r))
 
 /* The end-of-input character */
 #define RE_EOF            0    /* End of input */
@@ -96,16 +113,16 @@ typedef unsigned short ReStateNumber;
  ** number of actives states is small.
  */
 typedef struct ReStateSet {
-    unsigned nState;            /* Number of current states */
-    ReStateNumber *aState;      /* Current states */
+  unsigned nState;            /* Number of current states */
+  ReStateNumber *aState;      /* Current states */
 } ReStateSet;
 
 /* Add a state to the given state set if it is not already there */
 static void re_add_state(ReStateSet *pSet, int newState) {
-    for (unsigned i = 0; i < pSet->nState; ++i) {
-        if (pSet->aState[i] == newState) return;
-    }
-    pSet->aState[pSet->nState++] = (ReStateNumber) newState;
+  for (unsigned i = 0; i < pSet->nState; ++i) {
+    if (pSet->aState[i] == newState) return;
+  }
+  pSet->aState[pSet->nState++] = (ReStateNumber) newState;
 }
 
 /* Extract the next unicode character from *pzIn and return it.  Advance
@@ -113,237 +130,237 @@ static void re_add_state(ReStateSet *pSet, int newState) {
  ** be clear:  this routine converts utf8 to unicode.  This routine is
  ** optimized for the common case where the next character is a single byte.
  */
-static unsigned re_next_char(ReInput *p) {
-    if (p->i >= p->mx) return 0;
+static unsigned re_next_char(Slice *p) {
+  if (SLICE_FINISHED(*p)) return 0;
 
-    unsigned c = p->z[p->i++];
-    if (c >= 0x80) {
-        if ((c & 0xe0) == 0xc0 && p->i < p->mx && (p->z[p->i] & 0xc0) == 0x80) {
-            c = (c & 0x1f) << 6 | (p->z[p->i++] & 0x3f);
-            if (c < 0x80) c = 0xfffd;
-        } else if ((c & 0xf0) == 0xe0 && p->i + 1 < p->mx && (p->z[p->i] & 0xc0) == 0x80
-                && (p->z[p->i + 1] & 0xc0) == 0x80) {
-            c = (c & 0x0f) << 12 | ((p->z[p->i] & 0x3f) << 6) | (p->z[p->i + 1] & 0x3f);
-            p->i += 2;
-            if (c <= 0x7ff || (c >= 0xd800 && c <= 0xdfff)) c = 0xfffd;
-        } else if ((c & 0xf8) == 0xf0 && p->i + 3 < p->mx && (p->z[p->i] & 0xc0) == 0x80
-                && (p->z[p->i + 1] & 0xc0) == 0x80 && (p->z[p->i + 2] & 0xc0) == 0x80) {
-            c = (c & 0x07) << 18 | ((p->z[p->i] & 0x3f) << 12) | ((p->z[p->i + 1] & 0x3f) << 6)
-                | (p->z[p->i + 2] & 0x3f);
-            p->i += 3;
-            if (c <= 0xffff || c > 0x10ffff) c = 0xfffd;
-        } else {
-            c = 0xfffd;
-        }
+  unsigned j = 0;
+  unsigned c = p->ptr[j++];
+  if (c >= 0x80) {
+    if ((c & 0xe0) == 0xc0 && SLICE_LEN_GT(*p, j+0)
+      && (p->ptr[j+0] & 0xc0) == 0x80) {
+      c = (c & 0x1f) << 6 | (p->ptr[j+0] & 0x3f);
+      j += 1;
+      if (c < 0x80) c = 0xfffd;
+    } else if ((c & 0xf0) == 0xe0 && SLICE_LEN_GT(*p, j+1)
+      && (p->ptr[j+0] & 0xc0) == 0x80 && (p->ptr[j+1] & 0xc0) == 0x80) {
+      c = (c & 0x0f) << 12 | ((p->ptr[j+0] & 0x3f) << 6) | (p->ptr[j+1] & 0x3f);
+      j += 2;
+      if (c <= 0x7ff || (c >= 0xd800 && c <= 0xdfff)) c = 0xfffd;
+    } else if ((c & 0xf8) == 0xf0 && SLICE_LEN_GT(*p, j+2)
+      && (p->ptr[j+0] & 0xc0) == 0x80 && (p->ptr[j+1] & 0xc0) == 0x80 && (p->ptr[j+2] & 0xc0) == 0x80) {
+      c = (c & 0x07) << 18 | ((p->ptr[j+0] & 0x3f) << 12) | ((p->ptr[j+1] & 0x3f) << 6) | (p->ptr[j+2] & 0x3f);
+      j += 3;
+      if (c <= 0xffff || c > 0x10ffff) c = 0xfffd;
+    } else {
+      c = 0xfffd;
     }
-    return c;
+  }
+  SLICE_ADVANCE(*p, j);
+  return c;
 }
-static unsigned re_next_char_nocase(ReInput *p) {
-    unsigned c = re_next_char(p);
-    if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
-    return c;
+
+static unsigned re_next_char_nocase(Slice *p) {
+  unsigned c = re_next_char(p);
+  if (CHAR_IN(c, 'A', 'Z')) c += 'a' - 'A';
+  return c;
 }
 
 /* Return true if c is a perl "word" character:  [A-Za-z0-9_] */
 static int re_word_char(int c) {
-    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z')
-        || (c >= 'A' && c <= 'Z') || c == '_';
+  return CHAR_IN(c, '0', '9') || CHAR_IN(c, 'a', 'z') || CHAR_IN(c, 'A', 'Z') || c == '_';
 }
 
 /* Return true if c is a "digit" character:  [0-9] */
 static int re_digit_char(int c) {
-    return (c >= '0' && c <= '9');
+  return CHAR_IN(c, '0', '9');
 }
 
 /* Return true if c is a perl "space" character:  [ \t\r\n\v\f] */
 static int re_space_char(int c) {
-    return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f';
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f';
 }
 
 /* Run a compiled regular expression on the zero-terminated input
  ** string zIn[].  Return true on a match and false if there is no match.
  */
 int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn) {
-    ReInput in;
-    in.z = zIn;
-    in.i = 0;
-    in.mx = nIn >= 0 ? nIn : (int) strlen((char const*) zIn);
+  Slice in = slice_from_string((const char*) zIn, nIn);
 
-    /* Look for the initial prefix match, if there is one. */
-    if (pRe->nInit) {
-        unsigned char x = pRe->zInit[0];
-        while (in.i + pRe->nInit <= in.mx
-                && (zIn[in.i] != x ||
-                    strncmp((const char*) zIn + in.i, (const char*) pRe->zInit, pRe->nInit) != 0)
-              ) {
-            ++in.i;
-        }
-        if (in.i + pRe->nInit > in.mx) return 0;
-    }
+  /* Look for the initial prefix match, if there is one. */
+  if (pRe->nInit) {
+    unsigned j = 0;
+    unsigned char x = pRe->zInit[0];
+    while (SLICE_LEN_GE(in, j + pRe->nInit)
+      && (in.ptr[j] != x || strncmp(in.ptr + j, (const char*) pRe->zInit, pRe->nInit) != 0)
+    ) {
+        ++j;
+      }
+    if (SLICE_LEN_LT(in, j + pRe->nInit)) return 0;
+  }
 
-    ReStateSet aStateSet[2];
-    ReStateNumber aSpace[100];
-    ReStateNumber *pToFree = 0;
-    if (pRe->nState <= (sizeof(aSpace) / (sizeof(aSpace[0]) * 2))) {
-        aStateSet[0].aState = aSpace;
-    } else {
-        pToFree = (ReStateNumber*) sqlite3_malloc64(sizeof(ReStateNumber) * 2 * pRe->nState);
-        if (pToFree == 0) return -1;
-        aStateSet[0].aState = pToFree;
-    }
-    aStateSet[1].aState = &aStateSet[0].aState[pRe->nState];
-    ReStateSet *pNext = &aStateSet[1];
+  ReStateSet aStateSet[2];
+  ReStateNumber aSpace[100];
+  ReStateNumber *pToFree = 0;
+  if (pRe->nState <= (sizeof(aSpace) / (sizeof(aSpace[0]) * 2))) {
+    aStateSet[0].aState = aSpace;
+  } else {
+    pToFree = (ReStateNumber*) sqlite3_malloc64(sizeof(ReStateNumber) * 2 * pRe->nState);
+    if (pToFree == 0) return -1;
+    aStateSet[0].aState = pToFree;
+  }
+  aStateSet[1].aState = &aStateSet[0].aState[pRe->nState];
+  ReStateSet *pNext = &aStateSet[1];
+  pNext->nState = 0;
+  re_add_state(pNext, 0);
+
+  int rc = 0;
+  unsigned int iSwap = 0;
+  for (int c = RE_EOF + 1; !rc && c != RE_EOF && pNext->nState > 0; ) {
+    int cPrev = c;
+    c = pRe->xNextChar(&in);
+    ReStateSet *pThis = pNext;
+    pNext = &aStateSet[iSwap];
     pNext->nState = 0;
-    re_add_state(pNext, 0);
+    iSwap = 1 - iSwap;
+    for (unsigned int i = 0; !rc && i < pThis->nState; ++i) {
+      int x = pThis->aState[i];
+      switch (pRe->aOp[x]) {
+        case RE_OP_MATCH:
+          if (pRe->aArg[x] == c) re_add_state(pNext, x + 1);
+          break;
 
-    int rc = 0;
-    unsigned int iSwap = 0;
-    for (int c = RE_EOF + 1; !rc && c != RE_EOF && pNext->nState > 0; ) {
-        int cPrev = c;
-        c = pRe->xNextChar(&in);
-        ReStateSet *pThis = pNext;
-        pNext = &aStateSet[iSwap];
-        pNext->nState = 0;
-        iSwap = 1 - iSwap;
-        for (unsigned int i = 0; !rc && i < pThis->nState; ++i) {
-            int x = pThis->aState[i];
-            switch (pRe->aOp[x]) {
-                case RE_OP_MATCH:
-                    if (pRe->aArg[x] == c) re_add_state(pNext, x + 1);
-                    break;
+        case RE_OP_ANY:
+          if (c != 0) re_add_state(pNext, x + 1);
+          break;
 
-                case RE_OP_ANY:
-                    if (c != 0) re_add_state(pNext, x + 1);
-                    break;
+        case RE_OP_WORD:
+          if (re_word_char(c)) re_add_state(pNext, x + 1);
+          break;
 
-                case RE_OP_WORD:
-                    if (re_word_char(c)) re_add_state(pNext, x + 1);
-                    break;
+        case RE_OP_NOTWORD:
+          if (!re_word_char(c) && c != 0) re_add_state(pNext, x + 1);
+          break;
 
-                case RE_OP_NOTWORD:
-                    if (!re_word_char(c) && c != 0) re_add_state(pNext, x + 1);
-                    break;
+        case RE_OP_DIGIT:
+          if (re_digit_char(c)) re_add_state(pNext, x + 1);
+          break;
 
-                case RE_OP_DIGIT:
-                    if (re_digit_char(c)) re_add_state(pNext, x + 1);
-                    break;
+        case RE_OP_NOTDIGIT:
+          if (!re_digit_char(c) && c != 0) re_add_state(pNext, x + 1);
+          break;
 
-                case RE_OP_NOTDIGIT:
-                    if (!re_digit_char(c) && c != 0) re_add_state(pNext, x + 1);
-                    break;
+        case RE_OP_SPACE:
+          if (re_space_char(c)) re_add_state(pNext, x + 1);
+          break;
 
-                case RE_OP_SPACE:
-                    if (re_space_char(c)) re_add_state(pNext, x + 1);
-                    break;
+        case RE_OP_NOTSPACE:
+          if (!re_space_char(c) && c != 0) re_add_state(pNext, x + 1);
+          break;
 
-                case RE_OP_NOTSPACE:
-                    if (!re_space_char(c) && c != 0) re_add_state(pNext, x + 1);
-                    break;
+        case RE_OP_BOUNDARY:
+          if (re_word_char(c) != re_word_char(cPrev)) re_add_state(pThis, x + 1);
+          break;
 
-                case RE_OP_BOUNDARY:
-                    if (re_word_char(c) != re_word_char(cPrev)) re_add_state(pThis, x + 1);
-                    break;
+        case RE_OP_ANYSTAR:
+          re_add_state(pNext, x);
+          re_add_state(pThis, x + 1);
+          break;
 
-                case RE_OP_ANYSTAR:
-                    re_add_state(pNext, x);
-                    re_add_state(pThis, x + 1);
-                    break;
+        case RE_OP_FORK:
+          re_add_state(pThis, x + pRe->aArg[x]);
+          re_add_state(pThis, x + 1);
+          break;
 
-                case RE_OP_FORK:
-                    re_add_state(pThis, x + pRe->aArg[x]);
-                    re_add_state(pThis, x + 1);
-                    break;
+        case RE_OP_GOTO:
+          re_add_state(pThis, x + pRe->aArg[x]);
+          break;
 
-                case RE_OP_GOTO:
-                    re_add_state(pThis, x + pRe->aArg[x]);
-                    break;
+        case RE_OP_ACCEPT:
+          rc = 1;
+          break;
 
-                case RE_OP_ACCEPT:
-                    rc = 1;
-                    break;
-
-                case RE_OP_CC_EXC:
-                    if (c == 0) break;
-                    /* FALL-THROUGH */
-                case RE_OP_CC_INC:
-                    {
-                        int n = pRe->aArg[x];
-                        int hit = 0;
-                        for (int j = 1; j > 0 && j < n; ++j) {
-                            if (pRe->aOp[x + j] == RE_OP_CC_VALUE) {
-                                if (pRe->aArg[x + j] == c) {
-                                    hit = 1;
-                                    j = -1;
-                                }
-                            } else {
-                                if (pRe->aArg[x + j] <= c && pRe->aArg[x + j + 1] >= c) {
-                                    hit = 1;
-                                    j = -1;
-                                } else {
-                                    ++j;
-                                }
-                            }
-                        }
-                        if (pRe->aOp[x] == RE_OP_CC_EXC) hit = !hit;
-                        if (hit) re_add_state(pNext, x + n);
-                        break;
-                    }
+        case RE_OP_CC_EXC:
+          if (c == 0) break;
+        /* FALL-THROUGH */
+        case RE_OP_CC_INC:
+          {
+            int n = pRe->aArg[x];
+            int hit = 0;
+            for (int j = 1; j > 0 && j < n; ++j) {
+              if (pRe->aOp[x + j] == RE_OP_CC_VALUE) {
+                if (pRe->aArg[x + j] == c) {
+                  hit = 1;
+                  j = -1;
+                }
+              } else {
+                if (pRe->aArg[x + j] <= c && pRe->aArg[x + j + 1] >= c) {
+                  hit = 1;
+                  j = -1;
+                } else {
+                  ++j;
+                }
+              }
             }
-        }
-    }
-    for (unsigned int i = 0; !rc && i < pNext->nState; ++i) {
-        if (pRe->aOp[pNext->aState[i]] == RE_OP_ACCEPT) {
-            rc = 1;
+            if (pRe->aOp[x] == RE_OP_CC_EXC) hit = !hit;
+            if (hit) re_add_state(pNext, x + n);
             break;
-        }
+          }
+      }
     }
+  }
+  for (unsigned int i = 0; !rc && i < pNext->nState; ++i) {
+    if (pRe->aOp[pNext->aState[i]] == RE_OP_ACCEPT) {
+      rc = 1;
+      break;
+    }
+  }
 
-    sqlite3_free((void*) pToFree);
-    return rc;
+  sqlite3_free((void*) pToFree);
+  return rc;
 }
 
 /* Resize the opcode and argument arrays for an RE under construction.
 */
 static int re_resize(ReCompiled *p, int N) {
-    char *aOp = (char*) sqlite3_realloc64(p->aOp, N * sizeof(p->aOp[0]));
-    if (aOp == 0) return 1;
-    p->aOp = aOp;
-    int *aArg = (int*) sqlite3_realloc64(p->aArg, N * sizeof(p->aArg[0]));
-    if (aArg == 0) return 1;
-    p->aArg = aArg;
-    p->nAlloc = N;
-    return 0;
+  char *aOp = (char*) sqlite3_realloc64(p->aOp, N * sizeof(p->aOp[0]));
+  if (aOp == 0) return 1;
+  p->aOp = aOp;
+  int *aArg = (int*) sqlite3_realloc64(p->aArg, N * sizeof(p->aArg[0]));
+  if (aArg == 0) return 1;
+  p->aArg = aArg;
+  p->nAlloc = N;
+  return 0;
 }
 
 /* Insert a new opcode and argument into an RE under construction.  The
  ** insertion point is just prior to existing opcode iBefore.
  */
 static int re_insert(ReCompiled *p, int iBefore, int op, int arg) {
-    if (p->nAlloc <= p->nState && re_resize(p, p->nAlloc * 2)) return 0;
-    for (int i = p->nState; i > iBefore; --i) {
-        p->aOp[i] = p->aOp[i - 1];
-        p->aArg[i] = p->aArg[i - 1];
-    }
-    ++p->nState;
-    p->aOp[iBefore] = (char) op;
-    p->aArg[iBefore] = arg;
-    return iBefore;
+  if (p->nAlloc <= p->nState && re_resize(p, p->nAlloc * 2)) return 0;
+  for (int i = p->nState; i > iBefore; --i) {
+    p->aOp[i] = p->aOp[i - 1];
+    p->aArg[i] = p->aArg[i - 1];
+  }
+  ++p->nState;
+  p->aOp[iBefore] = (char) op;
+  p->aArg[iBefore] = arg;
+  return iBefore;
 }
 
 /* Append a new opcode and argument to the end of the RE under construction.
 */
 static int re_append(ReCompiled *p, int op, int arg) {
-    return re_insert(p, p->nState, op, arg);
+  return re_insert(p, p->nState, op, arg);
 }
 
 /* Make a copy of N opcodes starting at iStart onto the end of the RE
  ** under construction.
  */
 static void re_copy(ReCompiled *p, int iStart, int N) {
-    if (p->nState + N >= p->nAlloc && re_resize(p, p->nAlloc * 2 + N)) return;
-    memcpy(&p->aOp[p->nState], &p->aOp[iStart], N * sizeof(p->aOp[0]));
-    memcpy(&p->aArg[p->nState], &p->aArg[iStart], N * sizeof(p->aArg[0]));
-    p->nState += N;
+  if (p->nState + N >= p->nAlloc && re_resize(p, p->nAlloc * 2 + N)) return;
+  memcpy(&p->aOp[p->nState], &p->aOp[iStart], N * sizeof(p->aOp[0]));
+  memcpy(&p->aArg[p->nState], &p->aArg[iStart], N * sizeof(p->aArg[0]));
+  p->nState += N;
 }
 
 /* Return true if c is a hexadecimal digit character:  [0-9a-fA-F]
@@ -351,59 +368,61 @@ static void re_copy(ReCompiled *p, int iStart, int N) {
  ** c is not a hex digit *pV is unchanged.
  */
 static int re_hex(int c, int *pV) {
-    if (c >= '0' && c <= '9') {
-        c -= '0';
-    } else if (c >= 'a' && c <= 'f') {
-        c -= 'a' - 10;
-    } else if (c >= 'A' && c <= 'F') {
-        c -= 'A' - 10;
-    } else {
-        return 0;
-    }
-    *pV = *pV * 16 + (c & 0xff);
-    return 1;
+  if (CHAR_IN(c, '0', '9')) {
+    c -= '0';
+  } else if (CHAR_IN(c, 'a', 'f')) {
+    c -= 'a' - 10;
+  } else if (CHAR_IN(c, 'A', 'F')) {
+    c -= 'A' - 10;
+  } else {
+    return 0;
+  }
+  *pV = *pV * 16 + (c & 0xff);
+  return 1;
 }
 
 /* A backslash character has been seen, read the next character and
  ** return its interpretation.
  */
 static unsigned re_esc_char(ReCompiled *p) {
-    static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";
-    static const char zTrans[] = "\a\f\n\r\t\v";
-    if (p->sIn.i >= p->sIn.mx) return 0;
+  static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";
+  static const char zTrans[] = "\a\f\n\r\t\v";
+  if (SLICE_FINISHED(p->sIn)) return 0;
 
-    char c = p->sIn.z[p->sIn.i];
-    int v = 0;
-    if (c == 'u' && p->sIn.i + 4 < p->sIn.mx) {
-        const unsigned char *zIn = p->sIn.z + p->sIn.i;
-        if (re_hex(zIn[1],&v)
-                && re_hex(zIn[2],&v)
-                && re_hex(zIn[3],&v)
-                && re_hex(zIn[4],&v)
-           ) {
-            p->sIn.i += 5;
-            return v;
-        }
+  unsigned j = 0;
+  char c = p->sIn.ptr[j];
+  int v = 0;
+  if (c == 'u' && SLICE_LEN_GE(p->sIn, 5)) {
+    const unsigned char *zIn = (const unsigned char*) (p->sIn.ptr + j);
+    if (re_hex(zIn[1],&v)
+      && re_hex(zIn[2],&v)
+      && re_hex(zIn[3],&v)
+      && re_hex(zIn[4],&v)
+    ) {
+      SLICE_ADVANCE(p->sIn, 5);
+      return v;
     }
-    if (c == 'x' && p->sIn.i + 2 < p->sIn.mx) {
-        const unsigned char *zIn = p->sIn.z + p->sIn.i;
-        if (re_hex(zIn[1],&v)
-                && re_hex(zIn[2],&v)
-           ) {
-            p->sIn.i += 3;
-            return v;
-        }
+  }
+  if (c == 'x' && SLICE_LEN_GE(p->sIn, 3)) {
+    const unsigned char *zIn = (const unsigned char*) (p->sIn.ptr + j);
+    if (re_hex(zIn[1],&v)
+      && re_hex(zIn[2],&v)
+    ) {
+      SLICE_ADVANCE(p->sIn, 3);
+      return v;
     }
+  }
 
-    int i = 0;
-    for (i = 0; zEsc[i] && zEsc[i] != c; ++i) {}
-    if (zEsc[i]) {
-        if (i < 6) c = zTrans[i];
-        ++p->sIn.i;
-    } else {
-        p->zErr = "unknown \\ escape";
-    }
-    return c;
+  int i = 0;
+  for (i = 0; zEsc[i] && zEsc[i] != c; ++i) {}
+  if (zEsc[i]) {
+    if (i < 6) c = zTrans[i];
+    ++j;
+  } else {
+    p->zErr = "unknown \\ escape";
+  }
+  SLICE_ADVANCE(p->sIn, j);
+  return c;
 }
 
 /* Forward declaration */
@@ -411,7 +430,7 @@ static const char *re_subcompile_string(ReCompiled*);
 
 /* Peek at the next byte of input */
 static unsigned char rePeek(ReCompiled *p) {
-    return p->sIn.i < p->sIn.mx ? p->sIn.z[p->sIn.i] : 0;
+  return SLICE_FINISHED(p->sIn) ? 0 : p->sIn.ptr[0];
 }
 
 /* Compile RE text into a sequence of opcodes.  Continue up to the
@@ -419,20 +438,20 @@ static unsigned char rePeek(ReCompiled *p) {
  ** return a pointer to the error message string.
  */
 static const char *re_subcompile_re(ReCompiled *p) {
-    int iStart = p->nState;
-    const char *zErr = re_subcompile_string(p);
-    if (zErr) return zErr;
+  int iStart = p->nState;
+  const char *zErr = re_subcompile_string(p);
+  if (zErr) return zErr;
 
-    while (rePeek(p) == '|') {
-        int iEnd = p->nState;
-        re_insert(p, iStart, RE_OP_FORK, iEnd + 2 - iStart);
-        int iGoto = re_append(p, RE_OP_GOTO, 0);
-        ++p->sIn.i;
-        zErr = re_subcompile_string(p);
-        if (zErr) return zErr;
-        p->aArg[iGoto] = p->nState - iGoto;
-    }
-    return 0;
+  while (rePeek(p) == '|') {
+    int iEnd = p->nState;
+    re_insert(p, iStart, RE_OP_FORK, iEnd + 2 - iStart);
+    int iGoto = re_append(p, RE_OP_GOTO, 0);
+    SLICE_ADVANCE(p->sIn, 1);
+    zErr = re_subcompile_string(p);
+    if (zErr) return zErr;
+    p->aArg[iGoto] = p->nState - iGoto;
+  }
+  return 0;
 }
 
 /* Compile an element of regular expression text (anything that can be
@@ -440,154 +459,156 @@ static const char *re_subcompile_re(ReCompiled *p) {
  ** to the error message if there is a problem.
  */
 static const char *re_subcompile_string(ReCompiled *p) {
-    int iPrev = -1;
-    unsigned c = 0;
-    while ((c = p->xNextChar(&p->sIn)) != 0) {
-        int iStart = p->nState;
-        switch (c) {
-            case '|':
-            case '$':
-            case ')':
-                --p->sIn.i;
-                return 0;
+  int iPrev = -1;
+  unsigned c = 0;
+  while ((c = p->xNextChar(&p->sIn)) != 0) {
+    int iStart = p->nState;
+    switch (c) {
+      case '|':
+      case '$':
+      case ')':
+        SLICE_RETRACT(p->sIn, 1);
+        return 0;
 
-            case '(':
-                {
-                    const char *zErr = re_subcompile_re(p);
-                    if (zErr) return zErr;
-                    if (rePeek(p) != ')') return "unmatched '('";
-                    ++p->sIn.i;
-                    break;
-                }
-
-            case '.':
-                if (rePeek(p) == '*') {
-                    re_append(p, RE_OP_ANYSTAR, 0);
-                    ++p->sIn.i;
-                } else {
-                    re_append(p, RE_OP_ANY, 0);
-                }
-                break;
-
-            case '*':
-                if (iPrev < 0) return "'*' without operand";
-                re_insert(p, iPrev, RE_OP_GOTO, p->nState - iPrev + 1);
-                re_append(p, RE_OP_FORK, iPrev - p->nState + 1);
-                break;
-
-            case '+':
-                if (iPrev < 0) return "'+' without operand";
-                re_append(p, RE_OP_FORK, iPrev - p->nState);
-                break;
-
-            case '?':
-                if (iPrev < 0) return "'?' without operand";
-                re_insert(p, iPrev, RE_OP_FORK, p->nState - iPrev + 1);
-                break;
-
-            case '{':
-                {
-                    if (iPrev < 0) return "'{m,n}' without operand";
-
-                    int m = 0;
-                    while ((c = rePeek(p)) >= '0' && c <= '9') {
-                        m = m * 10 + c - '0';
-                        ++p->sIn.i;
-                    }
-                    int n = m;
-                    if (c == ',') {
-                        ++p->sIn.i;
-                        n = 0;
-                        while ((c = rePeek(p)) >= '0' && c <= '9') {
-                            n = n * 10 + c - '0';
-                            ++p->sIn.i;
-                        }
-                    }
-                    if (c != '}') return "unmatched '{'";
-                    if (n > 0 && n < m) return "n less than m in '{m,n}'";
-
-                    ++p->sIn.i;
-                    int sz = p->nState - iPrev;
-                    if (m == 0) {
-                        if (n == 0) return "both m and n are zero in '{m,n}'";
-                        re_insert(p, iPrev, RE_OP_FORK, sz + 1);
-                        --n;
-                    } else {
-                        for (int j = 1; j < m; ++j) re_copy(p, iPrev, sz);
-                    }
-                    for (int j = m; j < n; ++j) {
-                        re_append(p, RE_OP_FORK, sz + 1);
-                        re_copy(p, iPrev, sz);
-                    }
-                    if (n == 0 && m > 0) {
-                        re_append(p, RE_OP_FORK, -sz);
-                    }
-                    break;
-                }
-
-            case '[':
-                {
-                    int iFirst = p->nState;
-                    if (rePeek(p) == '^') {
-                        re_append(p, RE_OP_CC_EXC, 0);
-                        ++p->sIn.i;
-                    } else {
-                        re_append(p, RE_OP_CC_INC, 0);
-                    }
-                    while ((c = p->xNextChar(&p->sIn)) != 0) {
-                        if (c == '[' && rePeek(p) == ':') {
-                            return "POSIX character classes not supported";
-                        }
-                        if (c == '\\') c = re_esc_char(p);
-                        if (rePeek(p) == '-') {
-                            re_append(p, RE_OP_CC_RANGE, c);
-                            ++p->sIn.i;
-                            c = p->xNextChar(&p->sIn);
-                            if (c == '\\') c = re_esc_char(p);
-                            re_append(p, RE_OP_CC_RANGE, c);
-                        } else {
-                            re_append(p, RE_OP_CC_VALUE, c);
-                        }
-                        if (rePeek(p) == ']') {
-                            ++p->sIn.i;
-                            break;
-                        }
-                    }
-                    if (c == 0) return "unclosed '['";
-                    p->aArg[iFirst] = p->nState - iFirst;
-                    break;
-                }
-
-            case '\\':
-                {
-                    int specialOp = 0;
-                    switch (rePeek(p)) {
-                        case 'b': specialOp = RE_OP_BOUNDARY;   break;
-                        case 'd': specialOp = RE_OP_DIGIT;      break;
-                        case 'D': specialOp = RE_OP_NOTDIGIT;   break;
-                        case 's': specialOp = RE_OP_SPACE;      break;
-                        case 'S': specialOp = RE_OP_NOTSPACE;   break;
-                        case 'w': specialOp = RE_OP_WORD;       break;
-                        case 'W': specialOp = RE_OP_NOTWORD;    break;
-                    }
-                    if (specialOp) {
-                        ++p->sIn.i;
-                        re_append(p, specialOp, 0);
-                    } else {
-                        c = re_esc_char(p);
-                        re_append(p, RE_OP_MATCH, c);
-                    }
-                    break;
-                }
-
-            default:
-                re_append(p, RE_OP_MATCH, c);
-                break;
-
+      case '(':
+        {
+          const char *zErr = re_subcompile_re(p);
+          if (zErr) return zErr;
+          if (rePeek(p) != ')') return "unmatched '('";
+          SLICE_ADVANCE(p->sIn, 1);
+          break;
         }
-        iPrev = iStart;
+
+      case '.':
+        if (rePeek(p) == '*') {
+          re_append(p, RE_OP_ANYSTAR, 0);
+          SLICE_ADVANCE(p->sIn, 1);
+        } else {
+          re_append(p, RE_OP_ANY, 0);
+        }
+        break;
+
+      case '*':
+        if (iPrev < 0) return "'*' without operand";
+        re_insert(p, iPrev, RE_OP_GOTO, p->nState - iPrev + 1);
+        re_append(p, RE_OP_FORK, iPrev - p->nState + 1);
+        break;
+
+      case '+':
+        if (iPrev < 0) return "'+' without operand";
+        re_append(p, RE_OP_FORK, iPrev - p->nState);
+        break;
+
+      case '?':
+        if (iPrev < 0) return "'?' without operand";
+        re_insert(p, iPrev, RE_OP_FORK, p->nState - iPrev + 1);
+        break;
+
+      case '{':
+        {
+          if (iPrev < 0) return "'{m,n}' without operand";
+
+          int m = 0;
+          while (1) {
+            c = rePeek(p);
+            if (!CHAR_IN(c, '0', '9')) break;
+            m = m * 10 + c - '0';
+            SLICE_ADVANCE(p->sIn, 1);
+          }
+          int n = m;
+          if (c == ',') {
+            SLICE_ADVANCE(p->sIn, 1);
+            n = 0;
+            while ((c = rePeek(p)) >= '0' && c <= '9') {
+              n = n * 10 + c - '0';
+              SLICE_ADVANCE(p->sIn, 1);
+            }
+          }
+          if (c != '}') return "unmatched '{'";
+          if (n > 0 && n < m) return "n less than m in '{m,n}'";
+
+          SLICE_ADVANCE(p->sIn, 1);
+          int sz = p->nState - iPrev;
+          if (m == 0) {
+            if (n == 0) return "both m and n are zero in '{m,n}'";
+            re_insert(p, iPrev, RE_OP_FORK, sz + 1);
+            --n;
+          } else {
+            for (int j = 1; j < m; ++j) re_copy(p, iPrev, sz);
+          }
+          for (int j = m; j < n; ++j) {
+            re_append(p, RE_OP_FORK, sz + 1);
+            re_copy(p, iPrev, sz);
+          }
+          if (n == 0 && m > 0) {
+            re_append(p, RE_OP_FORK, -sz);
+          }
+          break;
+        }
+
+      case '[':
+        {
+          int iFirst = p->nState;
+          if (rePeek(p) == '^') {
+            re_append(p, RE_OP_CC_EXC, 0);
+            SLICE_ADVANCE(p->sIn, 1);
+          } else {
+            re_append(p, RE_OP_CC_INC, 0);
+          }
+          while ((c = p->xNextChar(&p->sIn)) != 0) {
+            if (c == '[' && rePeek(p) == ':') {
+              return "POSIX character classes not supported";
+            }
+            if (c == '\\') c = re_esc_char(p);
+            if (rePeek(p) == '-') {
+              re_append(p, RE_OP_CC_RANGE, c);
+              SLICE_ADVANCE(p->sIn, 1);
+              c = p->xNextChar(&p->sIn);
+              if (c == '\\') c = re_esc_char(p);
+              re_append(p, RE_OP_CC_RANGE, c);
+            } else {
+              re_append(p, RE_OP_CC_VALUE, c);
+            }
+            if (rePeek(p) == ']') {
+              SLICE_ADVANCE(p->sIn, 1);
+              break;
+            }
+          }
+          if (c == 0) return "unclosed '['";
+          p->aArg[iFirst] = p->nState - iFirst;
+          break;
+        }
+
+      case '\\':
+        {
+          int specialOp = 0;
+          switch (rePeek(p)) {
+            case 'b': specialOp = RE_OP_BOUNDARY;   break;
+            case 'd': specialOp = RE_OP_DIGIT;      break;
+            case 'D': specialOp = RE_OP_NOTDIGIT;   break;
+            case 's': specialOp = RE_OP_SPACE;      break;
+            case 'S': specialOp = RE_OP_NOTSPACE;   break;
+            case 'w': specialOp = RE_OP_WORD;       break;
+            case 'W': specialOp = RE_OP_NOTWORD;    break;
+          }
+          if (specialOp) {
+            SLICE_ADVANCE(p->sIn, 1);
+            re_append(p, specialOp, 0);
+          } else {
+            c = re_esc_char(p);
+            re_append(p, RE_OP_MATCH, c);
+          }
+          break;
+        }
+
+      default:
+        re_append(p, RE_OP_MATCH, c);
+        break;
+
     }
-    return 0;
+    iPrev = iStart;
+  }
+  return 0;
 }
 
 /* Free and reclaim all the memory used by a previously compiled
@@ -595,11 +616,11 @@ static const char *re_subcompile_string(ReCompiled *p) {
  ** for every call to re_compile() to avoid memory leaks.
  */
 void re_free(ReCompiled *pRe) {
-    if (pRe) {
-        sqlite3_free(pRe->aOp);
-        sqlite3_free(pRe->aArg);
-        sqlite3_free(pRe);
-    }
+  if (pRe) {
+    sqlite3_free(pRe->aOp);
+    sqlite3_free(pRe->aArg);
+    sqlite3_free(pRe);
+  }
 }
 
 /*
@@ -609,43 +630,41 @@ void re_free(ReCompiled *pRe) {
  ** error message if something goes wrong.
  */
 const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase) {
-    *ppRe = 0;
-    ReCompiled *pRe = (ReCompiled*) sqlite3_malloc(sizeof(*pRe));
-    if (pRe == 0) {
-        return "out of memory";
-    }
-    memset(pRe, 0, sizeof(*pRe));
-    pRe->xNextChar = noCase ? re_next_char_nocase : re_next_char;
-    if (re_resize(pRe, 30)) {
-        re_free(pRe);
-        return "out of memory";
-    }
-    if (zIn[0] == '^') {
-        ++zIn;
-    } else {
-        re_append(pRe, RE_OP_ANYSTAR, 0);
-    }
-    pRe->sIn.z = (unsigned char*) zIn;
-    pRe->sIn.i = 0;
-    pRe->sIn.mx = (int) strlen(zIn);
-    const char *zErr = re_subcompile_re(pRe);
-    if (zErr) {
-        re_free(pRe);
-        return zErr;
-    }
-    if (rePeek(pRe) == '$' && pRe->sIn.i + 1 >= pRe->sIn.mx) {
-        re_append(pRe, RE_OP_MATCH, RE_EOF);
-        re_append(pRe, RE_OP_ACCEPT, 0);
-        *ppRe = pRe;
-    } else if (pRe->sIn.i >= pRe->sIn.mx) {
-        re_append(pRe, RE_OP_ACCEPT, 0);
-        *ppRe = pRe;
-    } else {
-        re_free(pRe);
-        return "unrecognized character";
-    }
+  *ppRe = 0;
+  ReCompiled *pRe = (ReCompiled*) sqlite3_malloc(sizeof(*pRe));
+  if (pRe == 0) {
+    return "out of memory";
+  }
+  memset(pRe, 0, sizeof(*pRe));
+  pRe->xNextChar = noCase ? re_next_char_nocase : re_next_char;
+  if (re_resize(pRe, 30)) {
+    re_free(pRe);
+    return "out of memory";
+  }
+  if (zIn[0] == '^') {
+    ++zIn;
+  } else {
+    re_append(pRe, RE_OP_ANYSTAR, 0);
+  }
+  pRe->sIn = slice_from_string(zIn, 0);
+  const char *zErr = re_subcompile_re(pRe);
+  if (zErr) {
+    re_free(pRe);
+    return zErr;
+  }
+  if (rePeek(pRe) == '$' && SLICE_LEN_LE(pRe->sIn, 1)) {
+    re_append(pRe, RE_OP_MATCH, RE_EOF);
+    re_append(pRe, RE_OP_ACCEPT, 0);
+    *ppRe = pRe;
+  } else if (SLICE_FINISHED(pRe->sIn)) {
+    re_append(pRe, RE_OP_ACCEPT, 0);
+    *ppRe = pRe;
+  } else {
+    re_free(pRe);
+    return "unrecognized character";
+  }
 
-    /* The following is a performance optimization.  If the regex begins with
+  /* The following is a performance optimization.  If the regex begins with
      ** ".*" (if the input regex lacks an initial "^") and afterwards there are
      ** one or more matching characters, enter those matching characters into
      ** zInit[].  The re_match() routine can then search ahead in the input
@@ -653,25 +672,25 @@ const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase) {
      ** regex engine over the string.  Do not worry able trying to match
      ** unicode characters beyond plane 0 - those are very rare and this is
      ** just an optimization. */
-    if (pRe->aOp[0] == RE_OP_ANYSTAR && !noCase) {
-        int j = 0;
-        for (int i = 1; j < (int) sizeof(pRe->zInit) - 2 && pRe->aOp[i] == RE_OP_MATCH; ++i) {
-            unsigned x = pRe->aArg[i];
-            if (x <= 127) {
-                pRe->zInit[j++] = (unsigned char) x;
-            } else if (x <= 0xfff) {
-                pRe->zInit[j++] = (unsigned char) (0xc0 | (x >> 6));
-                pRe->zInit[j++] = 0x80 | (x & 0x3f);
-            } else if (x <= 0xffff) {
-                pRe->zInit[j++] = (unsigned char) (0xd0 | (x >> 12));
-                pRe->zInit[j++] = 0x80 | ((x >> 6) & 0x3f);
-                pRe->zInit[j++] = 0x80 | (x & 0x3f);
-            } else {
-                break;
-            }
-        }
-        if (j > 0 && pRe->zInit[j - 1] == 0) --j;
-        pRe->nInit = j;
+  if (pRe->aOp[0] == RE_OP_ANYSTAR && !noCase) {
+    int j = 0;
+    for (int i = 1; j < (int) sizeof(pRe->zInit) - 2 && pRe->aOp[i] == RE_OP_MATCH; ++i) {
+      unsigned x = pRe->aArg[i];
+      if (x <= 127) {
+        pRe->zInit[j++] = (unsigned char) x;
+      } else if (x <= 0xfff) {
+        pRe->zInit[j++] = (unsigned char) (0xc0 | (x >> 6));
+        pRe->zInit[j++] = 0x80 | (x & 0x3f);
+      } else if (x <= 0xffff) {
+        pRe->zInit[j++] = (unsigned char) (0xd0 | (x >> 12));
+        pRe->zInit[j++] = 0x80 | ((x >> 6) & 0x3f);
+        pRe->zInit[j++] = 0x80 | (x & 0x3f);
+      } else {
+        break;
+      }
     }
-    return pRe->zErr;
+    if (j > 0 && pRe->zInit[j - 1] == 0) --j;
+    pRe->nInit = j;
+  }
+  return pRe->zErr;
 }

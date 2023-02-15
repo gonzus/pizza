@@ -208,7 +208,8 @@ static int re_space_char(int c) {
 }
 
 /* Run a compiled regular expression on the zero-terminated input
- * string zIn[].  Return true on a match and false if there is no match.
+ * string zIn[].  Set matched to true on a match and false if there is no match.
+ * Return the possible error condition.
  */
 int regex_match(Regex* rx, Slice text, int* matched) {
   *matched = 0;
@@ -221,7 +222,7 @@ int regex_match(Regex* rx, Slice text, int* matched) {
     ) {
         ++j;
       }
-    if (SLICE_LEN_LT(text, j + rx->nInit)) return 0;
+    if (SLICE_LEN_LT(text, j + rx->nInit)) return RX_OK;
   }
 
   ReStateSet aStateSet[2];
@@ -232,8 +233,7 @@ int regex_match(Regex* rx, Slice text, int* matched) {
   } else {
     pToFree = (ReStateNumber*) sqlite3_malloc64(sizeof(ReStateNumber) * 2 * rx->nState);
     if (pToFree == 0) {
-      rx->zErr = "out of memory 2";
-      return 201;
+      return RX_OOM;
     }
     aStateSet[0].aState = pToFree;
   }
@@ -346,27 +346,27 @@ int regex_match(Regex* rx, Slice text, int* matched) {
 
   sqlite3_free((void*) pToFree);
   *matched = rc;
-  return 0;
+  return RX_OK;
 }
 
 /* Resize the opcode and argument arrays for an RE under construction.
 */
 static int regex_resize(Regex* rx, int N) {
   char *aOp = (char*) sqlite3_realloc64(rx->aOp, N * sizeof(rx->aOp[0]));
-  if (aOp == 0) return 1;
+  if (aOp == 0) return RX_OOM;
   rx->aOp = aOp;
   int *aArg = (int*) sqlite3_realloc64(rx->aArg, N * sizeof(rx->aArg[0]));
-  if (aArg == 0) return 1;
+  if (aArg == 0) return RX_OOM;
   rx->aArg = aArg;
   rx->nAlloc = N;
-  return 0;
+  return RX_OK;
 }
 
 /* Insert a new opcode and argument into an RE under construction.  The
  * insertion point is just prior to existing opcode iBefore.
  */
 static int re_insert(Regex *p, int iBefore, int op, int arg) {
-  if (p->nAlloc <= p->nState && regex_resize(p, p->nAlloc * 2)) return 0;
+  if (p->nAlloc <= p->nState && regex_resize(p, p->nAlloc * 2) != RX_OK) return 0;
   for (int i = p->nState; i > iBefore; --i) {
     p->aOp[i] = p->aOp[i - 1];
     p->aArg[i] = p->aArg[i - 1];
@@ -387,7 +387,7 @@ static int re_append(Regex *p, int op, int arg) {
  * under construction.
  */
 static void re_copy(Regex *p, int iStart, int N) {
-  if (p->nState + N >= p->nAlloc && regex_resize(p, p->nAlloc * 2 + N)) return;
+  if (p->nState + N >= p->nAlloc && regex_resize(p, p->nAlloc * 2 + N) != RX_OK) return;
   memcpy(&p->aOp[p->nState], &p->aOp[iStart], N * sizeof(p->aOp[0]));
   memcpy(&p->aArg[p->nState], &p->aArg[iStart], N * sizeof(p->aArg[0]));
   p->nState += N;
@@ -414,10 +414,12 @@ static int re_hex(int c, int *pV) {
 /* A backslash character has been seen, read the next character and
  * return its interpretation.
  */
-static unsigned re_esc_char(Regex *p) {
+static unsigned re_esc_char(Regex *p, unsigned *d) {
+  *d = 0;
+  if (SLICE_FINISHED(p->sIn)) return RX_INPUT_TOO_SHORT;
+
   static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";
   static const char zTrans[] = "\a\f\n\r\t\v";
-  if (SLICE_FINISHED(p->sIn)) return 0;
 
   unsigned j = 0;
   char c = p->sIn.ptr[j];
@@ -430,7 +432,8 @@ static unsigned re_esc_char(Regex *p) {
       && re_hex(zIn[4],&v)
     ) {
       SLICE_ADVANCE(p->sIn, 5);
-      return v;
+      *d = v;
+      return RX_OK;
     }
   }
   if (c == 'x' && SLICE_LEN_GE(p->sIn, 3)) {
@@ -439,20 +442,25 @@ static unsigned re_esc_char(Regex *p) {
       && re_hex(zIn[2],&v)
     ) {
       SLICE_ADVANCE(p->sIn, 3);
-      return v;
+      *d = v;
+      return RX_OK;
     }
   }
 
   int i = 0;
-  for (i = 0; zEsc[i] && zEsc[i] != c; ++i) {}
+  for (i = 0; zEsc[i] && zEsc[i] != c; ++i) {
+  }
   if (zEsc[i]) {
-    if (i < 6) c = zTrans[i];
+    if (i < 6) {
+      c = zTrans[i];
+    }
     ++j;
   } else {
-    p->zErr = "unknown \\ escape";
+    return RX_UNKNOWN_ESCAPE;
   }
   SLICE_ADVANCE(p->sIn, j);
-  return c;
+  *d = c;
+  return RX_OK;
 }
 
 /* Forward declaration */
@@ -464,8 +472,8 @@ static unsigned char rePeek(Regex *p) {
 }
 
 /* Compile RE text into a sequence of opcodes.  Continue up to the
- * first unmatched ")" character, then return.  If an error is found,
- * return a pointer to the error message string.
+ * first unmatched ")" character, then return.
+ * Return an error code.
  */
 static int re_subcompile_re(Regex *p) {
   int err = 0;
@@ -482,32 +490,32 @@ static int re_subcompile_re(Regex *p) {
     if (err) return err;
     p->aArg[iGoto] = p->nState - iGoto;
   }
-  return 0;
+  return RX_OK;
 }
 
 /* Compile an element of regular expression text (anything that can be
- * an operand to the "|" operator).  Return NULL on success or a pointer
- * to the error message if there is a problem.
+ * an operand to the "|" operator).
+ * Return an error code.
  */
 static int re_subcompile_string(Regex *p) {
   int iPrev = -1;
   unsigned c = 0;
   while ((c = p->next(&p->sIn)) != 0) {
+    int err = 0;
     int iStart = p->nState;
     switch (c) {
       case '|':
       case '$':
       case ')':
         SLICE_RETRACT(p->sIn, 1);
-        return 0;
+        return RX_OK;
 
       case '(':
         {
-          int err = re_subcompile_re(p);
+          err = re_subcompile_re(p);
           if (err) return err;
           if (rePeek(p) != ')') {
-            p->zErr = "unmatched '('";
-            return 101;
+            return RX_UNMATCHED_PARENTHESIS;
           }
           SLICE_ADVANCE(p->sIn, 1);
           break;
@@ -524,8 +532,7 @@ static int re_subcompile_string(Regex *p) {
 
       case '*':
         if (iPrev < 0) {
-          p->zErr = "'*' without operand";
-          return 102;
+          return RX_STAR_WITHOUT_OPERAND;
         }
         re_insert(p, iPrev, RE_OP_GOTO, p->nState - iPrev + 1);
         re_append(p, RE_OP_FORK, iPrev - p->nState + 1);
@@ -533,16 +540,14 @@ static int re_subcompile_string(Regex *p) {
 
       case '+':
         if (iPrev < 0) {
-          p->zErr = "'+' without operand";
-          return 103;
+          return RX_PLUS_WITHOUT_OPERAND;
         }
         re_append(p, RE_OP_FORK, iPrev - p->nState);
         break;
 
       case '?':
         if (iPrev < 0) {
-          p->zErr = "'?' without operand";
-          return 104;
+          return RX_QUESTION_WITHOUT_OPERAND;
         }
         re_insert(p, iPrev, RE_OP_FORK, p->nState - iPrev + 1);
         break;
@@ -550,8 +555,7 @@ static int re_subcompile_string(Regex *p) {
       case '{':
         {
           if (iPrev < 0) {
-            p->zErr = "'{m,n}' without operand";
-            return 105;
+            return RX_LOHI_WITHOUT_OPERAND;
           }
 
           int m = 0;
@@ -565,26 +569,25 @@ static int re_subcompile_string(Regex *p) {
           if (c == ',') {
             SLICE_ADVANCE(p->sIn, 1);
             n = 0;
-            while ((c = rePeek(p)) >= '0' && c <= '9') {
+            while (1) {
+              c = rePeek(p);
+              if (!CHAR_IN(c, '0', '9')) break;
               n = n * 10 + c - '0';
               SLICE_ADVANCE(p->sIn, 1);
             }
           }
           if (c != '}') {
-            p->zErr = "unmatched '{'";
-            return 106;
+            return RX_UNMATCHED_BRACE;
           }
           if (n > 0 && n < m) {
-            p->zErr = "n less than m in '{m,n}'";
-            return 107;
+            return RX_LOHI_HI_SMALLER_THAN_LO;
           }
 
           SLICE_ADVANCE(p->sIn, 1);
           int sz = p->nState - iPrev;
           if (m == 0) {
             if (n == 0) {
-              p->zErr = "both m and n are zero in '{m,n}'";
-              return 108;
+              return RX_LOHI_BOTH_ZERO;
             }
             re_insert(p, iPrev, RE_OP_FORK, sz + 1);
             --n;
@@ -612,15 +615,20 @@ static int re_subcompile_string(Regex *p) {
           }
           while ((c = p->next(&p->sIn)) != 0) {
             if (c == '[' && rePeek(p) == ':') {
-              p->zErr = "POSIX character classes not supported";
-              return 109;
+              return RX_UNKNOWN_POSIX_CHARCLASS;
             }
-            if (c == '\\') c = re_esc_char(p);
+            if (c == '\\'){
+              err = re_esc_char(p, &c);
+              if (err != RX_OK) return err;
+            }
             if (rePeek(p) == '-') {
               re_append(p, RE_OP_CC_RANGE, c);
               SLICE_ADVANCE(p->sIn, 1);
               c = p->next(&p->sIn);
-              if (c == '\\') c = re_esc_char(p);
+              if (c == '\\') {
+                err = re_esc_char(p, &c);
+                if (err != RX_OK) return err;
+              }
               re_append(p, RE_OP_CC_RANGE, c);
             } else {
               re_append(p, RE_OP_CC_VALUE, c);
@@ -631,8 +639,7 @@ static int re_subcompile_string(Regex *p) {
             }
           }
           if (c == 0) {
-            p->zErr = "unclosed '['";
-            return 110;
+            return RX_UNMATCHED_BRACKET;
           }
           p->aArg[iFirst] = p->nState - iFirst;
           break;
@@ -654,7 +661,8 @@ static int re_subcompile_string(Regex *p) {
             SLICE_ADVANCE(p->sIn, 1);
             re_append(p, specialOp, 0);
           } else {
-            c = re_esc_char(p);
+            err = re_esc_char(p, &c);
+            if (err != RX_OK) return err;
             re_append(p, RE_OP_MATCH, c);
           }
           break;
@@ -667,47 +675,48 @@ static int re_subcompile_string(Regex *p) {
     }
     iPrev = iStart;
   }
-  return 0;
+  return RX_OK;
 }
 
 /*
  * Compile a textual regular expression in zIn[] into a compiled regular
- * expression suitable for use by regex_match() and return a pointer to the
- * compiled regular expression in *ppRe.  Return NULL on success or an
- * error message if something goes wrong.
+ * expression suitable for use by regex_match().
+ * Return an error code.
  */
 int regex_compile(Regex* rx, Slice source, int case_insensitive) {
-  regex_reset(rx);
-  rx->next = case_insensitive ? re_next_char_nocase : re_next_char;
-  if (regex_resize(rx, 30)) {
+  int err = 0;
+  do {
     regex_reset(rx);
-    rx->zErr = "out of memory 1";
-    return 201;
-  }
-  unsigned j = 0;
-  if (source.ptr[j] == '^') {
-    ++j;
-  } else {
-    re_append(rx, RE_OP_ANYSTAR, 0);
-  }
-  rx->sIn = slice_from_memory(source.ptr + j, source.len - j);
-  int err = re_subcompile_re(rx);
-  if (err) {
-    regex_reset(rx);
-    return err;
-  }
-  if (rePeek(rx) == '$' && SLICE_LEN_LE(rx->sIn, 1)) {
-    re_append(rx, RE_OP_MATCH, RE_EOF);
-    re_append(rx, RE_OP_ACCEPT, 0);
-  } else if (SLICE_FINISHED(rx->sIn)) {
-    re_append(rx, RE_OP_ACCEPT, 0);
-  } else {
-    regex_reset(rx);
-    rx->zErr = "unrecognized character";
-    return 202;
-  }
+    rx->next = case_insensitive ? re_next_char_nocase : re_next_char;
+    if (regex_resize(rx, 30) != RX_OK) {
+      regex_reset(rx);
+      err = RX_OOM;
+      break;
+    }
+    unsigned j = 0;
+    if (source.ptr[j] == '^') {
+      ++j;
+    } else {
+      re_append(rx, RE_OP_ANYSTAR, 0);
+    }
+    rx->sIn = slice_from_memory(source.ptr + j, source.len - j);
+    err = re_subcompile_re(rx);
+    if (err) {
+      regex_reset(rx);
+      break;
+    }
+    if (rePeek(rx) == '$' && SLICE_LEN_LE(rx->sIn, 1)) {
+      re_append(rx, RE_OP_MATCH, RE_EOF);
+      re_append(rx, RE_OP_ACCEPT, 0);
+    } else if (SLICE_FINISHED(rx->sIn)) {
+      re_append(rx, RE_OP_ACCEPT, 0);
+    } else {
+      regex_reset(rx);
+      err = RX_UNRECOGNIZED_CHARACTER;
+      break;
+    }
 
-  /*
+    /*
    * The following is a performance optimization.  If the regex begins with
    * ".*" (if the input regex lacks an initial "^") and afterwards there are
    * one or more matching characters, enter those matching characters into
@@ -717,29 +726,51 @@ int regex_compile(Regex* rx, Slice source, int case_insensitive) {
    * unicode characters beyond plane 0 - those are very rare and this is
    * just an optimization.
    */
-  if (rx->aOp[0] == RE_OP_ANYSTAR && !case_insensitive) {
-    j = 0;
-    for (int i = 1; j < sizeof(rx->zInit) - 2 && rx->aOp[i] == RE_OP_MATCH; ++i) {
-      unsigned x = rx->aArg[i];
-      if (x <= 127) {
-        rx->zInit[j++] = (unsigned char) x;
-      } else if (x <= 0xfff) {
-        rx->zInit[j++] = (unsigned char) (0xc0 | (x >> 6));
-        rx->zInit[j++] = 0x80 | (x & 0x3f);
-      } else if (x <= 0xffff) {
-        rx->zInit[j++] = (unsigned char) (0xd0 | (x >> 12));
-        rx->zInit[j++] = 0x80 | ((x >> 6) & 0x3f);
-        rx->zInit[j++] = 0x80 | (x & 0x3f);
-      } else {
-        break;
+    if (rx->aOp[0] == RE_OP_ANYSTAR && !case_insensitive) {
+      j = 0;
+      for (int i = 1; j < sizeof(rx->zInit) - 2 && rx->aOp[i] == RE_OP_MATCH; ++i) {
+        unsigned x = rx->aArg[i];
+        if (x <= 127) {
+          rx->zInit[j++] = (unsigned char) x;
+        } else if (x <= 0xfff) {
+          rx->zInit[j++] = (unsigned char) (0xc0 | (x >> 6));
+          rx->zInit[j++] = 0x80 | (x & 0x3f);
+        } else if (x <= 0xffff) {
+          rx->zInit[j++] = (unsigned char) (0xd0 | (x >> 12));
+          rx->zInit[j++] = 0x80 | ((x >> 6) & 0x3f);
+          rx->zInit[j++] = 0x80 | (x & 0x3f);
+        } else {
+          break;
+        }
       }
+      if (j > 0 && rx->zInit[j - 1] == 0) {
+        --j;
+      }
+      rx->nInit = j;
     }
-    if (j > 0 && rx->zInit[j - 1] == 0) --j;
-    rx->nInit = j;
-  }
-  if (rx->zErr) {
-    LOG_INFO("Found error [%s]", rx->zErr);
-    return 999;
-  }
-  return 0;
+  } while (0);
+  return err;
+}
+
+const char* regex_error(int err) {
+  if (err < 0 || err >= RX_LAST) return "*UNKNOWN*";
+
+  static const char* errors[] = {
+    "RX_OK",
+    "RX_OOM",
+    "RX_INPUT_TOO_SHORT",
+    "RX_UNRECOGNIZED_CHARACTER",
+    "RX_UNKNOWN_ESCAPE",
+    "RX_UNKNOWN_POSIX_CHARCLASS",
+    "RX_UNMATCHED_PARENTHESIS",
+    "RX_UNMATCHED_BRACE",
+    "RX_UNMATCHED_BRACKET",
+    "RX_STAR_WITHOUT_OPERAND",
+    "RX_PLUS_WITHOUT_OPERAND",
+    "RX_QUESTION_WITHOUT_OPERAND",
+    "RX_LOHI_WITHOUT_OPERAND",
+    "RX_LOHI_HI_SMALLER_THAN_LO",
+    "RX_LOHI_BOTH_ZERO",
+  };
+  return errors[err];
 }

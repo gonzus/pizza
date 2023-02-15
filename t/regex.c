@@ -9,7 +9,7 @@ static void test_simple(void) {
   static struct Sample {
     const char* source;
     int match;
-    const char* string;
+    const char* text;
   } samples[] = {
     { "^[0-9]+$", 0, 0 },
     { 0, 1, "0" },
@@ -43,16 +43,46 @@ static void test_simple(void) {
       Slice s = slice_from_string(samples[j].source, 0);
       err = regex_compile(&rx, s, 0);
       LOG_DEBUG("compiled {%.*s} => %d [%s]", s.len, s.ptr, err, rx.zErr ? rx.zErr : "");
-      ok(!err, "regex {%s} successfully compiled", samples[j].source);
+      ok(!err, "regex {%.*s} successfully compiled", s.len, s.ptr);
     }
-    if (samples[j].string) {
+    if (samples[j].text) {
       int matched = 0;
-      Slice t = slice_from_string(samples[j].string, 0);
+      Slice t = slice_from_string(samples[j].text, 0);
       err = regex_match(&rx, t, &matched);
       LOG_DEBUG("matched {%.*s} => %d - %d [%s]", t.len, t.ptr, matched, err, rx.zErr ? rx.zErr : "");
-      ok(!err, "regex successfully matched against {%s}", samples[j].string);
-      ok(!!matched == !!samples[j].match, "regex %s match {%s}", samples[j].match ? "does" : "does not", samples[j].string);
+      ok(!err, "regex successfully matched against {%.*s}", t.len, t.ptr);
+      ok(!!matched == !!samples[j].match, "regex %s match {%.*s}", samples[j].match ? "does" : "does not", t.len, t.ptr);
     }
+  }
+  regex_destroy(&rx);
+}
+
+static void test_invalid(void) {
+  static struct Sample {
+    const char* source;
+    int err;
+  } samples[] = {
+    { "a$b", RX_UNRECOGNIZED_CHARACTER },
+    { "\\z", RX_UNKNOWN_ESCAPE },
+    { "[[:digit:]]", RX_UNKNOWN_POSIX_CHARCLASS },
+    { "(a", RX_UNMATCHED_PARENTHESIS },
+    { "a{2,3", RX_UNMATCHED_BRACE },
+    { "[a", RX_UNMATCHED_BRACKET },
+    { "*", RX_STAR_WITHOUT_OPERAND },
+    { "+", RX_PLUS_WITHOUT_OPERAND },
+    { "?", RX_QUESTION_WITHOUT_OPERAND },
+    { "{1,2}", RX_LOHI_WITHOUT_OPERAND },
+    { "a{3,2}", RX_LOHI_HI_SMALLER_THAN_LO },
+    { "a{0,0}", RX_LOHI_BOTH_ZERO },
+  };
+  Regex rx; regex_build(&rx);
+  for (int j = 0; j < ALEN(samples); ++j) {
+    int err = 0;
+    Slice s = slice_from_string(samples[j].source, 0);
+    err = regex_compile(&rx, s, 0);
+    // LOG_INFO("compiled {%.*s} => %d [%s]", s.len, s.ptr, err, regex_error(err));
+    int expected = samples[j].err;
+    ok(err == expected, "regex {%.*s} compiled with correct error %d [%s]", s.len, s.ptr, expected, regex_error(expected));
   }
   regex_destroy(&rx);
 }
@@ -62,6 +92,7 @@ int main (int argc, char* argv[]) {
   (void) argv;
 
   test_simple();
+  test_invalid();
 
   done_testing();
 }
